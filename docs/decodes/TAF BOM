@@ -1,0 +1,64 @@
+# BOM TAF Decode Guide
+
+This document provides reference information for decoding TAF and TAF3 messages according to the Bureau of Meteorology (BOM).
+
+---
+
+## 1. Overview
+A **TAF** (Terminal Aerodrome Forecast) is a coded weather forecast for within 5 nautical miles of an aerodrome; **TAF3** is similar but issued every 3 hours :contentReference[oaicite:2]{index=2}.
+
+---
+
+## 2. Common Forecast Elements
+
+- **FMhhmm**: Forecast from time (UTC); begins a new line
+- **TEMPO**: Temporary fluctuations (< 1 hr, covering less than half the period)
+- **BECMG hhmm/hhmm**: Gradual change expected during this timeframe
+- **PROB30 / PROB40**: Probability (%) of forecast conditions within period
+- **TLhhmm / AT hhmm**: Precise change time or at a specific time
+
+---
+
+## 3. Wind & Visibility
+
+- Format: `dddffKT`
+  - `ddd`: direction in degrees
+  - `ff`: speed in knots
+
+- Visibility in statute miles or meters (e.g., `6SM`, `9999`)
+- RVR notation: `R28L/2600FT`
+
+---
+
+## 4. Weather Phenomena & Clouds
+
+- Intensity: `-` = light, no symbol = moderate, `+` = heavy
+- Descriptors: `MI`, `BC`, `SH`, `TS`, etc.
+- Phenomena: `RA`, `DZ`, `SN`, `FG`, `HZ`, `TSRA`, etc.
+- Cloud types: `FEW`, `SCT`, `BKN`, `OVC`, with heights (in hundreds of feet)
+- Vertical visibility: `VV004` (400 ft)
+
+---
+
+## 5. Example Format
+
+TAF YMML 151100Z 1512/1618 20008KT CAVOK
+FM151600 18010KT SCT020
+TEMPO 1518/1522 5000 RA BKN010
+BECMG 1606/1608 24012KT
+
+
+---
+
+## 6. Tips for Dispatch Buddy
+
+- Split forecast blocks by `FM`, `TEMPO`, `BECMG`, or line break
+- Decode each to English:
+  - `FM151600`: “From 16:00 UTC, wind 180°/10 kt, scattered clouds at 2,000 ft”
+  - `TEMPO ...`: “Temporary rain lowering visibility”
+- Include PROB and TL/AT conditions in risk scoring
+
+---
+
+## 7. Source
+- BOM Aerodrome forecast guide :contentReference[oaicite:3]{index=3}

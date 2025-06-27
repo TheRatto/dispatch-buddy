@@ -4,6 +4,7 @@ import '../providers/flight_provider.dart';
 import '../models/airport.dart';
 import 'airport_detail_screen.dart';
 import 'raw_data_screen.dart';
+import '../widgets/zulu_time_widget.dart';
 
 class SummaryScreen extends StatelessWidget {
   @override
@@ -12,6 +13,14 @@ class SummaryScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Dispatch Summary'),
         actions: [
+          const ZuluTimeWidget(),
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              Navigator.pop(context); // Go back to input screen
+            },
+            tooltip: 'Edit Flight Plan',
+          ),
           IconButton(
             icon: Icon(Icons.save),
             onPressed: () {
@@ -99,30 +108,6 @@ class SummaryScreen extends StatelessWidget {
             ],
           );
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        onTap: (index) {
-          switch (index) {
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AirportDetailScreen()),
-              );
-              break;
-            case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => RawDataScreen()),
-              );
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Summary'),
-          BottomNavigationBarItem(icon: Icon(Icons.airplanemode_active), label: 'Airports'),
-          BottomNavigationBarItem(icon: Icon(Icons.code), label: 'Raw Data'),
-        ],
       ),
     );
   }

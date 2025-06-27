@@ -16,11 +16,11 @@
   - Clear color-coded status and icons for operational clarity
   - Large, touch-friendly controls and readable text
 
-You are working on an iOS app called **Dispatch Buddy**. The goal of the app is to assist pilots during preflight planning by parsing flight plan documents (e.g., ForeFlight PDFs), retrieving weather and NOTAMs, and providing a summarised, visually clear operational briefing.
+You are working on a **Flutter app** called **Dispatch Buddy**. The goal of the app is to assist pilots during preflight planning by parsing flight plan documents (e.g., ForeFlight PDFs), retrieving weather and NOTAMs, and providing a summarised, visually clear operational briefing.
 
 ## 🎯 Objective
 
-Create a clean, intuitive iOS app that:
+Create a clean, intuitive Flutter app that:
 - Accepts a flight plan PDF as input
 - Extracts route and operational data from the document
 - Retrieves live NOTAMs and METAR/TAF for involved airports
@@ -41,15 +41,15 @@ The app consists of the following 5 main screens:
 
 ## 🧠 AI Integration
 
-- Use on-device LLM (Apple Intelligence preferred) to summarise NOTAMs and weather.
-- Generate briefing text, holding fuel recommendations, arrival/departure expectations, and operational flags.
-- All parsing and analysis must work offline if possible.
+- Use placeholder AI summarisation for now
+- Generate briefing text, holding fuel recommendations, arrival/departure expectations, and operational flags
+- All parsing and analysis must work offline if possible
 
 ## 🔧 Tech Notes
 
-- App built in **SwiftUI**
-- Uses on-device file parsing, LLM summarisation, and local storage
-- External APIs: FAA NOTAM/METAR (JSON), optional NAIPS (XML)
+- App built in **Flutter/Dart**
+- Uses on-device file parsing, placeholder AI summarisation, and local storage
+- External APIs: FAA NOTAM/METAR (JSON), AviationWeather.gov, optional NAIPS (XML)
 - Include "Save Briefing" feature for offline recall
 
 ## 📄 Reference Docs (linked in /docs/)

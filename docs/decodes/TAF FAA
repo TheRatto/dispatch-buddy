@@ -1,0 +1,60 @@
+# FAA TAF Decode Guide
+
+This guide outlines how to interpret TAF messages according to FAA standards.
+
+---
+
+## 1. Structure of a TAF
+
+- Starts with `TAF`, optional amendment tags (`AMD`, `COR`)
+- ICAO aerodrome code and issue time (e.g., `KJFK 151130Z`)
+- Validity period (`1512/1618`)
+- Forecast groups follow, often introduced by:
+  - `FMhhmm`, `TEMPO`, `BECMG`, `PROB40`, `PROB30`
+  - Timing qualifiers like `AT`, `TL`, `WS`
+
+---
+
+## 2. Elements
+
+- **Wind**: `dddffKT` (e.g., `20008KT`)
+- **Visibility**: `4SM`, `6SM`, etc.
+- **Weather**: `RA`, `TS`, `BR`, combined descriptors (`-SHRA`, `+TSRA`)
+- **Clouds**: `FEW020`, `SCT030CB`, `BKN015`, `OVC010`
+- **RVR**: e.g., `R28L/2600FT`
+- **Temperature/Dew Point**: sometimes included at end
+
+---
+
+## 3. Common Group Meanings
+
+- `FMhhmm`: Change initiated from this time
+- `TEMPO`: Temporary conditions expected
+- `PROB30`: 30% chance of specified condition
+- `BECMG`: Gradual change between two times (e.g., `BECMG 1315`)
+- `AT`, `TL`: Specific timing markers for onset/termination
+
+---
+
+## 4. Example Block
+
+FM1930 22012KT 5SM BR SCT020
+TEMPO 2000/2004 3SM TSRA BKN015CB
+BECMG 2106/2108 24015KT
+PROB30 2112/2114 2SM -SHRA
+
+
+---
+
+## 5. Implementation Tips
+
+- Parse and segment on `FM`, `TEMPO`, `BECMG`, `PROB`
+- Format each as plain-language bullet or sentence:
+  - `From 19:30Z, wind 220° at 12 kt, 5SM visibility, mist, scattered clouds at 2,000 ft`
+  - `Temporary thunderstorms with rain and broken low clouds between 20:00Z–20:04Z`
+  - `Probability 30% of -SHRA between 21:12Z–21:14Z`
+
+---
+
+## 6. Reference
+- FAA “Key to Aerodrome Forecast and METAR” key document :contentReference[oaicite:5]{index=5}

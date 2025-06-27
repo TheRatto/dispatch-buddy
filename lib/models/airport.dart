@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 enum SystemStatus { green, yellow, red }
 
 class Airport {
@@ -46,6 +48,31 @@ class Airport {
       'systems': systems.map((key, value) => MapEntry(key, value.toString().split('.').last)),
       'runways': runways,
       'navaids': navaids,
+    };
+  }
+
+  factory Airport.fromDbJson(Map<String, dynamic> json) {
+    return Airport(
+      icao: json['icao'],
+      name: json['name'],
+      city: json['city'],
+      latitude: 0, // Not stored in DB for now
+      longitude: 0, // Not stored in DB for now
+      runways: [], // Not stored in DB for now
+      navaids: [], // Not stored in DB for now
+      systems: Map<String, SystemStatus>.from(
+        jsonDecode(json['systemsJson']).map((key, value) => MapEntry(key, SystemStatus.values.firstWhere((e) => e.toString() == 'SystemStatus.$value'))),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toDbJson(String flightId) {
+    return {
+      'flightId': flightId,
+      'icao': icao,
+      'name': name,
+      'city': city,
+      'systemsJson': jsonEncode(systems.map((key, value) => MapEntry(key, value.toString().split('.').last))),
     };
   }
 } 

@@ -5,7 +5,8 @@ import '../models/flight.dart';
 import '../models/airport.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
-import 'summary_screen.dart';
+import 'briefing_tabs_screen.dart';
+import '../services/api_service.dart';
 
 class InputScreen extends StatefulWidget {
   @override
@@ -15,17 +16,32 @@ class InputScreen extends StatefulWidget {
 class _InputScreenState extends State<InputScreen> {
   final _formKey = GlobalKey<FormState>();
   final _routeController = TextEditingController();
-  final _etdController = TextEditingController();
   final _flightLevelController = TextEditingController();
+  DateTime _selectedDateTime = DateTime.now().add(Duration(hours: 1));
   bool _isLoading = false;
+  bool _isZuluTime = false; // Toggle between local and Zulu time
 
   @override
   void initState() {
     super.initState();
-    // Set default values for testing
-    _routeController.text = 'YPPH YSSY';
-    _etdController.text = '2024-01-15 08:30';
-    _flightLevelController.text = 'FL350';
+    
+    // Check if there's existing flight data to pre-populate
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final flightProvider = context.read<FlightProvider>();
+      final currentFlight = flightProvider.currentFlight;
+      
+      if (currentFlight != null) {
+        // Pre-populate with existing data
+        _routeController.text = currentFlight.route;
+        _selectedDateTime = currentFlight.etd;
+        _flightLevelController.text = currentFlight.flightLevel;
+        setState(() {}); // Update the UI
+      } else {
+        // Set default values for testing
+        _routeController.text = 'YPPH YSSY WSSS KJFK CYYZ EGLL';
+        _flightLevelController.text = 'FL350';
+      }
+    });
   }
 
   @override
@@ -34,7 +50,7 @@ class _InputScreenState extends State<InputScreen> {
       appBar: AppBar(
         title: Text('New Briefing'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -62,6 +78,7 @@ class _InputScreenState extends State<InputScreen> {
                           labelText: 'Route',
                           hintText: 'e.g., YPPH YSSY',
                           border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.route),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -71,19 +88,96 @@ class _InputScreenState extends State<InputScreen> {
                         },
                       ),
                       SizedBox(height: 16),
-                      TextFormField(
-                        controller: _etdController,
-                        decoration: InputDecoration(
-                          labelText: 'ETD',
-                          hintText: 'YYYY-MM-DD HH:MM',
-                          border: OutlineInputBorder(),
+                      // Local/Zulu Time Toggle
+                      Row(
+                        children: [
+                          Text(
+                            'Time Format:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildToggleButton('Local', !_isZuluTime, () {
+                                  setState(() => _isZuluTime = false);
+                                }),
+                                _buildToggleButton('Zulu', _isZuluTime, () {
+                                  setState(() => _isZuluTime = true);
+                                }),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      // ETD Date/Time Picker
+                      InkWell(
+                        onTap: _selectDateTime,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.schedule, color: Colors.grey.shade600),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ETD',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      _formatDateTime(_selectedDateTime),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (_isZuluTime) ...[
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Local: ${_formatLocalTime(_selectedDateTime)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ] else ...[
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Zulu: ${_formatZuluTime(_selectedDateTime)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+                            ],
+                          ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter ETD';
-                          }
-                          return null;
-                        },
                       ),
                       SizedBox(height: 16),
                       TextFormField(
@@ -92,6 +186,7 @@ class _InputScreenState extends State<InputScreen> {
                           labelText: 'Flight Level',
                           hintText: 'e.g., FL350',
                           border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.flight),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -194,144 +289,529 @@ class _InputScreenState extends State<InputScreen> {
     );
   }
 
+  Widget _buildToggleButton(String text, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFF1E3A8A) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectDateTime() async {
+    final DateTime? result = await showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return _DateTimePickerDialog(
+          initialDateTime: _selectedDateTime,
+          isZuluTime: _isZuluTime,
+        );
+      },
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedDateTime = result;
+      });
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    if (_isZuluTime) {
+      return _formatZuluTime(dateTime);
+    } else {
+      return _formatLocalTime(dateTime);
+    }
+  }
+
+  String _formatLocalTime(DateTime dateTime) {
+    final date = '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}';
+    final time = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return '$date at $time (Local)';
+  }
+
+  String _formatZuluTime(DateTime dateTime) {
+    // Convert to UTC (Zulu time)
+    final utcTime = dateTime.toUtc();
+    final date = '${utcTime.day.toString().padLeft(2, '0')}/${utcTime.month.toString().padLeft(2, '0')}/${utcTime.year}';
+    final time = '${utcTime.hour.toString().padLeft(2, '0')}:${utcTime.minute.toString().padLeft(2, '0')}';
+    return '$date at ${time}Z';
+  }
+
   void _generateBriefing() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    context.read<FlightProvider>().setLoading(true);
 
     try {
-      // Parse route
-      final routeParts = _routeController.text.split(' ');
-      if (routeParts.length < 2) {
-        throw Exception('Invalid route format');
-      }
+      final apiService = ApiService();
 
-      final departure = routeParts[0];
-      final destination = routeParts[1];
+      final icaos = _routeController.text.toUpperCase().split(' ').where((s) => s.isNotEmpty).toSet().toList();
       
-      // Parse ETD - fix the parsing
-      final etd = DateTime.parse(_etdController.text.replaceAll(' ', 'T'));
+      // Fetch all data in parallel using the new batch methods
+      final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(icao)));
+      final weatherFuture = apiService.fetchWeather(icaos);
+      final tafsFuture = apiService.fetchTafs(icaos);
 
-      // Create flight with mock data
-      final flight = Flight(
+      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
+
+      final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
+      final List<Weather> metars = results[1] as List<Weather>;
+      final List<Weather> tafs = results[2] as List<Weather>;
+
+      // Flatten the list of lists into a single list
+      final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
+      final List<Weather> allWeather = [...metars, ...tafs];
+      
+      final newFlight = Flight(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         route: _routeController.text,
-        departure: departure,
-        destination: destination,
-        etd: etd,
+        departure: icaos.first,
+        destination: icaos.last,
+        etd: _selectedDateTime,
         flightLevel: _flightLevelController.text,
-        alternates: ['YSCB', 'YMML'],
+        alternates: [], // Can be parsed from route later
         createdAt: DateTime.now(),
-        airports: _generateMockAirports([departure, destination]),
-        notams: _generateMockNotams([departure, destination]),
-        weather: _generateMockWeather([departure, destination]),
+        airports: icaos.map((icao) => Airport(
+          icao: icao,
+          name: '$icao Airport',
+          city: 'Unknown',
+          latitude: 0,
+          longitude: 0,
+          systems: {
+            'runways': SystemStatus.green,
+            'navaids': SystemStatus.green,
+            'taxiways': SystemStatus.green,
+            'lighting': SystemStatus.green,
+          },
+          runways: [],
+          navaids: [],
+        )).toList(),
+        notams: allNotams,
+        weather: allWeather,
       );
 
       // Save to provider
-      context.read<FlightProvider>().createNewFlight(flight);
+      context.read<FlightProvider>().setCurrentFlight(newFlight);
 
       // Navigate to summary
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => SummaryScreen()),
+        MaterialPageRoute(builder: (context) => BriefingTabsScreen()),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error generating briefing: $e');
+      debugPrint('Stack trace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text('Failed to generate briefing. Check console for details.')),
       );
     } finally {
       setState(() => _isLoading = false);
+      context.read<FlightProvider>().setLoading(false);
     }
   }
 
   void _generateMockBriefing() {
+    // This is now a shortcut for a real flight
     _routeController.text = 'YPPH YSSY';
-    _etdController.text = '2024-01-15 08:30';
+    _selectedDateTime = DateTime.now().add(Duration(hours: 2));
     _flightLevelController.text = 'FL350';
     _generateBriefing();
   }
 
   void _generateMockBriefing2() {
+    // This is now a shortcut for a real flight
     _routeController.text = 'YMML YBBN';
-    _etdController.text = '2024-01-15 14:00';
+    _selectedDateTime = DateTime.now().add(Duration(hours: 3));
     _flightLevelController.text = 'FL380';
     _generateBriefing();
-  }
-
-  List<Airport> _generateMockAirports(List<String> icaoCodes) {
-    final airportData = {
-      'YPPH': {'name': 'Perth Airport', 'city': 'Perth'},
-      'YSSY': {'name': 'Sydney Airport', 'city': 'Sydney'},
-      'YMML': {'name': 'Melbourne Airport', 'city': 'Melbourne'},
-      'YBBN': {'name': 'Brisbane Airport', 'city': 'Brisbane'},
-    };
-
-    return icaoCodes.map((icao) {
-      final data = airportData[icao] ?? {'name': '$icao Airport', 'city': 'Unknown'};
-      return Airport(
-        icao: icao,
-        name: data['name']!,
-        city: data['city']!,
-        latitude: -31.9522,
-        longitude: 115.8589,
-        systems: {
-          'runways': SystemStatus.green,
-          'navaids': SystemStatus.green,
-          'taxiways': SystemStatus.green,
-          'lighting': SystemStatus.green,
-        },
-        runways: ['06/24', '03/21'],
-        navaids: ['ILS', 'VOR', 'DME'],
-      );
-    }).toList();
-  }
-
-  List<Notam> _generateMockNotams(List<String> icaoCodes) {
-    final notams = <Notam>[];
-    
-    for (final icao in icaoCodes) {
-      if (icao == 'YSSY') {
-        notams.add(Notam(
-          id: 'C1234/24',
-          icao: icao,
-          type: NotamType.runway,
-          validFrom: DateTime.now(),
-          validTo: DateTime.now().add(Duration(hours: 6)),
-          rawText: 'C1234/24 NOTAMN Q) YSSY/QMRLC/IV/NBO/A/000/999/3355S15110E005 A) YSSY B) 2401150800 C) 2401151400 E) RWY16L ILS U/S DUE MAINT',
-          decodedText: 'Runway 16L ILS is unavailable due to maintenance from 0800Z to 1400Z',
-          affectedSystem: 'RWY16L ILS',
-          isCritical: true,
-        ));
-      }
-    }
-    
-    return notams;
-  }
-
-  List<Weather> _generateMockWeather(List<String> icaoCodes) {
-    return icaoCodes.map((icao) {
-      return Weather(
-        icao: icao,
-        timestamp: DateTime.now(),
-        rawText: 'METAR $icao 150830Z 25015KT 9999 SCT030 BKN100 25/18 Q1013',
-        decodedText: 'Wind 250° at 15 knots, visibility 10km, scattered cloud at 3000ft, broken cloud at 10000ft, temperature 25°C, dew point 18°C, QNH 1013',
-        windDirection: 250,
-        windSpeed: 15,
-        visibility: 10000,
-        cloudCover: 'SCT030 BKN100',
-        temperature: 25.0,
-        dewPoint: 18.0,
-        qnh: 1013,
-        conditions: 'Good',
-      );
-    }).toList();
   }
 
   @override
   void dispose() {
     _routeController.dispose();
-    _etdController.dispose();
     _flightLevelController.dispose();
     super.dispose();
+  }
+}
+
+class _DateTimePickerDialog extends StatefulWidget {
+  final DateTime initialDateTime;
+  final bool isZuluTime;
+
+  const _DateTimePickerDialog({
+    required this.initialDateTime,
+    required this.isZuluTime,
+  });
+
+  @override
+  _DateTimePickerDialogState createState() => _DateTimePickerDialogState();
+}
+
+class _DateTimePickerDialogState extends State<_DateTimePickerDialog> {
+  late DateTime _selectedDateTime;
+  late bool _isZuluTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDateTime = widget.initialDateTime;
+    _isZuluTime = widget.isZuluTime;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.all(12), // Reduced padding
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              bool isWide = constraints.maxWidth > 500;
+
+              final content = isWide
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildTitle(),
+                              SizedBox(height: 12),
+                              _buildTimeFormatToggle(),
+                              SizedBox(height: 12),
+                              _buildDatePickerWidget(),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(height: 60),
+                              _buildTimePickerWidget(),
+                              SizedBox(height: 12),
+                              _buildPreview(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTitle(),
+                        SizedBox(height: 12),
+                        _buildTimeFormatToggle(),
+                        SizedBox(height: 12),
+                        _buildDatePickerWidget(),
+                        SizedBox(height: 12),
+                        _buildTimePickerWidget(),
+                        SizedBox(height: 16),
+                        _buildPreview(),
+                        SizedBox(height: 12),
+                        _buildConfirmButton(),
+                      ],
+                    );
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  content,
+                  if (isWide) ...[
+                    SizedBox(height: 12),
+                    _buildConfirmButton(),
+                  ]
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return Row(
+      children: [
+        Icon(Icons.schedule, color: Color(0xFF1E3A8A)),
+        SizedBox(width: 12),
+        Text(
+          'Select ETD',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeFormatToggle() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Time Format:',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(width: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildToggleButton('Local', !_isZuluTime, () {
+                setState(() => _isZuluTime = false);
+              }),
+              _buildToggleButton('Zulu', _isZuluTime, () {
+                setState(() => _isZuluTime = true);
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePickerWidget() {
+    return Container(
+      padding: EdgeInsets.all(8), // Reduced padding
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Select Date',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          SizedBox(
+            height: 260, // Reduced height
+            child: CalendarDatePicker(
+              initialDate: _selectedDateTime,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(Duration(days: 365)),
+              onDateChanged: (date) {
+                setState(() {
+                  _selectedDateTime = DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    _selectedDateTime.hour,
+                    _selectedDateTime.minute,
+                  );
+                });
+              },
+              selectableDayPredicate: (date) =>
+                  date.isAfter(DateTime.now().subtract(Duration(days: 1))),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimePickerWidget() {
+    return Container(
+      padding: EdgeInsets.all(8), // Reduced padding
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Select Time',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          SizedBox(
+            height: 100, // Reduced height
+            child: Row(
+              children: [
+                Expanded(
+                  child: ListWheelScrollView.useDelegate(
+                    itemExtent: 30,
+                    physics: FixedExtentScrollPhysics(),
+                    controller: FixedExtentScrollController(
+                      initialItem: 1000 + _selectedDateTime.hour,
+                    ),
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: 2000,
+                      builder: (context, index) {
+                        final hour = index % 24;
+                        return Center(
+                          child: Text(
+                            hour.toString().padLeft(2, '0'),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        );
+                      },
+                    ),
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        final hour = index % 24;
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          hour,
+                          _selectedDateTime.minute,
+                        );
+                      });
+                    },
+                  ),
+                ),
+                Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: ListWheelScrollView.useDelegate(
+                    itemExtent: 30,
+                    physics: FixedExtentScrollPhysics(),
+                    controller: FixedExtentScrollController(
+                      initialItem: 1000 + _selectedDateTime.minute,
+                    ),
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: 2000,
+                      builder: (context, index) {
+                        final minute = index % 60;
+                        return Center(
+                          child: Text(
+                            minute.toString().padLeft(2, '0'),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        );
+                      },
+                    ),
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        final minute = index % 60;
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          _selectedDateTime.hour,
+                          minute,
+                        );
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreview() {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color(0xFF1E3A8A).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Color(0xFF1E3A8A).withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Preview',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E3A8A)),
+          ),
+          SizedBox(height: 4),
+          Text(
+            _isZuluTime
+                ? _formatZuluTime(_selectedDateTime)
+                : _formatLocalTime(_selectedDateTime),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 2),
+          Text(
+            _isZuluTime
+                ? 'Local: ${_formatLocalTime(_selectedDateTime)}'
+                : 'Zulu: ${_formatZuluTime(_selectedDateTime)}',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmButton() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel'),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(_selectedDateTime),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Confirm'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToggleButton(String text, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFF1E3A8A) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatLocalTime(DateTime dateTime) {
+    final date = '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}';
+    final time = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return '$date at $time (Local)';
+  }
+
+  String _formatZuluTime(DateTime dateTime) {
+    final utcTime = dateTime.toUtc();
+    final date = '${utcTime.day.toString().padLeft(2, '0')}/${utcTime.month.toString().padLeft(2, '0')}/${utcTime.year}';
+    final time = '${utcTime.hour.toString().padLeft(2, '0')}:${utcTime.minute.toString().padLeft(2, '0')}';
+    return '$date at ${time}Z';
   }
 } 

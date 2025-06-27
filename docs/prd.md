@@ -13,8 +13,7 @@
 - Preflight briefers or flight ops staff
 
 ## Platforms
-- Initial: Flutter app (iOS, Android, Web via single codebase)
-- Future: Native iOS (for Apple SDK integrations)
+- Flutter app (iOS, Android, Web via single codebase)
 
 ## Core Use Cases
 1. Upload a flight plan (e.g., ForeFlight PDF)
@@ -31,10 +30,11 @@
 
 ### Data Sources
 - FAA NOTAM/METAR API (initial)
+- AviationWeather.gov API
 - NAIPS (optional/add-on via XML)
 
 ### AI & LLM Integration
-- On-device summarisation of operational impacts
+- Placeholder AI summarisation of operational impacts
 - Highlights: weather risk, navaid/runway status, holding fuel recommendations
 
 ### Visualisation
@@ -61,7 +61,7 @@
 - Advanced PDF/image parsing (OCR)
 - Interactive airport diagrams
 - Exporting briefing as PDF/AirDrop
-- Migration to SwiftUI for deep Apple SDK integration (if needed)
+- Enhanced AI integration when needed
 
 ## Out of Scope (MVP)
 - Fuel planning

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../models/flight.dart';
 import 'input_screen.dart';
-import 'summary_screen.dart';
+import 'briefing_tabs_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -29,12 +29,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.flight_takeoff,
-                        size: 48,
-                        color: Colors.white,
+                      Image.asset(
+                        'assets/images/logo.png',
+                        height: 80,
                       ),
-                      SizedBox(height: 12),
+                      SizedBox(height: 16),
                       Text(
                         'AI Preflight Briefing Assistant',
                         style: TextStyle(
@@ -149,7 +148,7 @@ class HomeScreen extends StatelessWidget {
               flightProvider.loadFlight(flight);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SummaryScreen()),
+                MaterialPageRoute(builder: (context) => BriefingTabsScreen()),
               );
             },
           ),

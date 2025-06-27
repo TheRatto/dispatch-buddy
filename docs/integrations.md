@@ -1,7 +1,7 @@
 # Dispatch Buddy – Data & Integration Plan
 
 ## Overview
-Dispatch Buddy aims to operate entirely on-device where possible, with optional cloud or API integrations as fallback or enhancement layers.
+Dispatch Buddy aims to operate entirely on-device where possible, with cloud or API integrations as fallback or enhancement layers.
 
 ## Data Input
 ### ForeFlight / NAIPS PDF
@@ -14,29 +14,36 @@ Dispatch Buddy aims to operate entirely on-device where possible, with optional 
   - Weather/NOTAM blocks
 
 ## Weather & NOTAM Sources
-### Primary: FAA NOTAM/METAR API
+### Primary: AviationWeather.gov API
+- Free, open access (JSON)
+- Endpoint: `https://aviationweather.gov/cgi-bin/data/api.php`
+- Usage: METAR and TAF data by ICAO
+
+### Secondary: FAA NOTAM API
 - Free, open access (JSON)
 - Endpoint: `https://notamsapi.faa.gov/notamapi/v1/notams`
 - Usage: ICAO lookup (e.g., `?icao=YSSY`)
 
 ### Optional: NAIPS XML Post (Airservices Australia)
-- Requires approval + potential licensing fee
-- XML SOAP-style interface
-- Sample endpoint: `https://www.airservicesaustralia.com/NAIPS/naips-xml-data.asp`
-- Can retrieve TAFs, METARs, NOTAMs by ICAO
+- Requires login/session management
+- Returns full text briefing in XML
 
 ## AI & LLM Integration
-### Summarisation & Risk Analysis
-- Performed on-device
-- Prompt templates format decoded data into:
-  - Operational summaries
-  - Fuel recommendations
-  - Runway/navaid usability
+### Primary: On-Device Placeholder
+- Basic keyword and pattern matching
+- Generates simple summaries from raw text
+- No external API calls needed for now
 
-### Technology Options
-- Use Apple Intelligence if available (iOS 18+)
-- Fallback: On-device open model (e.g. Mistral, Gemma via Ollama)
-- All LLM parsing must occur on-device (no internet requirement)
+### Future: Cloud-Based LLM (e.g., OpenAI/Gemini)
+- Send concatenated raw text to a cloud function
+- Use advanced LLM to parse, decode, and summarise
+- Requires API keys and billing setup
+
+## ATIS (Automatic Terminal Information Service)
+### Status: Not Currently Available
+- There is no simple, free, public REST API for ATIS data.
+- The FAA provides Digital ATIS (D-ATIS) via its **System Wide Information Management (SWIM)** program, but this requires a formal approval process and a more complex integration than the other APIs.
+- For now, ATIS retrieval is out of scope for the MVP.
 
 ## Storage
 - Data saved locally (SQLite or file-based)
@@ -46,7 +53,7 @@ Dispatch Buddy aims to operate entirely on-device where possible, with optional 
 ## Parsing Pipeline
 - Step 1: Upload → read and clean text
 - Step 2: Regex extract known fields (ICAO, NOTAM IDs, Q/A/B/E blocks)
-- Step 3: Feed chunks to LLM with templated prompts
+- Step 3: Feed chunks to placeholder AI with templated prompts
 - Step 4: Render summaries + decoded views
 
 ## Future Integrations

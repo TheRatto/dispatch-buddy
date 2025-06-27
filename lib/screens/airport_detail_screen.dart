@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../models/airport.dart';
+import '../widgets/zulu_time_widget.dart';
 
 class AirportDetailScreen extends StatelessWidget {
   @override
@@ -9,6 +10,10 @@ class AirportDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Airport Details'),
+        actions: const [
+          ZuluTimeWidget(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Consumer<FlightProvider>(
         builder: (context, flightProvider, child) {
