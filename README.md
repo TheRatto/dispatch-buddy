@@ -53,6 +53,40 @@ The app consists of the following 5 main screens:
 - Include "Save Briefing" feature for offline recall
 
 ## 📄 Reference Docs (linked in /docs/)
-- PRD.md – Product requirements and goals
-- screens.md – UI structure and screen specs
-- integrations.md – Data pipeline and API access plan
+
+### Product & Design
+- **PRD.md** – Product requirements and goals
+- **screens.md** – UI structure and screen specs
+- **integrations.md** – Data pipeline and API access plan
+
+### Development & Architecture
+- **refactoring_roadmap.md** – Strategic refactoring plan and architectural improvements
+- **current_sprint_tasks.md** – Current sprint tasks and priorities
+- **development_guidelines.md** – Coding standards, patterns, and best practices
+
+### Technical Documentation
+- **decodes/** – Weather decoding guides and reference materials
+  - **metar_decode_guide.md** – METAR decoding reference
+  - **TAF BOM** – Bureau of Meteorology TAF format
+  - **TAF FAA** – FAA TAF format
+
+## 🚀 Getting Started
+
+### For New Developers
+1. Read `docs/development_guidelines.md` for coding standards
+2. Check `docs/current_sprint_tasks.md` for current priorities
+3. Review `docs/refactoring_roadmap.md` for architectural context
+
+### For AI Assistance
+- Follow patterns in `docs/development_guidelines.md`
+- Reference `docs/refactoring_roadmap.md` for architectural decisions
+- Use `docs/current_sprint_tasks.md` to understand current priorities
+
+## 🔄 Current Development Status
+
+- **Phase**: Architectural Refactoring
+- **Focus**: Service extraction and UI component separation
+- **Priority**: Performance optimization and code maintainability
+- **Next Sprint**: TafDisplayService extraction and widget separation
+
+See `docs/current_sprint_tasks.md` for detailed current tasks and priorities.

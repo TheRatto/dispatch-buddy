@@ -2,23 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/flight_provider.dart';
-import '../models/flight.dart';
-import '../models/airport.dart';
-import '../models/notam.dart';
 import '../models/weather.dart';
-import '../models/decoded_weather_models.dart';
-import '../services/api_service.dart';
+import '../models/notam.dart';
 import '../services/decoder_service.dart';
 import '../services/taf_display_service.dart';
-import '../services/taf_state_manager.dart';
 import '../widgets/zulu_time_widget.dart';
-import '../widgets/decoded_weather_card.dart';
-import '../widgets/raw_taf_card.dart';
-import '../widgets/taf_time_slider.dart';
-import '../widgets/taf_airport_selector.dart';
-import '../widgets/taf_empty_states.dart';
-import '../widgets/metar_tab.dart';
-import '../widgets/taf_tab.dart';
+import '../widgets/taf_decoded_card.dart';
+import '../widgets/taf_raw_display.dart';
+import '../widgets/taf_timeline_slider.dart';
 
 class RawDataScreen extends StatefulWidget {
   @override
@@ -29,104 +20,25 @@ class _RawDataScreenState extends State<RawDataScreen> {
   String? _selectedAirport; // Track selected airport for TAFs2
   // Store slider positions per airport
   final Map<String, double> _sliderPositions = {};
-  double _sliderValue = 0.0;
-  List<TimePeriod> _timePeriods = [];
-  List<DateTime> _timeline = [];
-  Map<String, dynamic>? _activePeriods;
-  Weather? _currentTaf;
   
-  // TAF State Manager - handles all business logic
-  final TafStateManager _tafStateManager = TafStateManager();
-  
-  // Performance tracking for UI state
-  String? _lastProcessedAirport;
-  double? _lastProcessedSliderValue;
-  String? _lastLoggedBuild; // Track last logged build to reduce debug output
-  
-  // Data change tracking for better cache management
-  String? _lastTafHash; // Hash of the last processed TAF data
-  String? _lastTimelineHash; // Hash of the last processed timeline
-  
-  // Cache keys
-  String _getCacheKey(String airport, double sliderValue, String periodType) {
-    return '${airport}_${sliderValue.toStringAsFixed(3)}_$periodType';
-  }
-  
-  String _getActivePeriodsCacheKey(String airport, double sliderValue) {
-    return '${airport}_${sliderValue.toStringAsFixed(3)}';
-  }
-  
-  // Generate hash for TAF data to detect changes
-  String _generateTafHash(Weather taf) {
-    return '${taf.rawText.hashCode}_${taf.decodedWeather?.forecastPeriods?.length ?? 0}';
-  }
-  
-  // Generate hash for timeline to detect changes
-  String _generateTimelineHash(List<DateTime> timeline) {
-    return '${timeline.length}_${timeline.isNotEmpty ? timeline.first.hashCode : 0}_${timeline.isNotEmpty ? timeline.last.hashCode : 0}';
-  }
-  
-  // Clear cache when switching airports or when data changes
-  void _clearCache() {
-    _tafStateManager.clearCache();
-    _lastProcessedAirport = null;
-    _lastProcessedSliderValue = null;
-    _lastLoggedBuild = null;
-    _lastTafHash = null;
-    _lastTimelineHash = null;
-  }
-  
-  // Smart cache clearing based on data changes
-  void _clearCacheIfDataChanged(Weather taf, List<DateTime> timeline) {
-    _tafStateManager.clearCacheIfDataChanged(taf, timeline);
-    
-    // Update local tracking
-    _lastTafHash = _generateTafHash(taf);
-    _lastTimelineHash = _generateTimelineHash(timeline);
-  }
-  
-  // Limit cache size to prevent memory issues
-  void _limitCacheSize() {
-    // Cache size limiting is now handled by TafStateManager
-  }
-  
-  // Performance monitoring
-  void _logPerformanceStats() {
-    _tafStateManager.logPerformanceStats();
-  }
+  // TAF Display Service for caching and performance optimization
+  final TafDisplayService _tafDisplayService = TafDisplayService();
 
   @override
   void initState() {
     super.initState();
   }
 
-  void _initializeData(Weather taf) {
-    if (taf.decodedWeather != null && taf.decodedWeather!.forecastPeriods != null) {
-      final decoder = DecoderService();
-      
-      // Use the new timeline-based approach
-      _timeline = taf.decodedWeather!.timeline;
-      
-      if (_timeline.isNotEmpty) {
-        // Find active periods at the first time point
-        _activePeriods = decoder.findActivePeriodsAtTime(_timeline.first, taf.decodedWeather!.forecastPeriods!);
-      }
-    }
+  @override
+  void dispose() {
+    // Clear cache when disposing
+    _tafDisplayService.clearCache();
+    super.dispose();
   }
 
   void _onSliderChanged(double value, Weather taf) {
     setState(() {
-      _sliderValue = value;
-      
-      if (_timeline.isNotEmpty) {
-        // Convert slider value to timeline index
-        final index = (value * (_timeline.length - 1)).round();
-        final selectedTime = _timeline[index];
-        
-        // Find active periods at this time
-        final decoder = DecoderService();
-        _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, taf.decodedWeather!.forecastPeriods!);
-      }
+      _sliderPositions[_selectedAirport!] = value;
     });
   }
 
@@ -164,8 +76,8 @@ class _RawDataScreenState extends State<RawDataScreen> {
             return TabBarView(
               children: [
                 _buildNotamsTab(context, flight.notams),
-                MetarTab(metarsByIcao: flightProvider.metarsByIcao),
-                TafTab(tafsByIcao: flightProvider.tafsByIcao),
+                _buildMetarsTab(context, flightProvider.metarsByIcao),
+                _buildTafsTab(context, flightProvider.tafsByIcao),
                 _buildTafs2Tab(context, flightProvider.tafsByIcao),
               ],
             );
@@ -609,36 +521,28 @@ class _RawDataScreenState extends State<RawDataScreen> {
     }
 
     final selectedTaf = tafsByIcao[_selectedAirport!]!.first;
-    final decodedTaf = selectedTaf.decodedWeather;
-
-    // Get slider position for this airport
-    final forecastPeriods = decodedTaf?.forecastPeriods ?? [];
-    double sliderValue = _sliderPositions[_selectedAirport!] ?? 0.0;
-    
-    print('DEBUG: Main build - forecastPeriods length: ${forecastPeriods.length}');
-    print('DEBUG: Main build - forecastPeriods types: ${forecastPeriods.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList()}');
-    
-    // Use the new timeline-based approach
     final timeline = selectedTaf.decodedWeather?.timeline ?? [];
-    final timelineLength = timeline.length;
+    final sliderValue = _sliderPositions[_selectedAirport!] ?? 0.0;
+    
+    print('DEBUG: Main build - forecastPeriods length: ${selectedTaf.decodedWeather?.forecastPeriods?.length ?? 0}');
+    print('DEBUG: Main build - forecastPeriods types: ${selectedTaf.decodedWeather?.forecastPeriods?.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList() ?? []}');
     
     // Smart cache management: Clear cache only if data actually changed
-    _clearCacheIfDataChanged(selectedTaf, timeline);
+    _tafDisplayService.clearCacheIfDataChanged(selectedTaf, timeline);
     
-    // Use TafStateManager to get active periods
-    final activePeriods = _tafStateManager.getActivePeriods(
-      _selectedAirport!,
-      sliderValue,
-      timeline,
-      forecastPeriods,
-    );
-    
-    // Store the active periods for both cards to use
-    final finalActivePeriods = activePeriods;
+    // Get active periods using TafDisplayService
+    Map<String, dynamic>? activePeriods;
+    if (timeline.isNotEmpty) {
+      final timeIndex = (sliderValue * (timeline.length - 1)).round().clamp(0, timeline.length - 1);
+      final currentTime = timeline[timeIndex];
+      activePeriods = _tafDisplayService.getActivePeriods(
+        selectedTaf, currentTime, _selectedAirport!, sliderValue
+      );
+    }
     
     // Log performance stats periodically
     if (activePeriods != null) {
-      _logPerformanceStats();
+      _tafDisplayService.logPerformanceStats();
     }
 
     return Padding(
@@ -657,28 +561,37 @@ class _RawDataScreenState extends State<RawDataScreen> {
               ),
               SizedBox(height: 4),
               
-              // Decoded Card - returns the active periods it uses
+              // Decoded Card using new widget
               SizedBox(
                 height: 250,
                 child: RepaintBoundary(
-                  child: finalActivePeriods != null
-                    ? _buildDecodedCardFromActivePeriods(finalActivePeriods, timeline, decodedTaf?.forecastPeriods)
-                    : _buildEmptyDecodedCard(),
+                  child: TafDecodedCard(
+                    taf: selectedTaf,
+                    activePeriods: activePeriods,
+                    tafDisplayService: _tafDisplayService,
+                    airport: _selectedAirport!,
+                    sliderValue: sliderValue,
+                    timeline: timeline,
+                  ),
                 ),
               ),
               SizedBox(height: 4),
               
-              // Raw Card - uses the same active periods as decoded card
+              // Raw Card using new widget
               SizedBox(
                 height: 250,
                 child: RepaintBoundary(
-                  child: _buildRawCardFromActivePeriods(selectedTaf, finalActivePeriods),
+                  child: TafRawDisplay(
+                    taf: selectedTaf,
+                    activePeriods: activePeriods,
+                    decoderService: DecoderService(),
+                  ),
                 ),
               ),
             ],
           ),
           
-          // Time Slider - anchored to bottom
+          // Time Slider using new widget - anchored to bottom
           Positioned(
             bottom: 0,
             left: 0,
@@ -686,16 +599,20 @@ class _RawDataScreenState extends State<RawDataScreen> {
             height: 90,
             child: RepaintBoundary(
               child: timeline.isNotEmpty
-                ? _buildTimeSliderFromTimeline(timeline, sliderValue, (value) {
-                    // Performance optimization: Only trigger rebuild if value changed significantly
-                    final currentValue = _sliderPositions[_selectedAirport!] ?? 0.0;
-                    if ((value - currentValue).abs() > 0.001) { // Threshold to avoid micro-changes
-                      setState(() {
-                        _sliderPositions[_selectedAirport!] = value;
-                        // Cache management is now handled by TafStateManager
-                      });
-                    }
-                  })
+                ? TafTimelineSlider(
+                    taf: selectedTaf,
+                    sliderValue: sliderValue,
+                    onChanged: (value) {
+                      // Performance optimization: Only trigger rebuild if value changed significantly
+                      final currentValue = _sliderPositions[_selectedAirport!] ?? 0.0;
+                      if ((value - currentValue).abs() > 0.001) { // Threshold to avoid micro-changes
+                        setState(() {
+                          _sliderPositions[_selectedAirport!] = value;
+                        });
+                      }
+                    },
+                    timeline: timeline,
+                  )
                 : _buildEmptyTimeSlider(),
             ),
           ),
@@ -705,32 +622,171 @@ class _RawDataScreenState extends State<RawDataScreen> {
   }
 
   DecodedForecastPeriod? _getActiveBaselinePeriod(List<DecodedForecastPeriod> periods, DateTime time) {
-    // Use TafStateManager to get active baseline period
-    return _tafStateManager.getActiveBaselinePeriod(periods, time);
-  }
-
-  Widget _buildEmptyDecodedCard() {
-    return TafEmptyStates.emptyDecodedCard();
-  }
-
-  Widget _buildEmptyTimeSlider() {
-    return TafTimeSlider(
-      timeline: [],
-      sliderValue: 0.0,
-      onChanged: (value) {},
-    );
+    // Find the baseline period that is active at the given time
+    DecodedForecastPeriod? activePeriod;
+    
+    for (final period in periods) {
+      if (!period.isConcurrent) {
+        bool isActive = false;
+        
+        if (period.startTime != null && period.endTime != null) {
+          // Period with both start and end times (BECMG periods)
+          isActive = (time.isAfter(period.startTime!) || time.isAtSameMomentAs(period.startTime!)) && 
+                     time.isBefore(period.endTime!);
+        } else if (period.startTime != null) {
+          // Period with only start time (FM periods)
+          // Find the next FM period to determine the end time
+          final nextFmPeriod = periods.where((p) => 
+            p.type == 'FM' && 
+            p.startTime != null && 
+            p.startTime!.isAfter(period.startTime!)
+          ).firstOrNull;
+          
+          if (nextFmPeriod != null) {
+            // This FM period ends when the next FM period starts
+            isActive = (time.isAfter(period.startTime!) || time.isAtSameMomentAs(period.startTime!)) && 
+                       time.isBefore(nextFmPeriod.startTime!);
+          } else {
+            // No next FM period, so this FM period continues to the end
+            isActive = time.isAfter(period.startTime!) || time.isAtSameMomentAs(period.startTime!);
+          }
+        }
+        
+        if (isActive) {
+          activePeriod = period;
+          break; // Found the active period, no need to continue
+        }
+      }
+    }
+    
+    // If no active period found, find the most recent period that started before this time
+    if (activePeriod == null) {
+      DecodedForecastPeriod? mostRecentPeriod;
+      DateTime? mostRecentTime;
+      
+      for (final period in periods) {
+        if (!period.isConcurrent && period.startTime != null) {
+          if (period.startTime!.isBefore(time) || period.startTime!.isAtSameMomentAs(time)) {
+            if (mostRecentTime == null || period.startTime!.isAfter(mostRecentTime!)) {
+              mostRecentTime = period.startTime!;
+              mostRecentPeriod = period;
+            }
+          }
+        }
+      }
+      
+      activePeriod = mostRecentPeriod;
+    }
+    
+    // If still no period found, return the first period
+    return activePeriod ?? (periods.isNotEmpty ? periods.first : null);
   }
 
   Widget _buildAirportBubbles(List<String> airports) {
-    return TafAirportSelector(
-      airports: airports,
-      selectedAirport: _selectedAirport,
-      onAirportSelected: (icao) {
-        setState(() {
-          _selectedAirport = icao;
-        });
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: airports.map((icao) => Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: _buildAirportBubble(
+            icao,
+            _selectedAirport == icao,
+            () {
+              setState(() {
+                _selectedAirport = icao;
+              });
+            },
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAirportBubble(String icao, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        if (!isSelected) {
+          _tafDisplayService.clearCache(); // Clear cache when switching airports
+        }
+        onTap();
       },
-      onCacheClear: _clearCache,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFFF97316) : Colors.grey[700]!,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Color(0xFFF97316) : Colors.grey[600]!,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          icao,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white70,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyDecodedCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Decoded TAF',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'No decoded data available',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyTimeSlider() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Time Slider',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'No forecast periods available',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -751,21 +807,131 @@ class _RawDataScreenState extends State<RawDataScreen> {
   }
   
   Widget _buildDecodedCardWithHighlightingInfo(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods) {
-    return DecodedWeatherCard(
-      baseline: baseline,
-      completeWeather: completeWeather,
-      concurrentPeriods: concurrentPeriods,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Decoded TAF',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (concurrentPeriods.isNotEmpty) _buildConcurrentKey(concurrentPeriods),
+              ],
+            ),
+            SizedBox(height: 8),
+            Expanded(
+              child: SingleChildScrollView(
+                child: _buildTafCompactDetails(baseline, completeWeather, concurrentPeriods),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConcurrentKey(List<DecodedForecastPeriod> concurrentPeriods) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: concurrentPeriods.map((period) {
+        Color color;
+        String label;
+        
+        if (period.type.contains('TEMPO')) {
+          color = Colors.orange;
+          label = period.type; // Use the full period type instead of hardcoded 'TEMPO'
+        } else if (period.type.contains('INTER')) {
+          color = Colors.purple;
+          label = period.type; // Use the full period type instead of hardcoded 'INTER'
+        } else if (period.type.contains('PROB30')) {
+          color = Colors.orange;
+          label = period.type; // Use the full period type instead of hardcoded 'PROB30'
+        } else if (period.type.contains('PROB40')) {
+          color = Colors.orange;
+          label = period.type; // Use the full period type instead of hardcoded 'PROB40'
+        } else {
+          color = Colors.purple;
+          label = period.type;
+        }
+        
+        return Padding(
+          padding: const EdgeInsets.only(left: 4.0),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
   Map<String, String> _getCompleteWeatherForPeriod(DecodedForecastPeriod period, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods]) {
-    // Use TafStateManager to get complete weather with inheritance
-    return _tafStateManager.getCompleteWeatherForPeriod(
-      period,
-      _selectedAirport ?? '',
-      _sliderPositions[_selectedAirport!] ?? 0.0,
-      allPeriods ?? [],
-    );
+    // Performance optimization: Check cache first
+    final cacheKey = _getCacheKey(_selectedAirport ?? '', _sliderPositions[_selectedAirport!] ?? 0.0, period.type);
+    
+    if (_weatherCache.containsKey(cacheKey)) {
+      print('DEBUG: Using CACHED weather for ${period.type}: ${_weatherCache[cacheKey]}');
+      return _weatherCache[cacheKey]!;
+    }
+    
+    Map<String, String> completeWeather = Map.from(period.weather);
+    print('DEBUG: Period ${period.type} - Original weather: ${period.weather}');
+    
+    if (period.type != 'INITIAL' && allPeriods != null && allPeriods.isNotEmpty) {
+      DecodedForecastPeriod? sourcePeriod;
+      
+      if (period.type == 'BECMG') {
+        // BECMG periods inherit from the immediately preceding baseline period
+        // Find the most recent baseline period that started before this BECMG starts
+        sourcePeriod = allPeriods
+          .where((p) => !p.isConcurrent && p.startTime != null && p.startTime!.isBefore(period.startTime!))
+          .fold<DecodedForecastPeriod?>(null, (prev, p) => prev == null || p.startTime!.isAfter(prev.startTime!) ? p : prev);
+        print('DEBUG: BECMG period - inheriting from previous baseline period: ${sourcePeriod?.type}');
+      } else if (period.type == 'FM') {
+        // FM periods inherit from the previous FM period
+        sourcePeriod = allPeriods
+          .where((p) => p.type == 'FM' && p.endTime != null && p.endTime!.isBefore(period.startTime!))
+          .fold<DecodedForecastPeriod?>(null, (prev, p) => prev == null || p.endTime!.isAfter(prev.endTime!) ? p : prev);
+        print('DEBUG: FM period - inheriting from previous FM period: ${sourcePeriod?.type}');
+      } else {
+        // Concurrent periods (TEMPO/INTER) inherit from the current baseline period
+        // Find the baseline period that is active during this concurrent period
+        sourcePeriod = allPeriods
+          .where((p) => !p.isConcurrent && p.startTime != null && p.endTime != null &&
+                       p.startTime!.isBefore(period.startTime!) && p.endTime!.isAfter(period.startTime!))
+          .firstOrNull;
+        print('DEBUG: Concurrent period - inheriting from baseline period: ${sourcePeriod?.type}');
+      }
+      
+      if (sourcePeriod != null) {
+        for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
+          if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
+            completeWeather[key] = sourcePeriod.weather[key] ?? '-';
+            print('DEBUG: Inherited $key: ${sourcePeriod.weather[key]}');
+          }
+        }
+      }
+    }
+    
+    print('DEBUG: Complete weather for ${period.type}: $completeWeather');
+    
+    // Cache the result
+    _weatherCache[cacheKey] = completeWeather;
+    _limitCacheSize(); // Prevent memory issues
+    
+    return completeWeather;
   }
 
   Widget _buildTafCompactDetails(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods) {
@@ -894,10 +1060,205 @@ class _RawDataScreenState extends State<RawDataScreen> {
   }
 
   Widget _buildRawCardFromActivePeriods(Weather taf, Map<String, dynamic>? activePeriods) {
-    return RawTafCard(
-      taf: taf,
-      activePeriods: activePeriods,
+    print('DEBUG: === RAW HIGHLIGHTING START ===');
+    print('DEBUG: Raw highlighting - activePeriods: $activePeriods');
+    
+    final originalRawText = taf.rawText;
+    final decoder = DecoderService();
+    final formattedRawText = decoder.formatTafForDisplay(originalRawText);
+    TextSpan textSpan;
+    
+    if (activePeriods != null) {
+      print('DEBUG: Raw highlighting - Object ID: ${activePeriods.hashCode}');
+      
+      // Use the same logic as decoded weather - get all active periods
+      final baseline = activePeriods['baseline'] as DecodedForecastPeriod?;
+      final concurrent = activePeriods['concurrent'] as List<DecodedForecastPeriod>;
+      
+      print('DEBUG: Raw highlighting - Baseline: ${baseline?.type}');
+      print('DEBUG: Raw highlighting - Concurrent: ${concurrent.map((p) => p.type).toList()}');
+      print('DEBUG: Raw highlighting - Concurrent length: ${concurrent.length}');
+      
+      // Simple highlighting based on period types
+      textSpan = _buildSimpleHighlightedText(formattedRawText, baseline, concurrent);
+    } else {
+      // No active periods, show unformatted text
+      textSpan = TextSpan(
+        text: formattedRawText, 
+        style: TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
+      );
+    }
+    
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Raw TAF',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText.rich(
+                    textSpan,
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+  
+  TextSpan _buildSimpleHighlightedText(String formattedText, DecodedForecastPeriod? baseline, List<DecodedForecastPeriod> concurrent) {
+    print('DEBUG: Building simple highlighted text');
+    print('DEBUG: Baseline: ${baseline?.type}');
+    print('DEBUG: Concurrent: ${concurrent.map((p) => p.type).toList()}');
+    
+    // Simple approach: highlight lines that contain the active period types
+    final lines = formattedText.split('\n');
+    final children = <TextSpan>[];
+    
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final isLastLine = i == lines.length - 1;
+      
+      // Stop highlighting when RMK is encountered
+      if (line.trim().startsWith('RMK')) {
+        // Add RMK line without highlighting
+        children.add(TextSpan(
+          text: line + (isLastLine ? '' : '\n'),
+          style: TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
+        ));
+        continue;
+      }
+      
+      // Check if this line should be highlighted
+      Color? highlightColor;
+      
+      // Check baseline period
+      if (baseline != null) {
+        if (baseline.type == 'INITIAL' && i == 0) {
+          // First line is INITIAL - it contains the TAF validity range
+          highlightColor = Color(0xFFF97316); // Orange
+          print('DEBUG: Highlighting INITIAL line: "$line"');
+        } else if (baseline.type == 'FM' && line.startsWith('FM')) {
+          // Check if this is the specific FM period that's active
+          if (_matchesPeriodTime(line, baseline)) {
+            highlightColor = Color(0xFFF97316); // Orange
+            print('DEBUG: Highlighting specific FM line: "$line" (time: ${baseline.time})');
+          }
+        } else if (baseline.type == 'BECMG' && line.startsWith('BECMG')) {
+          // Check if this is the specific BECMG period that's active
+          // BECMG is transitional - it persists until the next FM period
+          if (_matchesBecmgPeriod(line, baseline)) {
+            highlightColor = Color(0xFFF97316); // Orange
+            print('DEBUG: Highlighting specific BECMG line: "$line" (time: ${baseline.time})');
+          }
+        }
+      }
+      
+      // Check concurrent periods
+      for (final period in concurrent) {
+        bool shouldHighlight = false;
+        
+        if (period.type.contains('TEMPO') && line.startsWith('TEMPO')) {
+          // Check if this is the specific TEMPO period that's active
+          if (_matchesPeriodTime(line, period)) {
+            highlightColor = Colors.orange;
+            shouldHighlight = true;
+            print('DEBUG: Highlighting specific TEMPO line: "$line" (time: ${period.time})');
+          }
+        } else if (period.type.contains('INTER') && line.startsWith('INTER')) {
+          // Check if this is the specific INTER period that's active
+          if (_matchesPeriodTime(line, period)) {
+            highlightColor = Colors.purple;
+            shouldHighlight = true;
+            print('DEBUG: Highlighting specific INTER line: "$line" (time: ${period.time})');
+          }
+        } else if (period.type.contains('PROB30') && line.startsWith('PROB30')) {
+          // Check if this is the specific PROB30 period that's active
+          if (_matchesPeriodTime(line, period)) {
+            highlightColor = Colors.orange;
+            shouldHighlight = true;
+            print('DEBUG: Highlighting specific PROB30 line: "$line" (time: ${period.time})');
+          }
+        } else if (period.type.contains('PROB40') && line.startsWith('PROB40')) {
+          // Check if this is the specific PROB40 period that's active
+          if (_matchesPeriodTime(line, period)) {
+            highlightColor = Colors.orange;
+            shouldHighlight = true;
+            print('DEBUG: Highlighting specific PROB40 line: "$line" (time: ${period.time})');
+          }
+        }
+        
+        if (shouldHighlight) break; // Use first match
+      }
+      
+      // Add the line with or without highlighting
+      children.add(TextSpan(
+        text: line + (isLastLine ? '' : '\n'),
+        style: TextStyle(
+          color: highlightColor ?? Colors.black, 
+          fontFamily: 'monospace', 
+          fontSize: 12,
+          backgroundColor: highlightColor != null ? highlightColor.withOpacity(0.2) : null,
+        )
+      ));
+    }
+    
+    return TextSpan(children: children);
+  }
+  
+  bool _matchesPeriodTime(String line, DecodedForecastPeriod period) {
+    if (period.time.isEmpty) return false;
+    
+    print('DEBUG: Checking if line "$line" matches period time "${period.time}"');
+    
+    // Convert period time format to TAF text format
+    // Period time might be "2608-2611" but TAF text has "2608/2611"
+    final periodTimeFormatted = period.time.replaceAll('-', '/');
+    
+    // Check if the line contains the formatted time
+    final matches = line.contains(periodTimeFormatted);
+    print('DEBUG: Period time formatted: "$periodTimeFormatted", matches: $matches');
+    
+    return matches;
+  }
+  
+  bool _matchesBecmgPeriod(String line, DecodedForecastPeriod period) {
+    if (period.time.isEmpty) return false;
+    
+    print('DEBUG: Checking if line "$line" matches BECMG period time "${period.time}"');
+    
+    // Convert period time format to TAF text format
+    // Period time might be "2608-2611" but TAF text has "2608/2611"
+    final periodTimeFormatted = period.time.replaceAll('-', '/');
+    
+    // Check if the line contains the formatted time
+    final matches = line.contains(periodTimeFormatted);
+    print('DEBUG: BECMG period time formatted: "$periodTimeFormatted", matches: $matches');
+    
+    return matches;
   }
 
   Widget _buildWeatherInfo(Map<String, String> weather) {
@@ -925,8 +1286,35 @@ class _RawDataScreenState extends State<RawDataScreen> {
   }
 
   Widget _buildTimeSlider(List<TimePeriod> periods, double sliderValue, ValueChanged<double> onChanged) {
-    // This method is no longer used - replaced by TafTimeSlider component instead
-    throw UnimplementedError('Use TafTimeSlider component instead');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Slider(
+              value: sliderValue,
+              min: 0.0,
+              max: 1.0,
+              divisions: periods.length > 1 ? (periods.length - 1) : 1,
+              onChanged: onChanged,
+              activeColor: Color(0xFF14B8A6),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: periods.map((period) {
+                final day = period.startTime.day.toString().padLeft(2, '0');
+                final hour = period.startTime.hour.toString().padLeft(2, '0');
+                return Text(
+                  '$day/$hour',
+                  style: TextStyle(fontSize: 10),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<String> _getTafTimePeriods(List<TimePeriod> periods) {
@@ -1011,10 +1399,28 @@ class _RawDataScreenState extends State<RawDataScreen> {
   }
 
   Widget _buildTimeSliderFromTimeline(List<DateTime> timeline, double sliderValue, ValueChanged<double> onChanged) {
-    return TafTimeSlider(
-      timeline: timeline,
-      sliderValue: sliderValue,
-      onChanged: onChanged,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Slider(
+              value: sliderValue,
+              min: 0.0,
+              max: 1.0,
+              divisions: timeline.length > 1 ? (timeline.length - 1) : 1,
+              onChanged: onChanged,
+              activeColor: Color(0xFF14B8A6),
+            ),
+            // Show current time instead of all labels
+            Text(
+              'Time: ${DateFormat('MMM d, HH:mm').format(timeline[(sliderValue * (timeline.length - 1)).round()])}',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

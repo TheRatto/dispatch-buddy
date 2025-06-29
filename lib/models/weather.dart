@@ -1,5 +1,6 @@
 import 'dart:convert';
-import '../services/decoder_service.dart';
+import 'decoded_weather_models.dart';
+import '../services/decoder_service.dart' as decoder;
 
 class Weather {
   final String icao;
@@ -57,8 +58,8 @@ class Weather {
     final rawText = json['rawOb'] ?? '';
     
     // The decoder service is the source of truth for parsed data
-    final decoder = DecoderService();
-    final decodedWeather = decoder.decodeMetar(rawText);
+    final decoderService = decoder.DecoderService();
+    final decodedWeather = decoderService.decodeMetar(rawText);
     
     return Weather(
       icao: icao,
@@ -134,8 +135,8 @@ class Weather {
     if (icao.contains('EGLL')) {
       print('DEBUG: 🎯 About to call decodeTaf for EGLL');
     }
-    final decoder = DecoderService();
-    final decodedWeather = decoder.decodeTaf(rawText);
+    final decoderService = decoder.DecoderService();
+    final decodedWeather = decoderService.decodeTaf(rawText);
     
     if (icao.contains('EGLL')) {
       print('DEBUG: 🎯 decodeTaf completed for EGLL');
@@ -227,13 +228,13 @@ class Weather {
           decodedWeather = DecodedWeather.fromJson(json['decodedWeather']);
         } catch (e) {
           print('DEBUG: 🔧 fromDbJson - failed to load from JSON, re-decoding: $e');
-          final decoder = DecoderService();
-          decodedWeather = decoder.decodeTaf(rawText);
+          final decoderService = decoder.DecoderService();
+          decodedWeather = decoderService.decodeTaf(rawText);
         }
       } else {
         print('DEBUG: 🔧 fromDbJson - no decoded weather in JSON, calling decodeTaf');
-        final decoder = DecoderService();
-        decodedWeather = decoder.decodeTaf(rawText);
+        final decoderService = decoder.DecoderService();
+        decodedWeather = decoderService.decodeTaf(rawText);
       }
     } else {
       print('DEBUG: 🔧 fromDbJson - not calling decodeTaf (type: $type, rawText empty: ${rawText.isEmpty})');
