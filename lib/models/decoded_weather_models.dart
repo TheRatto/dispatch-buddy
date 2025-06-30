@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class DecodedForecastPeriod {
   final String type; // BECMG, TEMPO, FM, INTER
@@ -60,6 +62,63 @@ class DecodedForecastPeriod {
       relatedBaselinePeriods: List.from(json['relatedBaselinePeriods']),
       concurrentPeriods: List.from(json['concurrentPeriods']),
     );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is DecodedForecastPeriod &&
+        other.type == type &&
+        other.time == time &&
+        other.description == description &&
+        other.startTime == startTime &&
+        other.endTime == endTime &&
+        _mapEquals(other.weather, weather) &&
+        other.rawSection == rawSection &&
+        other.isConcurrent == isConcurrent &&
+        setEquals(other.changedElements, changedElements);
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      type,
+      time,
+      description,
+      startTime,
+      endTime,
+      _hashMap(weather),
+      rawSection,
+      isConcurrent,
+      _hashSet(changedElements),
+    );
+  }
+
+  // Helper methods for deep equality
+  bool _mapEquals(Map<String, String>? a, Map<String, String>? b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (a[key] != b[key]) return false;
+    }
+    return true;
+  }
+
+  int _hashMap(Map<String, String> map) {
+    int hash = 0;
+    for (final entry in map.entries) {
+      hash = Object.hash(hash, entry.key, entry.value);
+    }
+    return hash;
+  }
+
+  int _hashSet(Set<String> set) {
+    int hash = 0;
+    for (final item in set) {
+      hash = Object.hash(hash, item);
+    }
+    return hash;
   }
 }
 

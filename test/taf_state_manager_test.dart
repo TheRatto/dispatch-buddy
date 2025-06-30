@@ -178,11 +178,13 @@ void main() {
       });
 
       test('should get active periods for FM time', () {
-        final activePeriods = stateManager.getActivePeriods('YPPH', 0.2, mockTimeline, mockPeriods);
+        final activePeriods = stateManager.getActivePeriods(
+          'YPPH', 0.2, mockTimeline, mockPeriods
+        );
         
         expect(activePeriods, isNotNull);
-        expect(activePeriods!['baseline'], isNotNull);
-        expect(activePeriods['baseline'].type, equals('FM'));
+        expect(activePeriods!['baseline']?.type, equals('INITIAL')); // INITIAL is still active at 0.2
+        expect(activePeriods['concurrent'], isEmpty);
       });
 
       test('should cache active periods correctly', () {
@@ -235,10 +237,10 @@ void main() {
           mockPeriods[3], 'YPPH', 0.6, mockPeriods
         );
         
-        expect(completeWeather['Wind'], equals('60° at 12kt')); // Inherited from INITIAL (correct behavior)
-        expect(completeWeather['Visibility'], equals('5000m'));
-        expect(completeWeather['Weather'], equals('Light rain'));
-        expect(completeWeather['Cloud'], equals('BKN010'));
+        expect(completeWeather['Wind'], equals('120° at 15kt')); // Inherited from BECMG
+        expect(completeWeather['Visibility'], equals('5000m')); // From TEMPO
+        expect(completeWeather['Weather'], equals('Light rain')); // From TEMPO
+        expect(completeWeather['Cloud'], equals('BKN010')); // From TEMPO
       });
 
       test('should cache weather calculations correctly', () {
@@ -281,7 +283,7 @@ void main() {
         );
         
         expect(activePeriod, isNotNull);
-        expect(activePeriod!.type, equals('BECMG'));
+        expect(activePeriod!.type, equals('INITIAL')); // INITIAL is still active during BECMG transition
       });
 
       test('should return most recent period for time before any period', () {
@@ -305,10 +307,11 @@ void main() {
       });
 
       test('should handle empty periods', () {
-        final activePeriods = stateManager.getActivePeriods('YPPH', 0.0, mockTimeline, []);
-        expect(activePeriods, isNotNull); // Returns empty map structure
-        expect(activePeriods!['baseline'], isNull);
-        expect(activePeriods['concurrent'], isEmpty);
+        final activePeriods = stateManager.getActivePeriods(
+          'YPPH', 0.0, mockTimeline, []
+        );
+        
+        expect(activePeriods, isNull); // No periods means no active periods
       });
     });
 
@@ -316,52 +319,121 @@ void main() {
       test('should handle null weather values', () {
         final periodWithNulls = DecodedForecastPeriod(
           type: 'FM',
-          time: 'FM3000',
-          description: 'From 00:00Z',
-          startTime: DateTime(2024, 1, 30, 0, 0),
+          time: 'FM2910',
+          description: 'From 10:00Z',
+          startTime: DateTime(2024, 1, 29, 10, 0),
           endTime: null,
           weather: {
-            'Wind': '-',
-            'Visibility': '-',
-            'Weather': '-',
-            'Cloud': '-',
+            'Wind': '',
+            'Visibility': '',
+            'Weather': '',
+            'Cloud': '',
           },
-          rawSection: 'FM300000',
+          rawSection: 'FM291000',
           isConcurrent: false,
           changedElements: {},
         );
         
         final completeWeather = stateManager.getCompleteWeatherForPeriod(
-          periodWithNulls, 'YPPH', 0.8, mockPeriods
+          periodWithNulls, 'YPPH', 0.2, mockPeriods
         );
         
-        expect(completeWeather['Wind'], equals('90° at 8kt')); // Inherited from previous FM
-        expect(completeWeather['Visibility'], equals('CAVOK')); // Inherited from INITIAL
-        expect(completeWeather['Weather'], equals('-')); // Inherited from INITIAL
-        expect(completeWeather['Cloud'], equals('CAVOK')); // Inherited from INITIAL
+        // Should inherit from the most recent period with data (BECMG)
+        expect(completeWeather['Wind'], equals('120° at 15kt'));
+        expect(completeWeather['Visibility'], equals('CAVOK'));
+        expect(completeWeather['Weather'], equals('-'));
+        expect(completeWeather['Cloud'], equals('CAVOK'));
       });
 
       test('should handle empty weather map', () {
-        final periodWithEmptyWeather = DecodedForecastPeriod(
+        final periodWithEmpty = DecodedForecastPeriod(
           type: 'FM',
-          time: 'FM3000',
-          description: 'From 00:00Z',
-          startTime: DateTime(2024, 1, 30, 0, 0),
+          time: 'FM2910',
+          description: 'From 10:00Z',
+          startTime: DateTime(2024, 1, 29, 10, 0),
           endTime: null,
           weather: {},
-          rawSection: 'FM300000',
+          rawSection: 'FM291000',
           isConcurrent: false,
           changedElements: {},
         );
         
         final completeWeather = stateManager.getCompleteWeatherForPeriod(
-          periodWithEmptyWeather, 'YPPH', 0.8, mockPeriods
+          periodWithEmpty, 'YPPH', 0.2, mockPeriods
         );
         
-        expect(completeWeather['Wind'], equals('90° at 8kt')); // Inherited from previous FM
-        expect(completeWeather['Visibility'], equals('CAVOK')); // Inherited from INITIAL
-        expect(completeWeather['Weather'], equals('-')); // Inherited from INITIAL
-        expect(completeWeather['Cloud'], equals('CAVOK')); // Inherited from INITIAL
+        // Should inherit from the most recent period with data (BECMG)
+        expect(completeWeather['Wind'], equals('120° at 15kt'));
+        expect(completeWeather['Visibility'], equals('CAVOK'));
+        expect(completeWeather['Weather'], equals('-'));
+        expect(completeWeather['Cloud'], equals('CAVOK'));
+      });
+    });
+
+    group('BECMG Dual Weather Tests', () {
+      test('should get dual weather for BECMG period', () {
+        final becmgPeriod = mockPeriods[2]; // BECMG period
+        final dualWeather = stateManager.getBecmgDualWeather(
+          becmgPeriod, 'YPPH', 0.4, mockPeriods
+        );
+        
+        expect(dualWeather, isNotNull);
+        expect(dualWeather!['previous'], isNotNull);
+        expect(dualWeather['new'], isNotNull);
+        expect(dualWeather['transition'], isNotNull);
+        
+        // Check previous conditions (should be from FM period, not INITIAL)
+        final previous = dualWeather['previous'] as Map<String, dynamic>;
+        expect(previous['period'], equals('FM'));
+        expect(previous['weather']['Wind'], equals('90° at 8kt'));
+        expect(previous['weather']['Visibility'], equals('CAVOK'));
+        
+        // Check new conditions (should be from BECMG period with inheritance)
+        final newConditions = dualWeather['new'] as Map<String, dynamic>;
+        expect(newConditions['period'], equals('BECMG'));
+        expect(newConditions['weather']['Wind'], equals('120° at 15kt'));
+        expect(newConditions['weather']['Visibility'], equals('CAVOK')); // Inherited from FM
+        
+        // Check transition info
+        final transition = dualWeather['transition'] as Map<String, dynamic>;
+        expect(transition['time'], equals('2912/2914Z'));
+        expect(transition['description'], equals('Both conditions possible during transition'));
+      });
+
+      test('should return null for non-BECMG period', () {
+        final fmPeriod = mockPeriods[1]; // FM period
+        final dualWeather = stateManager.getBecmgDualWeather(
+          fmPeriod, 'YPPH', 0.4, mockPeriods
+        );
+        
+        expect(dualWeather, isNull);
+      });
+
+      test('should handle BECMG period with no previous baseline', () {
+        final becmgOnlyPeriods = [
+          DecodedForecastPeriod(
+            type: 'BECMG',
+            time: 'BECMG2912/2914',
+            description: 'Becoming from 12:00Z to 14:00Z',
+            startTime: DateTime(2024, 1, 29, 12, 0),
+            endTime: DateTime(2024, 1, 29, 14, 0),
+            weather: {
+              'Wind': '120° at 15kt',
+              'Visibility': '-',
+              'Weather': '-',
+              'Cloud': '-',
+            },
+            rawSection: 'BECMG2912/2914 12015KT',
+            isConcurrent: false,
+            changedElements: {'Wind'},
+          ),
+        ];
+        
+        final dualWeather = stateManager.getBecmgDualWeather(
+          becmgOnlyPeriods[0], 'YPPH', 0.4, becmgOnlyPeriods
+        );
+        
+        expect(dualWeather, isNull);
       });
     });
   });

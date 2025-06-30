@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/decoded_weather_models.dart';
+import '../constants/weather_colors.dart';
 
 class GridItemWithConcurrent extends StatelessWidget {
   final String label;
@@ -37,7 +38,7 @@ class GridItemWithConcurrent extends StatelessWidget {
     
     // Memoize concurrent period widgets to prevent unnecessary rebuilds
     final concurrentWidgets = relevantConcurrentPeriods.map((period) {
-      final color = period.type.contains('TEMPO') ? Colors.orange : Colors.purple;
+      final color = WeatherColors.getColorForProbCombination(period.type);
       final label = period.type; // Use the full period type instead of just 'TEMPO' or 'INTER'
       final concurrentValue = period.weather[weatherType];
       
@@ -76,7 +77,7 @@ class GridItemWithConcurrent extends StatelessWidget {
             Text(
               displayValue,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),

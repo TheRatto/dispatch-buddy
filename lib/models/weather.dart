@@ -90,6 +90,13 @@ class Weather {
       print('DEBUG: 🎯 EGLL rawTAF: "$rawText"');
     }
     
+    // Debug logging for KJFK
+    if (icao.contains('KJFK')) {
+      print('DEBUG: 🎯 Weather.fromTaf called for KJFK');
+      print('DEBUG: 🎯 KJFK rawTAF: "$rawText"');
+      print('DEBUG: 🎯 KJFK rawTAF length: ${rawText.length}');
+    }
+    
     // TAFs don't have current wind/visibility like METARs, so use defaults
     final windDirection = 0;
     final windSpeed = 0;
@@ -135,11 +142,20 @@ class Weather {
     if (icao.contains('EGLL')) {
       print('DEBUG: 🎯 About to call decodeTaf for EGLL');
     }
+    
+    if (icao.contains('KJFK')) {
+      print('DEBUG: 🎯 About to call decodeTaf for KJFK');
+    }
+    
     final decoderService = decoder.DecoderService();
     final decodedWeather = decoderService.decodeTaf(rawText);
     
     if (icao.contains('EGLL')) {
       print('DEBUG: 🎯 decodeTaf completed for EGLL');
+    }
+    
+    if (icao.contains('KJFK')) {
+      print('DEBUG: 🎯 decodeTaf completed for KJFK');
     }
     
     return Weather(

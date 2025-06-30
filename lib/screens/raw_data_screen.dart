@@ -8,8 +8,8 @@ import '../models/notam.dart';
 import '../models/weather.dart';
 import '../models/decoded_weather_models.dart';
 import '../services/api_service.dart';
+import '../services/database_service.dart';
 import '../services/decoder_service.dart';
-import '../services/taf_display_service.dart';
 import '../services/taf_state_manager.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../widgets/decoded_weather_card.dart';
@@ -19,6 +19,7 @@ import '../widgets/taf_airport_selector.dart';
 import '../widgets/taf_empty_states.dart';
 import '../widgets/metar_tab.dart';
 import '../widgets/taf_tab.dart';
+import '../constants/weather_colors.dart';
 
 class RawDataScreen extends StatefulWidget {
   @override
@@ -34,6 +35,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
   List<DateTime> _timeline = [];
   Map<String, dynamic>? _activePeriods;
   Weather? _currentTaf;
+  
+  // Scroll controller for TAFs2 tab
+  final ScrollController _tafs2ScrollController = ScrollController();
   
   // TAF State Manager - handles all business logic
   final TafStateManager _tafStateManager = TafStateManager();
@@ -92,12 +96,24 @@ class _RawDataScreenState extends State<RawDataScreen> {
   
   // Performance monitoring
   void _logPerformanceStats() {
-    _tafStateManager.logPerformanceStats();
+    final metrics = _tafStateManager.getPerformanceMetrics();
+    debugPrint('DEBUG: Performance Stats - Weather Cache: ${metrics['weatherCacheSize']} entries');
+    debugPrint('DEBUG: Performance Stats - Active Periods Cache: ${metrics['activePeriodsCacheSize']} entries');
+    debugPrint('DEBUG: Performance Stats - Weather Cache Hit Rate: ${metrics['weatherCacheHitRate']}');
+    debugPrint('DEBUG: Performance Stats - Active Periods Cache Hit Rate: ${metrics['activePeriodsCacheHitRate']}');
+    debugPrint('DEBUG: Performance Stats - Last Airport: $_selectedAirport');
+    debugPrint('DEBUG: Performance Stats - Last Slider Value: ${_sliderPositions[_selectedAirport!]}');
   }
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tafs2ScrollController.dispose();
+    super.dispose();
   }
 
   void _initializeData(Weather taf) {
@@ -116,16 +132,21 @@ class _RawDataScreenState extends State<RawDataScreen> {
 
   void _onSliderChanged(double value, Weather taf) {
     setState(() {
-      _sliderValue = value;
+      // Update the slider value for the current airport
+      _sliderPositions[_selectedAirport!] = value;
       
-      if (_timeline.isNotEmpty) {
+      // Get timeline from the selected TAF
+      final timeline = taf.decodedWeather?.timeline ?? [];
+      final forecastPeriods = taf.decodedWeather?.forecastPeriods ?? [];
+      
+      if (timeline.isNotEmpty && forecastPeriods.isNotEmpty) {
         // Convert slider value to timeline index
-        final index = (value * (_timeline.length - 1)).round();
-        final selectedTime = _timeline[index];
+        final index = (value * (timeline.length - 1)).round();
+        final selectedTime = timeline[index];
         
         // Find active periods at this time
         final decoder = DecoderService();
-        _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, taf.decodedWeather!.forecastPeriods!);
+        _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, forecastPeriods);
       }
     });
   }
@@ -163,10 +184,20 @@ class _RawDataScreenState extends State<RawDataScreen> {
             }
             return TabBarView(
               children: [
-                _buildNotamsTab(context, flight.notams),
-                MetarTab(metarsByIcao: flightProvider.metarsByIcao),
-                TafTab(tafsByIcao: flightProvider.tafsByIcao),
-                _buildTafs2Tab(context, flightProvider.tafsByIcao),
+                _buildNotamsTab(context, flight.notams, flightProvider),
+                RefreshIndicator(
+                  onRefresh: () async {
+                    await flightProvider.refreshFlightData();
+                  },
+                  child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                ),
+                RefreshIndicator(
+                  onRefresh: () async {
+                    await flightProvider.refreshFlightData();
+                  },
+                  child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
+                ),
+                _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
               ],
             );
           },
@@ -175,7 +206,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
     );
   }
 
-  Widget _buildNotamsTab(BuildContext context, List<Notam> notams) {
+  Widget _buildNotamsTab(BuildContext context, List<Notam> notams, FlightProvider flightProvider) {
     if (notams.isEmpty) {
       return Center(
         child: Column(
@@ -197,7 +228,11 @@ class _RawDataScreenState extends State<RawDataScreen> {
       );
     }
 
-    return ListView.builder(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await flightProvider.refreshFlightData();
+      },
+      child: ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: notams.length,
       itemBuilder: (context, index) {
@@ -210,7 +245,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              '${notam.icao} | ${notam.validFrom.day}/${notam.validFrom.month} ${notam.validFrom.hour.toString().padLeft(2, '0')}:${notam.validFrom.minute.toString().padLeft(2, '0')} - ${notam.validTo.hour.toString().padLeft(2, '0')}:${notam.validTo.minute.toString().padLeft(2, '0')}',
+                '${notam.icao} | ${_formatDateTime(notam.validFrom)} - ${_formatDateTime(notam.validTo)}',
             ),
             leading: Icon(
               notam.isCritical ? Icons.error : Icons.warning,
@@ -262,10 +297,11 @@ class _RawDataScreenState extends State<RawDataScreen> {
           ),
         );
       },
+      ),
     );
   }
 
-  Widget _buildMetarsTab(BuildContext context, Map<String, List<Weather>> metarsByIcao) {
+  Widget _buildMetarsTab(BuildContext context, Map<String, List<Weather>> metarsByIcao, FlightProvider flightProvider) {
     if (metarsByIcao.isEmpty) {
       return Center(
         child: Column(
@@ -288,21 +324,20 @@ class _RawDataScreenState extends State<RawDataScreen> {
     }
 
     final icaos = metarsByIcao.keys.toList();
-    return ListView.builder(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await flightProvider.refreshFlightData();
+      },
+      child: ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: icaos.length,
       itemBuilder: (context, index) {
         final icao = icaos[index];
         final metar = metarsByIcao[icao]!.first;
-        final decoded = metar.decodedWeather;
-        
         return Card(
           margin: EdgeInsets.only(bottom: 12),
           child: ExpansionTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              title: Row(
                   children: [
                     Icon(Icons.cloud, color: Color(0xFF3B82F6), size: 24),
                     SizedBox(width: 8),
@@ -314,9 +349,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
-                _buildMetarCompactDetails(metar),
-              ],
+              subtitle: Text(
+                _formatDateTime(metar.timestamp),
+                style: TextStyle(color: Colors.grey[600]),
             ),
             children: [
               Padding(
@@ -354,78 +389,11 @@ class _RawDataScreenState extends State<RawDataScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildMetarCompactDetails(Weather metar) {
-    if (metar.decodedWeather == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text('No decoded data available.'),
-      );
-    }
-
-    final decoded = metar.decodedWeather!;
-    final isCavok = metar.rawText.contains('CAVOK');
-    
-    String? temp, dewPoint;
-    if (decoded.temperatureDescription.isNotEmpty && !decoded.temperatureDescription.contains('unavailable')) {
-        var parts = decoded.temperatureDescription.split(',');
-        temp = parts[0].replaceAll('Temperature ', '');
-        if (parts.length > 1) {
-            dewPoint = parts[1].replaceAll(' Dew point ', '');
-        }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Wind', decoded.windDescription.replaceFirst('Wind ', '')),
-              SizedBox(width: 16),
-              _buildGridItem('Visibility', isCavok ? 'CAVOK' : decoded.visibilityDescription.replaceFirst('Visibility ', '')),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Weather', decoded.conditionsDescription, isPhenomenaOrRemark: true),
-              SizedBox(width: 16),
-              _buildGridItem('Cloud', decoded.cloudDescription),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Temp / Dew Point', '$temp / $dewPoint'),
-              SizedBox(width: 16),
-              _buildGridItem('QNH', decoded.pressureDescription.replaceFirst('QNH ', '')),
-            ],
-          ),
-          if (decoded.rvrDescription.isNotEmpty)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGridItem('RVR', decoded.rvrDescription.replaceFirst('Runway Visual Range: ', '')),
-                SizedBox(width: 16),
-                Expanded(child: SizedBox()), // Placeholder for alignment
-              ],
-            ),
-           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Remarks', decoded.remarks, isPhenomenaOrRemark: true),
-            ],
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildTafsTab(BuildContext context, Map<String, List<Weather>> tafsByIcao) {
+  Widget _buildTafsTab(BuildContext context, Map<String, List<Weather>> tafsByIcao, FlightProvider flightProvider) {
     if (tafsByIcao.isEmpty) {
       return Center(
         child: Column(
@@ -448,7 +416,11 @@ class _RawDataScreenState extends State<RawDataScreen> {
     }
 
     final icaos = tafsByIcao.keys.toList();
-    return ListView.builder(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await flightProvider.refreshFlightData();
+      },
+      child: ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: icaos.length,
       itemBuilder: (context, index) {
@@ -578,11 +550,15 @@ class _RawDataScreenState extends State<RawDataScreen> {
           ),
         );
       },
+      ),
     );
   }
 
-  Widget _buildTafs2Tab(BuildContext context, Map<String, List<Weather>> tafsByIcao) {
+  Widget _buildTafs2Tab(BuildContext context, Map<String, List<Weather>> tafsByIcao, FlightProvider flightProvider) {
+    print('DEBUG: TAFs2 tab - METHOD CALLED!');
+    
     if (tafsByIcao.isEmpty) {
+      print('DEBUG: TAFs2 tab - No TAFs available, showing empty state');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -606,10 +582,13 @@ class _RawDataScreenState extends State<RawDataScreen> {
     // Initialize selected airport if not set
     if (_selectedAirport == null || !tafsByIcao.containsKey(_selectedAirport)) {
       _selectedAirport = tafsByIcao.keys.first;
+      print('DEBUG: TAFs2 tab - Selected airport: $_selectedAirport');
     }
 
     final selectedTaf = tafsByIcao[_selectedAirport!]!.first;
     final decodedTaf = selectedTaf.decodedWeather;
+    print('DEBUG: TAFs2 tab - Selected TAF: ${selectedTaf.icao}');
+    print('DEBUG: TAFs2 tab - Decoded TAF: ${decodedTaf != null}');
 
     // Get slider position for this airport
     final forecastPeriods = decodedTaf?.forecastPeriods ?? [];
@@ -617,91 +596,128 @@ class _RawDataScreenState extends State<RawDataScreen> {
     
     print('DEBUG: Main build - forecastPeriods length: ${forecastPeriods.length}');
     print('DEBUG: Main build - forecastPeriods types: ${forecastPeriods.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList()}');
-    
-    // Use the new timeline-based approach
-    final timeline = selectedTaf.decodedWeather?.timeline ?? [];
-    final timelineLength = timeline.length;
-    
-    // Smart cache management: Clear cache only if data actually changed
-    _clearCacheIfDataChanged(selectedTaf, timeline);
-    
-    // Use TafStateManager to get active periods
-    final activePeriods = _tafStateManager.getActivePeriods(
-      _selectedAirport!,
-      sliderValue,
-      timeline,
-      forecastPeriods,
-    );
-    
-    // Store the active periods for both cards to use
-    final finalActivePeriods = activePeriods;
-    
-    // Log performance stats periodically
-    if (activePeriods != null) {
-      _logPerformanceStats();
-    }
 
-    return Padding(
+    if (forecastPeriods.isNotEmpty) {
+      // Calculate active periods for the current slider position
+      final decoder = DecoderService();
+      final timeline = selectedTaf.decodedWeather?.timeline ?? [];
+      
+      if (timeline.isNotEmpty) {
+        final index = (sliderValue * (timeline.length - 1)).round();
+        final selectedTime = timeline[index];
+        _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, forecastPeriods);
+        print('DEBUG: TAFs2 tab - Active periods: $_activePeriods');
+      }
+    }
+    
+    print('DEBUG: TAFs2 tab - Building RefreshIndicator with SingleChildScrollView');
+    return RefreshIndicator(
+      onRefresh: () async {
+        print('DEBUG: TAFs2 tab - Refresh triggered');
+        
+        // Get current scroll position to lock it
+        final currentOffset = _tafs2ScrollController.offset;
+        print('DEBUG: TAFs2 tab - Current scroll offset: $currentOffset');
+        
+        // Keep content locked in pulled-down position for a minimum duration
+        await Future.delayed(Duration(milliseconds: 1500));
+        
+        // Manually maintain scroll position during refresh
+        if (_tafs2ScrollController.hasClients) {
+          _tafs2ScrollController.jumpTo(currentOffset);
+        }
+        
+        // Then perform the actual refresh
+        await flightProvider.refreshFlightData();
+        
+        // Add a small delay after refresh completes for smooth transition
+        await Future.delayed(Duration(milliseconds: 500));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        controller: _tafs2ScrollController,
+        child: Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Stack(
+          child: Column(
         children: [
-          // Main content column - fills available space above slider
-          Column(
-            children: [
-              // Airport Bubbles
+              // Airport selector
               SizedBox(
                 height: 40,
                 child: RepaintBoundary(
-                  child: _buildAirportBubbles(tafsByIcao.keys.toList()),
+                  child: TafAirportSelector(
+                    airports: tafsByIcao.keys.toList(),
+                    selectedAirport: _selectedAirport!,
+                    onAirportSelected: (String airport) {
+                      print('DEBUG: TAFs2 tab - Airport selected: $airport');
+                      setState(() {
+                        _selectedAirport = airport;
+                        sliderValue = _sliderPositions[airport] ?? 0.0;
+                      });
+                    },
+                    onAddAirport: _showAddAirportDialog,
+                    onAirportLongPress: _showEditAirportDialog,
+                  ),
                 ),
               ),
               SizedBox(height: 4),
               
-              // Decoded Card - returns the active periods it uses
+              // Decoded weather card
               SizedBox(
-                height: 250,
+                height: 290,
                 child: RepaintBoundary(
-                  child: finalActivePeriods != null
-                    ? _buildDecodedCardFromActivePeriods(finalActivePeriods, timeline, decodedTaf?.forecastPeriods)
-                    : _buildEmptyDecodedCard(),
+                  child: _activePeriods != null && _activePeriods!['baseline'] != null
+                      ? DecodedWeatherCard(
+                          baseline: _activePeriods!['baseline'] as DecodedForecastPeriod,
+                          completeWeather: _getCompleteWeatherForPeriod(_activePeriods!['baseline'] as DecodedForecastPeriod, selectedTaf.decodedWeather?.timeline ?? []),
+                          concurrentPeriods: _activePeriods!['concurrent'] as List<DecodedForecastPeriod>,
+                          airport: _selectedAirport,
+                          sliderValue: sliderValue,
+                          allPeriods: forecastPeriods,
+                        )
+                      : Center(child: Text('No decoded data available')),
                 ),
               ),
               SizedBox(height: 4),
               
-              // Raw Card - uses the same active periods as decoded card
+              // Raw TAF card
               SizedBox(
-                height: 250,
+                height: 240,
                 child: RepaintBoundary(
-                  child: _buildRawCardFromActivePeriods(selectedTaf, finalActivePeriods),
+                  child: RawTafCard(
+                    taf: selectedTaf,
+                    activePeriods: _activePeriods,
+                  ),
                 ),
               ),
+              
+              // Time Slider - now part of scrollable content
+              SizedBox(
+            height: 89,
+                child: RepaintBoundary(
+                  child: selectedTaf.decodedWeather?.timeline.isNotEmpty == true
+                      ? TafTimeSlider(
+                          timeline: selectedTaf.decodedWeather!.timeline,
+                          sliderValue: sliderValue,
+                          onChanged: (value) => _onSliderChanged(value, selectedTaf),
+                        )
+                      : Container(
+                          height: 89,
+                          child: Center(child: Text('No timeline available')),
+                        ),
+                ),
+              ),
+              
+              // Bottom padding for pull-to-refresh
+              SizedBox(height: 20),
             ],
           ),
-          
-          // Time Slider - anchored to bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 90,
-            child: RepaintBoundary(
-              child: timeline.isNotEmpty
-                ? _buildTimeSliderFromTimeline(timeline, sliderValue, (value) {
-                    // Performance optimization: Only trigger rebuild if value changed significantly
-                    final currentValue = _sliderPositions[_selectedAirport!] ?? 0.0;
-                    if ((value - currentValue).abs() > 0.001) { // Threshold to avoid micro-changes
-                      setState(() {
-                        _sliderPositions[_selectedAirport!] = value;
-                        // Cache management is now handled by TafStateManager
-                      });
-                    }
-                  })
-                : _buildEmptyTimeSlider(),
-            ),
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}Z';
   }
 
   DecodedForecastPeriod? _getActiveBaselinePeriod(List<DecodedForecastPeriod> periods, DateTime time) {
@@ -726,10 +742,10 @@ class _RawDataScreenState extends State<RawDataScreen> {
       airports: airports,
       selectedAirport: _selectedAirport,
       onAirportSelected: (icao) {
-        setState(() {
-          _selectedAirport = icao;
-        });
-      },
+              setState(() {
+                _selectedAirport = icao;
+              });
+            },
       onCacheClear: _clearCache,
     );
   }
@@ -747,14 +763,18 @@ class _RawDataScreenState extends State<RawDataScreen> {
     // Get complete weather for the baseline period
     final completeWeather = _getCompleteWeatherForPeriod(baseline, timeline, allPeriods);
     // Return the card with period information for highlighting
-    return _buildDecodedCardWithHighlightingInfo(baseline, completeWeather, concurrent);
+    return _buildDecodedCardWithHighlightingInfo(baseline, completeWeather, concurrent, allPeriods);
   }
   
-  Widget _buildDecodedCardWithHighlightingInfo(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods) {
+  Widget _buildDecodedCardWithHighlightingInfo(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods, List<DecodedForecastPeriod>? allPeriods) {
     return DecodedWeatherCard(
       baseline: baseline,
       completeWeather: completeWeather,
       concurrentPeriods: concurrentPeriods,
+      tafStateManager: _tafStateManager,
+      airport: _selectedAirport,
+      sliderValue: _sliderPositions[_selectedAirport!],
+      allPeriods: allPeriods,
     );
   }
 
@@ -830,7 +850,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
     
     // Memoize concurrent period widgets to prevent unnecessary rebuilds
     final concurrentWidgets = relevantConcurrentPeriods.map((period) {
-      final color = period.type.contains('TEMPO') ? Colors.orange : Colors.purple;
+      final color = WeatherColors.getColorForProbCombination(period.type);
       final label = period.type; // Use the full period type instead of just 'TEMPO' or 'INTER'
       final concurrentValue = period.weather[weatherType];
       
@@ -855,39 +875,39 @@ class _RawDataScreenState extends State<RawDataScreen> {
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           concurrentValue,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: color,
-          ),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: color,
         ),
-      );
+      ),
+    );
     }).toList();
     
     return Expanded(
       child: RepaintBoundary(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
               style: const TextStyle(
-                fontSize: 10,
+              fontSize: 10,
                 color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
+              fontWeight: FontWeight.w500,
             ),
+          ),
             const SizedBox(height: 2),
-            Text(
-              displayValue,
+          Text(
+            displayValue,
               style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
             ),
+          ),
             // Add TEMPO/INTER lines if they have changes for this weather type
             ...concurrentWidgets,
-          ],
+        ],
         ),
       ),
     );
@@ -974,11 +994,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isInitial ? Colors.blue : 
-                           isTempo ? Colors.orange : 
-                           isInter ? Colors.purple : 
-                           isBecmg ? Colors.green : 
-                           isFm ? Colors.red : Colors.black,
+                    color: WeatherColors.getColorForPeriodType(period.baselinePeriod.type),
                   ),
                 ),
                 Text(
@@ -1031,9 +1047,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
     }
     
     return Expanded(
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          children: [
           Text(
             label,
             style: TextStyle(
@@ -1043,15 +1059,325 @@ class _RawDataScreenState extends State<RawDataScreen> {
             ),
           ),
           SizedBox(height: 2),
-          Text(
+            Text(
             displayValue,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
+            ),
+          ],
+        ),
+    );
+  }
+
+  void _showAddAirportDialog(BuildContext context) {
+    final TextEditingController controller = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter the ICAO code for the airport you want to add:'),
+              SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'ICAO Code',
+                  hintText: 'e.g., KJFK',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 4,
+                onChanged: (value) {
+                  // Auto-capitalize and limit to 4 characters
+                  if (value.length > 4) {
+                    controller.text = value.substring(0, 4).toUpperCase();
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final icao = controller.text.trim().toUpperCase();
+                if (icao.length == 4) {
+                  Navigator.of(context).pop();
+                  
+                  // Get the FlightProvider and add the airport
+                  final flightProvider = context.read<FlightProvider>();
+                  final success = await flightProvider.addAirportToFlight(icao);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Airport $icao added successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    // Check if it's because the airport already exists
+                    final currentFlight = flightProvider.currentFlight;
+                    if (currentFlight?.airports.any((airport) => airport.icao == icao) == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Airport $icao is already in your flight plan'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to add airport $icao. Please try again.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please enter a valid 4-letter ICAO code'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditAirportDialog(BuildContext context, String airport) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('What would you like to do with airport $airport?'),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showEditAirportCodeDialog(context, airport);
+                      },
+                      icon: Icon(Icons.edit, size: 16),
+                      label: Text('Edit'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showRemoveAirportDialog(context, airport);
+                      },
+                      icon: Icon(Icons.delete, size: 16),
+                      label: Text('Remove'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditAirportCodeDialog(BuildContext context, String oldAirport) {
+    final TextEditingController controller = TextEditingController(text: oldAirport);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Airport Code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter the new ICAO code for airport $oldAirport:'),
+              SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'ICAO Code',
+                  hintText: 'e.g., KJFK',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 4,
+                onChanged: (value) {
+                  // Auto-capitalize and limit to 4 characters
+                  if (value.length > 4) {
+                    controller.text = value.substring(0, 4).toUpperCase();
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newIcao = controller.text.trim().toUpperCase();
+                if (newIcao.length == 4 && newIcao != oldAirport) {
+                  Navigator.of(context).pop();
+                  
+                  // Get the FlightProvider and update the airport
+                  final flightProvider = context.read<FlightProvider>();
+                  final success = await flightProvider.updateAirportCode(oldAirport, newIcao);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Airport updated from $oldAirport to $newIcao successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to update airport. Please try again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } else if (newIcao == oldAirport) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('No changes made'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please enter a valid 4-letter ICAO code'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRemoveAirportDialog(BuildContext context, String airport) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Remove Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.warning,
+                color: Colors.orange,
+                size: 48,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Are you sure you want to remove airport $airport from your flight plan?',
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'This will also remove all associated weather data.',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                
+                // Get the FlightProvider and remove the airport
+                final flightProvider = context.read<FlightProvider>();
+                final success = await flightProvider.removeAirportFromFlight(airport);
+                
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Airport $airport removed successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to remove airport. Please try again.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Remove'),
+            ),
+          ],
+        );
+      },
     );
   }
 } 

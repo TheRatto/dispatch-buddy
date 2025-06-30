@@ -10,14 +10,22 @@ class TafStateManager {
   final Map<String, Map<String, String>> _weatherCache = {};
   final Map<String, Map<String, dynamic>> _activePeriodsCache = {};
   
+  // Cache size limits
+  static const int _maxWeatherCacheSize = 100;
+  static const int _maxActivePeriodsCacheSize = 50;
+  
   // Performance tracking
   String? _lastProcessedAirport;
   double? _lastProcessedSliderValue;
   String? _lastTafHash;
   String? _lastTimelineHash;
   
-  // Cache size management
-  static const int _maxCacheSize = 50;
+  // Performance metrics
+  int _weatherCacheHits = 0;
+  int _weatherCacheMisses = 0;
+  int _activePeriodsCacheHits = 0;
+  int _activePeriodsCacheMisses = 0;
+  DateTime? _lastMetricsReset;
   
   /// Generates a cache key for weather calculations
   String _getCacheKey(String airport, double sliderValue, String periodType) {
@@ -65,15 +73,15 @@ class TafStateManager {
   
   /// Limits cache size to prevent memory issues
   void _limitCacheSize() {
-    if (_weatherCache.length > _maxCacheSize) {
-      final keysToRemove = _weatherCache.keys.take(_weatherCache.length - _maxCacheSize).toList();
+    if (_weatherCache.length > _maxWeatherCacheSize) {
+      final keysToRemove = _weatherCache.keys.take(_weatherCache.length - _maxWeatherCacheSize).toList();
       for (final key in keysToRemove) {
         _weatherCache.remove(key);
       }
     }
     
-    if (_activePeriodsCache.length > _maxCacheSize) {
-      final keysToRemove = _activePeriodsCache.keys.take(_activePeriodsCache.length - _maxCacheSize).toList();
+    if (_activePeriodsCache.length > _maxActivePeriodsCacheSize) {
+      final keysToRemove = _activePeriodsCache.keys.take(_activePeriodsCache.length - _maxActivePeriodsCacheSize).toList();
       for (final key in keysToRemove) {
         _activePeriodsCache.remove(key);
       }
@@ -88,53 +96,93 @@ class TafStateManager {
     debugPrint('DEBUG: Performance Stats - Last Slider Value: $_lastProcessedSliderValue');
   }
   
-  /// Gets active periods for a given time, with caching
+  /// Get active periods for a given time with caching
   Map<String, dynamic>? getActivePeriods(
     String airport,
     double sliderValue,
     List<DateTime> timeline,
     List<DecodedForecastPeriod> forecastPeriods,
   ) {
+    // Force clear cache to see fresh parsing logs
+    clearCache();
+    
     final cacheKey = _getActivePeriodsCacheKey(airport, sliderValue);
     
-    // Check if we can use cached activePeriods
-    if (_activePeriodsCache.containsKey(cacheKey) && 
-        _lastProcessedAirport == airport && 
-        _lastProcessedSliderValue == sliderValue) {
-      final activePeriods = _activePeriodsCache[cacheKey];
-      debugPrint('DEBUG: Main build - Using CACHED activePeriods: $activePeriods');
-      debugPrint('DEBUG: Main build - Object ID: ${activePeriods?.hashCode}');
-      return activePeriods;
+    // Check cache first
+    if (_activePeriodsCache.containsKey(cacheKey)) {
+      _activePeriodsCacheHits++;
+      debugPrint('DEBUG: Using CACHED active periods for $airport at $sliderValue');
+      return Map<String, dynamic>.from(_activePeriodsCache[cacheKey]!);
     }
     
-    // Calculate activePeriods and cache it
-    DateTime? currentTime;
-    final timelineLength = timeline.length;
+    _activePeriodsCacheMisses++;
+    debugPrint('DEBUG: Calculating active periods for $airport at $sliderValue (cache miss)');
     
-    if (timelineLength > 1) {
-      final timeIndex = (sliderValue * (timelineLength - 1)).round().clamp(0, timelineLength - 1);
-      currentTime = timeline[timeIndex];
-    } else if (timelineLength == 1) {
-      currentTime = timeline.first;
+    if (timeline.isEmpty || forecastPeriods.isEmpty) {
+      return null;
     }
     
-    if (currentTime != null) {
-      final decoder = DecoderService();
-      final activePeriods = decoder.findActivePeriodsAtTime(currentTime, forecastPeriods);
-      
-      // Cache the result
-      _activePeriodsCache[cacheKey] = activePeriods;
-      _lastProcessedAirport = airport;
-      _lastProcessedSliderValue = sliderValue;
-      _limitCacheSize();
-      
-      debugPrint('DEBUG: Main build - Calculated and CACHED activePeriods: $activePeriods');
-      debugPrint('DEBUG: Main build - Object ID: ${activePeriods?.hashCode}');
-      
-      return activePeriods;
+    // Print the actual parsed periods for debugging
+    print('DEBUG: 🔍 === PARSED PERIODS FOR $airport ===');
+    for (int i = 0; i < forecastPeriods.length; i++) {
+      final period = forecastPeriods[i];
+      print('DEBUG: 🔍 Period $i: ${period.type} (${period.time})');
+      print('DEBUG: 🔍   Start time: ${period.startTime}');
+      print('DEBUG: 🔍   End time: ${period.endTime}');
+      print('DEBUG: 🔍   Is concurrent: ${period.isConcurrent}');
     }
+    print('DEBUG: 🔍 === END PARSED PERIODS ===');
     
-    return null;
+    // Calculate the current time based on slider position
+    final currentTime = timeline[(sliderValue * (timeline.length - 1)).round()];
+    
+    print('DEBUG: 🔍 TafStateManager - Slider value: $sliderValue');
+    print('DEBUG: 🔍 TafStateManager - Timeline length: ${timeline.length}');
+    print('DEBUG: 🔍 TafStateManager - Timeline index: ${(sliderValue * (timeline.length - 1)).round()}');
+    print('DEBUG: 🔍 TafStateManager - Current time: $currentTime');
+    
+    // Find active baseline period
+    final activeBaseline = getActiveBaselinePeriod(forecastPeriods, currentTime);
+    
+    // Find active concurrent periods with detailed logging
+    print('DEBUG: 🔍 === CHECKING CONCURRENT PERIODS ===');
+    final activeConcurrent = <DecodedForecastPeriod>[];
+    for (final period in forecastPeriods) {
+      if (period.isConcurrent) {
+        print('DEBUG: 🔍 Checking concurrent period: ${period.type} (${period.time})');
+        print('DEBUG: 🔍   Start time: ${period.startTime}');
+        print('DEBUG: 🔍   End time: ${period.endTime}');
+        print('DEBUG: 🔍   Current time: $currentTime');
+        
+        if (period.startTime != null && period.endTime != null) {
+          final isActive = (period.startTime!.isBefore(currentTime) || period.startTime!.isAtSameMomentAs(currentTime)) && 
+                          period.endTime!.isAfter(currentTime);
+          print('DEBUG: 🔍   Time comparison: ${period.startTime} <= $currentTime < ${period.endTime} = $isActive');
+          
+          if (isActive) {
+            activeConcurrent.add(period);
+            print('DEBUG: 🔍   ✅ Added to active concurrent periods');
+          } else {
+            print('DEBUG: 🔍   ❌ Not active');
+          }
+        } else {
+          print('DEBUG: 🔍   ❌ Missing start or end time');
+        }
+      }
+    }
+    print('DEBUG: 🔍 === END CONCURRENT PERIODS CHECK ===');
+    
+    final result = {
+      'baseline': activeBaseline,
+      'concurrent': activeConcurrent,
+    };
+    
+    // Cache the result
+    _activePeriodsCache[cacheKey] = result;
+    _limitCacheSize();
+    
+    debugPrint('DEBUG: Calculated active periods: baseline=${activeBaseline?.type}, concurrent=${activeConcurrent.length}');
+    return result;
   }
   
   /// Gets complete weather for a period, including inheritance logic
@@ -144,75 +192,100 @@ class TafStateManager {
     double sliderValue,
     List<DecodedForecastPeriod> allPeriods,
   ) {
-    // Performance optimization: Check cache first
     final cacheKey = _getCacheKey(airport, sliderValue, period.type);
     
+    // Check cache first
     if (_weatherCache.containsKey(cacheKey)) {
+      _weatherCacheHits++;
       debugPrint('DEBUG: Using CACHED weather for ${period.type}: ${_weatherCache[cacheKey]}');
-      return _weatherCache[cacheKey]!;
+      return Map<String, String>.from(_weatherCache[cacheKey]!);
     }
     
-    Map<String, String> completeWeather = Map.from(period.weather);
-    debugPrint('DEBUG: Period ${period.type} - Original weather: ${period.weather}');
+    _weatherCacheMisses++;
+    debugPrint('DEBUG: Calculating weather for ${period.type} (cache miss)');
     
-    if (allPeriods.isNotEmpty) {
-      DecodedForecastPeriod? sourcePeriod;
-      
-      if (period.type == 'BECMG') {
-        // BECMG periods inherit missing elements from the most recent period that has them
-        // This ensures baseline weather persists until specifically replaced
-        for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
-          if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
-            // Find the most recent period that has this element
-            for (final p in allPeriods.reversed) {
-              if (p.startTime != null && p.startTime!.isBefore(period.startTime!)) {
-                if (p.weather[key] != null && p.weather[key]!.isNotEmpty && p.weather[key] != '-') {
-                  sourcePeriod = p;
-                  break;
-                }
-              }
+    // Calculate complete weather with inheritance
+    final completeWeather = Map<String, String>.from(period.weather);
+    
+    // For each weather element, search back through all previous periods for the most recent non-missing value
+    for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
+      if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
+        // Search back through all previous periods
+        for (final p in allPeriods.reversed) {
+          if (p.startTime != null && p.startTime!.isBefore(period.startTime!)) {
+            if (p.weather[key] != null && p.weather[key]!.isNotEmpty && p.weather[key] != '-') {
+              completeWeather[key] = p.weather[key]!;
+              debugPrint('DEBUG: Inherited $key from ${p.type}: ${p.weather[key]}');
+              break;
             }
-            
-            if (sourcePeriod != null) {
-              completeWeather[key] = sourcePeriod.weather[key]!;
-              debugPrint('DEBUG: BECMG inherited $key from ${sourcePeriod.type}: ${sourcePeriod.weather[key]}');
-            }
-          }
-        }
-        debugPrint('DEBUG: BECMG period - inheritance complete');
-      } else if (period.type == 'FM') {
-        // FM periods inherit from the previous FM period
-        sourcePeriod = allPeriods
-          .where((p) => p.type == 'FM' && p.startTime != null && p.startTime!.isBefore(period.startTime!))
-          .fold<DecodedForecastPeriod?>(null, (prev, p) => prev == null || p.startTime!.isAfter(prev.startTime!) ? p : prev);
-        debugPrint('DEBUG: FM period - inheriting from previous FM period: ${sourcePeriod?.type}');
-      } else if (period.type != 'INITIAL') {
-        // Concurrent periods (TEMPO/INTER) inherit from the current baseline period
-        // Find the baseline period that is active during this concurrent period
-        sourcePeriod = allPeriods
-          .where((p) => !p.isConcurrent && p.startTime != null && p.endTime != null &&
-                       p.startTime!.isBefore(period.startTime!) && p.endTime!.isAfter(period.startTime!))
-          .firstOrNull;
-        debugPrint('DEBUG: Concurrent period - inheriting from baseline period: ${sourcePeriod?.type}');
-      }
-      
-      if (sourcePeriod != null) {
-        for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
-          if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
-            completeWeather[key] = sourcePeriod.weather[key] ?? '-';
-            debugPrint('DEBUG: Inherited $key: ${sourcePeriod.weather[key]}');
           }
         }
       }
     }
-    
-    debugPrint('DEBUG: Complete weather for ${period.type}: $completeWeather');
     
     // Cache the result
-    _weatherCache[cacheKey] = completeWeather;
+    _weatherCache[cacheKey] = Map<String, String>.from(completeWeather);
     _limitCacheSize();
     
+    debugPrint('DEBUG: Complete weather for ${period.type}: $completeWeather');
     return completeWeather;
+  }
+  
+  /// Gets dual weather for BECMG periods showing both previous and new conditions
+  Map<String, dynamic>? getBecmgDualWeather(
+    DecodedForecastPeriod becmgPeriod,
+    String airport,
+    double sliderValue,
+    List<DecodedForecastPeriod> allPeriods,
+  ) {
+    if (becmgPeriod.type != 'BECMG') {
+      return null;
+    }
+
+    // Find the previous baseline period (what conditions are ending)
+    DecodedForecastPeriod? previousBaseline;
+    for (final p in allPeriods.reversed) {
+      if (!p.isConcurrent && p.type != 'BECMG' && p.startTime != null && p.startTime!.isBefore(becmgPeriod.startTime!)) {
+        previousBaseline = p;
+        break;
+      }
+    }
+
+    if (previousBaseline == null) {
+      return null;
+    }
+
+    // Get complete weather for both periods
+    final previousWeather = getCompleteWeatherForPeriod(previousBaseline, airport, sliderValue, allPeriods);
+    final newWeather = getCompleteWeatherForPeriod(becmgPeriod, airport, sliderValue, allPeriods);
+
+    // Parse BECMG transition time
+    final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(becmgPeriod.time);
+    String transitionTime = 'Unknown';
+    if (timeMatch != null) {
+      final fromDay = timeMatch.group(1)!;
+      final fromHour = timeMatch.group(2)!;
+      final toDay = timeMatch.group(3)!;
+      final toHour = timeMatch.group(4)!;
+      transitionTime = '${fromDay}${fromHour}/${toDay}${toHour}Z';
+    }
+
+    return {
+      'previous': {
+        'period': previousBaseline.type,
+        'weather': previousWeather,
+        'description': 'Ending conditions',
+      },
+      'new': {
+        'period': 'BECMG',
+        'weather': newWeather,
+        'description': 'Becoming conditions',
+      },
+      'transition': {
+        'time': transitionTime,
+        'description': 'Both conditions possible during transition',
+      },
+    };
   }
   
   /// Gets active baseline period for a given time
@@ -275,5 +348,38 @@ class TafStateManager {
     
     // If still no period found, return the first period
     return activePeriod ?? (periods.isNotEmpty ? periods.first : null);
+  }
+  
+  /// Get performance metrics for monitoring
+  Map<String, dynamic> getPerformanceMetrics() {
+    final now = DateTime.now();
+    final weatherHitRate = _weatherCacheHits + _weatherCacheMisses > 0 
+        ? _weatherCacheHits / (_weatherCacheHits + _weatherCacheMisses) 
+        : 0.0;
+    final activePeriodsHitRate = _activePeriodsCacheHits + _activePeriodsCacheMisses > 0 
+        ? _activePeriodsCacheHits / (_activePeriodsCacheHits + _activePeriodsCacheMisses) 
+        : 0.0;
+    
+    return {
+      'weatherCacheSize': _weatherCache.length,
+      'activePeriodsCacheSize': _activePeriodsCache.length,
+      'weatherCacheHitRate': (weatherHitRate * 100).toStringAsFixed(1) + '%',
+      'activePeriodsCacheHitRate': (activePeriodsHitRate * 100).toStringAsFixed(1) + '%',
+      'weatherCacheHits': _weatherCacheHits,
+      'weatherCacheMisses': _weatherCacheMisses,
+      'activePeriodsCacheHits': _activePeriodsCacheHits,
+      'activePeriodsCacheMisses': _activePeriodsCacheMisses,
+      'lastMetricsReset': _lastMetricsReset?.toIso8601String(),
+      'uptime': _lastMetricsReset != null ? now.difference(_lastMetricsReset!).inMinutes : 0,
+    };
+  }
+  
+  /// Reset performance metrics
+  void resetPerformanceMetrics() {
+    _weatherCacheHits = 0;
+    _weatherCacheMisses = 0;
+    _activePeriodsCacheHits = 0;
+    _activePeriodsCacheMisses = 0;
+    _lastMetricsReset = DateTime.now();
   }
 } 

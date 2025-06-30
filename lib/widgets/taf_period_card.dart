@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/decoded_weather_models.dart';
 import '../models/weather.dart';
 import 'grid_item.dart';
+import '../constants/weather_colors.dart';
 
 class TafPeriodCard extends StatelessWidget {
   final TimePeriod period;
@@ -39,11 +40,7 @@ class TafPeriodCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isInitial ? Colors.blue : 
-                           isTempo ? Colors.orange : 
-                           isInter ? Colors.purple : 
-                           isBecmg ? Colors.green : 
-                           isFm ? Colors.red : Colors.black,
+                    color: WeatherColors.getColorForPeriodType(period.baselinePeriod.type),
                   ),
                 ),
                 Text(

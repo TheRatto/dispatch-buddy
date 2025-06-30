@@ -91,13 +91,18 @@ class WeatherParser {
         print('DEBUG: EGLL visibility parsed: ${weather['Visibility']}');
       }
     } else if (visibilitySMMatch != null) {
-      var visibility = visibilitySMMatch.group(1);
+      final visibility = visibilitySMMatch.group(1);
       if (visibility != null) {
-        // Only append SM if not already present
-        if (!visibility.endsWith('SM')) {
-          visibility = visibility + 'SM';
+        // Format visibility for display
+        if (visibility.startsWith('P')) {
+          // P6SM -> >6 statute miles
+          final number = visibility.substring(1).replaceAll('SM', '');
+          weather['Visibility'] = '>$number statute miles';
+        } else {
+          // 6SM -> 6 statute miles
+          final number = visibility.replaceAll('SM', '');
+          weather['Visibility'] = '$number statute miles';
         }
-        weather['Visibility'] = visibility;
       }
       if (isEgll) {
         print('DEBUG: EGLL visibility (SM) parsed: ${weather['Visibility']}');
@@ -215,7 +220,16 @@ class WeatherParser {
     } else if (visibilitySMMatch != null) {
       final visibility = visibilitySMMatch.group(1);
       if (visibility != null) {
-        return '${visibility}SM';
+        // Format visibility for display
+        if (visibility.startsWith('P')) {
+          // P6SM -> >6 statute miles
+          final number = visibility.substring(1).replaceAll('SM', '');
+          return '>$number statute miles';
+        } else {
+          // 6SM -> 6 statute miles
+          final number = visibility.replaceAll('SM', '');
+          return '$number statute miles';
+        }
       }
     }
     return null;

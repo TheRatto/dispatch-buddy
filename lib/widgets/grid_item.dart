@@ -37,11 +37,11 @@ class GridItem extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 2),
+          SizedBox(height: 1),
           Text(
             displayValue,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
           ),
