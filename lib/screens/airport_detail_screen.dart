@@ -11,10 +11,25 @@ class AirportDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Airport Details'),
-        actions: const [
-          ZuluTimeWidget(),
-          SizedBox(width: 8),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+            SizedBox(height: 2),
+            Text(
+              'Airport',
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              // TODO: Implement settings menu
+            },
+          ),
         ],
       ),
       body: Consumer<FlightProvider>(

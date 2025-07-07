@@ -12,10 +12,25 @@ class DecodedScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Decoded Info'),
-          actions: const [
-            ZuluTimeWidget(),
-            SizedBox(width: 8),
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+              SizedBox(height: 2),
+              Text(
+                'Decoded',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                // TODO: Implement settings menu
+              },
+            ),
           ],
           bottom: const TabBar(
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),

@@ -12,23 +12,23 @@ class SummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dispatch Summary'),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+            SizedBox(height: 2),
+            Text(
+              'Summary',
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+        centerTitle: true,
         actions: [
-          const ZuluTimeWidget(),
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.menu),
             onPressed: () {
-              Navigator.pop(context); // Go back to input screen
-            },
-            tooltip: 'Edit Flight Plan',
-          ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () {
-              context.read<FlightProvider>().saveCurrentFlight();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Briefing saved')),
-              );
+              // TODO: Implement settings menu
             },
           ),
         ],

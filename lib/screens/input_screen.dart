@@ -5,6 +5,7 @@ import '../models/flight.dart';
 import '../models/airport.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
+import '../widgets/zulu_time_widget.dart';
 import 'briefing_tabs_screen.dart';
 import '../services/api_service.dart';
 import '../widgets/flight_plan_form_card.dart';
@@ -53,27 +54,24 @@ class _InputScreenState extends State<InputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Briefing'),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+            SizedBox(height: 2),
+            Text(
+              'New Briefing',
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+        centerTitle: true,
         actions: [
-          PopupMenuButton<String>(
+          IconButton(
             icon: const Icon(Icons.menu),
-            onSelected: (value) {
-              if (value == 'network_diagnostics') {
-                _runNetworkDiagnostics();
-              }
+            onPressed: () {
+              // TODO: Implement settings menu
             },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'network_diagnostics',
-                child: Row(
-                  children: [
-                    Icon(Icons.wifi_find, color: Color(0xFF059669)),
-                    SizedBox(width: 8),
-                    Text('SATCOM Network Diagnostics'),
-                  ],
-                ),
-              ),
-            ],
           ),
         ],
       ),

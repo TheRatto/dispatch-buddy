@@ -170,10 +170,25 @@ class _RawDataScreenState extends State<RawDataScreen> {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Raw Data'),
-          actions: const [
-            ZuluTimeWidget(),
-            SizedBox(width: 8),
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+              SizedBox(height: 2),
+              Text(
+                'Raw Data',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                // TODO: Implement settings menu
+              },
+            ),
           ],
           bottom: const TabBar(
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -928,23 +943,31 @@ class _RawDataScreenState extends State<RawDataScreen> {
                 child: RepaintBoundary(
                   child: _activePeriods != null && _activePeriods!['baseline'] != null
                       ? DecodedWeatherCard(
+                          key: ValueKey('decoded_${flightProvider.selectedAirport}'),
                           baseline: _activePeriods!['baseline'] as DecodedForecastPeriod,
-                          completeWeather: _getCompleteWeatherForPeriod(_activePeriods!['baseline'] as DecodedForecastPeriod, selectedTaf.decodedWeather?.timeline ?? []),
+                          completeWeather: _getCompleteWeatherForPeriod(
+                            _activePeriods!['baseline'] as DecodedForecastPeriod,
+                            selectedTaf.decodedWeather?.timeline ?? [],
+                            forecastPeriods,
+                            flightProvider,
+                          ),
                           concurrentPeriods: _activePeriods!['concurrent'] as List<DecodedForecastPeriod>,
                           airport: flightProvider.selectedAirport,
                           sliderValue: sliderValue,
                           allPeriods: forecastPeriods,
+                          taf: selectedTaf,
                         )
                       : const Center(child: Text('No decoded data available')),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
               
               // Raw TAF card
               SizedBox(
                 height: 240,
                 child: RepaintBoundary(
                   child: RawTafCard(
+                    key: ValueKey('raw_${flightProvider.selectedAirport}'),
                     taf: selectedTaf,
                     activePeriods: _activePeriods,
                   ),
@@ -1031,6 +1054,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
       airport: flightProvider.selectedAirport,
       sliderValue: _sliderPositions[flightProvider.selectedAirport!],
       allPeriods: allPeriods,
+      taf: null, // This method is not used in the current implementation
     );
   }
 

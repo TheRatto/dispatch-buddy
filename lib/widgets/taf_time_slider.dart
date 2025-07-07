@@ -75,7 +75,7 @@ class TafTimeSlider extends StatelessWidget {
             ),
             // Show current time instead of all labels
             Text(
-              'Time: ${DateFormat('MMM d, HH:mm').format(timeline[(sliderValue * (timeline.length - 1)).round()])}',
+              '${DateFormat('dd HH:mm').format(timeline[(sliderValue * (timeline.length - 1)).round()])} Z',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ],

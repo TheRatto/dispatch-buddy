@@ -629,13 +629,17 @@ class DecoderService {
       }
     }
     
-    print('DEBUG: TAF validity period: $adjustedStartTime to $adjustedEndTime');
+    // Subtract one hour from end time to avoid showing the exact end time
+    // where there's no weather data
+    final effectiveEndTime = adjustedEndTime.subtract(const Duration(hours: 1));
+    
+    print('DEBUG: TAF validity period: $adjustedStartTime to $adjustedEndTime (effective end: $effectiveEndTime)');
     
     // Create hourly timeline
     final timeline = <DateTime>[];
     DateTime currentTime = adjustedStartTime;
     
-    while (currentTime.isBefore(adjustedEndTime) || currentTime.isAtSameMomentAs(adjustedEndTime)) {
+    while (currentTime.isBefore(effectiveEndTime) || currentTime.isAtSameMomentAs(effectiveEndTime)) {
       timeline.add(currentTime);
       currentTime = currentTime.add(const Duration(hours: 1));
     }

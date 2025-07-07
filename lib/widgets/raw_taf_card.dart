@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/weather.dart';
 import '../services/decoder_service.dart';
 import '../models/decoded_weather_models.dart';
 import '../constants/weather_colors.dart';
+import 'zulu_time_widget.dart';
 
 /// Raw TAF Card Widget
 /// 
@@ -29,11 +31,19 @@ class RawTafCard extends StatefulWidget {
 class _RawTafCardState extends State<RawTafCard> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrollable = false;
+  Timer? _ageUpdateTimer;
+  String _ageText = '';
 
   @override
   void initState() {
     super.initState();
+    print('DEBUG: RawTafCard initState for ${widget.taf.icao}');
     _scrollController.addListener(_onScroll);
+    _updateAgeText();
+    // Update age every minute
+    _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateAgeText();
+    });
     // Check if content is scrollable after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkIfScrollable();
@@ -44,7 +54,65 @@ class _RawTafCardState extends State<RawTafCard> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _ageUpdateTimer?.cancel();
     super.dispose();
+  }
+
+  void _updateAgeText() {
+    if (!mounted) return;
+    
+    // Extract issue time from TAF raw text
+    final issueTimeMatch = RegExp(r'(\d{2})(\d{2})(\d{2})Z').firstMatch(widget.taf.rawText);
+    if (issueTimeMatch == null) {
+      setState(() {
+        _ageText = '';
+      });
+      return;
+    }
+    
+    final day = int.parse(issueTimeMatch.group(1)!);
+    final hour = int.parse(issueTimeMatch.group(2)!);
+    final minute = int.parse(issueTimeMatch.group(3)!);
+    
+    // Create issue time with proper date handling
+    final now = DateTime.now().toUtc();
+    DateTime issueTime;
+    
+    // Try current month first
+    issueTime = DateTime.utc(now.year, now.month, day, hour, minute);
+    
+    // If the calculated age is more than 24 hours, the TAF might be from the previous month
+    final age = now.difference(issueTime);
+    if (age.inHours > 24) {
+      // Try previous month
+      final previousMonth = now.month == 1 ? 12 : now.month - 1;
+      final previousYear = now.month == 1 ? now.year - 1 : now.year;
+      issueTime = DateTime.utc(previousYear, previousMonth, day, hour, minute);
+    }
+    
+    // Recalculate age with the correct date
+    final finalAge = now.difference(issueTime);
+    final hours = finalAge.inHours;
+    final minutes = finalAge.inMinutes % 60;
+    
+    String ageText;
+    if (hours > 0) {
+      ageText = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')} hrs old';
+    } else {
+      ageText = '00:${minutes.toString().padLeft(2, '0')} hrs old';
+    }
+    
+    // Debug logging
+    print('DEBUG: RawTafCard age calculation for ${widget.taf.icao}:');
+    print('DEBUG:   Raw text: ${widget.taf.rawText}');
+    print('DEBUG:   Issue time: $issueTime');
+    print('DEBUG:   Current time: $now');
+    print('DEBUG:   Age: $finalAge');
+    print('DEBUG:   Age text: $ageText');
+    
+    setState(() {
+      _ageText = ageText;
+    });
   }
 
   void _onScroll() {
@@ -74,6 +142,7 @@ class _RawTafCardState extends State<RawTafCard> {
 
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: RawTafCard build for ${widget.taf.icao}');
     print('DEBUG: === RAW HIGHLIGHTING START ===');
     print('DEBUG: Raw highlighting - activePeriods: ${widget.activePeriods}');
     
@@ -114,6 +183,23 @@ class _RawTafCardState extends State<RawTafCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with TAF age indicator in top left
+            Row(
+              children: [
+                if (_ageText.isNotEmpty)
+                  Text(
+                    _ageText,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                const Spacer(),
+              ],
+            ),
+            const SizedBox(height: 8),
             Expanded(
               child: Stack(
                 children: [
@@ -124,46 +210,46 @@ class _RawTafCardState extends State<RawTafCard> {
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                                    child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: SelectableText.rich(
-                    textSpan,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      height: 1.2,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: SelectableText.rich(
+                        textSpan,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          height: 1.2,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              // Scroll indicator - only appears when content is scrollable
-              if (_isScrollable)
-                Positioned(
-                  right: 4,
-                  bottom: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.keyboard_arrow_up,
-                          color: Colors.white,
-                          size: 12,
+                  // Scroll indicator - only appears when content is scrollable
+                  if (_isScrollable)
+                    Positioned(
+                      right: 4,
+                      bottom: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.white,
-                          size: 12,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.keyboard_arrow_up,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
                 ],
               ),
             ),
@@ -172,6 +258,8 @@ class _RawTafCardState extends State<RawTafCard> {
       ),
     );
   }
+
+
   
   TextSpan _buildSimpleHighlightedText(String formattedText, DecodedForecastPeriod? baseline, List<DecodedForecastPeriod> concurrent) {
     print('DEBUG: Building simple highlighted text');

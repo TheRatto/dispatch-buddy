@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/decoded_weather_models.dart';
 import '../services/taf_state_manager.dart';
 import '../constants/weather_colors.dart';
+import '../models/weather.dart';
 
 /// Decoded Weather Card Widget
 /// 
@@ -10,7 +12,7 @@ import '../constants/weather_colors.dart';
 /// - Concurrent period highlighting (TEMPO/PROB)
 /// - Color-coded concurrent weather display
 /// - Exact styling preserved from original implementation
-class DecodedWeatherCard extends StatelessWidget {
+class DecodedWeatherCard extends StatefulWidget {
   final DecodedForecastPeriod baseline;
   final Map<String, String> completeWeather;
   final List<DecodedForecastPeriod> concurrentPeriods;
@@ -18,6 +20,7 @@ class DecodedWeatherCard extends StatelessWidget {
   final String? airport;
   final double? sliderValue;
   final List<DecodedForecastPeriod>? allPeriods;
+  final Weather? taf; // Add TAF for age calculation
 
   const DecodedWeatherCard({
     super.key,
@@ -28,12 +31,96 @@ class DecodedWeatherCard extends StatelessWidget {
     this.airport,
     this.sliderValue,
     this.allPeriods,
+    this.taf,
   });
 
   @override
+  State<DecodedWeatherCard> createState() => _DecodedWeatherCardState();
+}
+
+class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
+  Timer? _ageUpdateTimer;
+  String _ageText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    print('DEBUG: DecodedWeatherCard initState for ${widget.taf?.icao ?? 'no TAF'}');
+    _updateAgeText();
+    // Update age every minute
+    _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateAgeText();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ageUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _updateAgeText() {
+    if (!mounted || widget.taf == null) return;
+    
+    // Extract issue time from TAF raw text
+    final issueTimeMatch = RegExp(r'(\d{2})(\d{2})(\d{2})Z').firstMatch(widget.taf!.rawText);
+    if (issueTimeMatch == null) {
+      setState(() {
+        _ageText = '';
+      });
+      return;
+    }
+    
+    final day = int.parse(issueTimeMatch.group(1)!);
+    final hour = int.parse(issueTimeMatch.group(2)!);
+    final minute = int.parse(issueTimeMatch.group(3)!);
+    
+    // Create issue time with proper date handling
+    final now = DateTime.now().toUtc();
+    DateTime issueTime;
+    
+    // Try current month first
+    issueTime = DateTime.utc(now.year, now.month, day, hour, minute);
+    
+    // If the calculated age is more than 24 hours, the TAF might be from the previous month
+    final age = now.difference(issueTime);
+    if (age.inHours > 24) {
+      // Try previous month
+      final previousMonth = now.month == 1 ? 12 : now.month - 1;
+      final previousYear = now.month == 1 ? now.year - 1 : now.year;
+      issueTime = DateTime.utc(previousYear, previousMonth, day, hour, minute);
+    }
+    
+    // Recalculate age with the correct date
+    final finalAge = now.difference(issueTime);
+    final hours = finalAge.inHours;
+    final minutes = finalAge.inMinutes % 60;
+    
+    String ageText;
+    if (hours > 0) {
+      ageText = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')} hrs old';
+    } else {
+      ageText = '00:${minutes.toString().padLeft(2, '0')} hrs old';
+    }
+    
+    // Debug logging
+    print('DEBUG: DecodedWeatherCard age calculation for ${widget.taf!.icao}:');
+    print('DEBUG:   Raw text: ${widget.taf!.rawText}');
+    print('DEBUG:   Issue time: $issueTime');
+    print('DEBUG:   Current time: $now');
+    print('DEBUG:   Age: $finalAge');
+    print('DEBUG:   Age text: $ageText');
+    
+    setState(() {
+      _ageText = ageText;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print('DEBUG: DecodedWeatherCard build for ${widget.taf?.icao ?? 'no TAF'}');
     // Return the card with period information for highlighting
-    return _buildDecodedCard(baseline, completeWeather, concurrentPeriods);
+    return _buildDecodedCard(widget.baseline, widget.completeWeather, widget.concurrentPeriods);
   }
 
   Widget _buildEmptyDecodedCard() {
@@ -43,12 +130,21 @@ class DecodedWeatherCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Decoded TAF',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            // Header with TAF age indicator in top left
+            Row(
+              children: [
+                if (_ageText.isNotEmpty)
+                  Text(
+                    _ageText,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                const Spacer(),
+              ],
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -83,16 +179,20 @@ class DecodedWeatherCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header with TAF age indicator in top left
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Decoded TAF',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                        if (_ageText.isNotEmpty)
+                          Text(
+                            _ageText,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'monospace',
+                            ),
                           ),
-                        ),
+                        const Spacer(),
                         if (concurrentPeriods.isNotEmpty) _buildConcurrentKeyWithBecmg(concurrentPeriods, baseline),
                       ],
                     ),
@@ -214,7 +314,7 @@ class DecodedWeatherCard extends StatelessWidget {
     final transitionEnd = DateTime(DateTime.now().year, DateTime.now().month, toDay, toHour, 0);
     
     // Use the slider time if available, otherwise use current time
-    final currentTime = sliderValue != null && allPeriods != null 
+    final currentTime = widget.sliderValue != null && widget.allPeriods != null 
         ? _getCurrentTimeFromSlider()
         : DateTime.now();
     
@@ -231,13 +331,13 @@ class DecodedWeatherCard extends StatelessWidget {
 
   /// Get the current time based on slider value
   DateTime _getCurrentTimeFromSlider() {
-    if (sliderValue == null || allPeriods == null || allPeriods!.isEmpty) {
+    if (widget.sliderValue == null || widget.allPeriods == null || widget.allPeriods!.isEmpty) {
       return DateTime.now();
     }
     
     // Find the timeline from the periods
     final timeline = <DateTime>[];
-    for (final period in allPeriods!) {
+    for (final period in widget.allPeriods!) {
       if (period.startTime != null) {
         timeline.add(period.startTime!);
       }
@@ -255,7 +355,7 @@ class DecodedWeatherCard extends StatelessWidget {
     final uniqueTimeline = timeline.toSet().toList()..sort();
     
     // Calculate current time based on slider position
-    final index = (sliderValue! * (uniqueTimeline.length - 1)).round();
+    final index = (widget.sliderValue! * (uniqueTimeline.length - 1)).round();
     return uniqueTimeline[index.clamp(0, uniqueTimeline.length - 1)];
   }
 
@@ -318,9 +418,9 @@ class DecodedWeatherCard extends StatelessWidget {
     
     // Check if this value should be colored due to BECMG transition
     Color? valueColor;
-    if (baseline.type == 'BECMG' && _isInBecmgTransition(baseline)) {
+    if (widget.baseline.type == 'BECMG' && _isInBecmgTransition(widget.baseline)) {
       // Check if this weather type is changing in the BECMG period
-      if (baseline.changedElements.contains(weatherType)) {
+      if (widget.baseline.changedElements.contains(weatherType)) {
         valueColor = WeatherColors.becmg;
       }
     }
@@ -378,4 +478,6 @@ class DecodedWeatherCard extends StatelessWidget {
       ),
     );
   }
+
+
 } 

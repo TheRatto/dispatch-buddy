@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class ZuluTimeWidget extends StatefulWidget {
-  const ZuluTimeWidget({super.key});
+  final bool showIcon;
+  final bool compact;
+  final double? fontSize;
+  
+  const ZuluTimeWidget({
+    super.key,
+    this.showIcon = true,
+    this.compact = false,
+    this.fontSize,
+  });
 
   @override
   _ZuluTimeWidgetState createState() => _ZuluTimeWidgetState();
@@ -28,17 +37,34 @@ class _ZuluTimeWidgetState extends State<ZuluTimeWidget> {
   }
 
   void _updateZuluTime() {
-    if (mounted) {
-      final now = DateTime.now().toUtc();
-      setState(() {
-        _currentZuluTime =
-            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}Z';
-      });
-    }
+    final now = DateTime.now().toUtc();
+    final day = now.day.toString().padLeft(2, '0');
+    final hour = now.hour.toString().padLeft(2, '0');
+    final minute = now.minute.toString().padLeft(2, '0');
+    
+    setState(() {
+      _currentZuluTime = '$day $hour:$minute Z';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.compact) {
+      // Compact version for app bar leading - subtle and clean
+      return Text(
+        _currentZuluTime,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.9),
+          fontSize: widget.fontSize ?? 11,
+          fontWeight: FontWeight.w500,
+          fontFamily: 'monospace',
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+    
+    // Full version for app bar
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -48,13 +74,15 @@ class _ZuluTimeWidgetState extends State<ZuluTimeWidget> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.access_time, size: 16, color: Colors.white70),
-          const SizedBox(width: 4),
+          if (widget.showIcon) ...[
+            const Icon(Icons.access_time, size: 16, color: Colors.white70),
+            const SizedBox(width: 4),
+          ],
           Text(
             _currentZuluTime,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: widget.fontSize ?? 14,
               fontWeight: FontWeight.w500,
               fontFamily: 'monospace',
             ),
