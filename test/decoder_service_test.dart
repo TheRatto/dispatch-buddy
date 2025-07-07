@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dispatch_buddy/services/decoder_service.dart';
-import 'package:dispatch_buddy/models/weather.dart';
 import 'package:dispatch_buddy/services/weather_parser.dart';
 
 void main() {
@@ -34,7 +33,7 @@ void main() {
         final weather = WeatherParser.parseWeatherFromSegment(segment);
         
         expect(weather['Weather'], equals('Light Showers of Rain'));
-        expect(weather['Wind'], equals('90° at 10kt'));
+        expect(weather['Wind'], equals('090° at 10kt'));
         expect(weather['Visibility'], equals('>10km'));
       });
     });
@@ -45,7 +44,7 @@ void main() {
         final result = decoderService.decodeTaf(tafText);
         
         expect(result, isNotNull);
-        expect(result!.forecastPeriods, isNotEmpty);
+        expect(result.forecastPeriods, isNotEmpty);
         expect(result.forecastPeriods!.first.type, equals('INITIAL'));
         expect(result.forecastPeriods!.first.weather['Wind'], contains('170°'));
         expect(result.forecastPeriods!.first.weather['Visibility'], equals('>10km'));
@@ -56,7 +55,7 @@ void main() {
         final result = decoderService.decodeTaf(tafText);
         
         expect(result, isNotNull);
-        expect(result!.forecastPeriods!.length, greaterThan(1));
+        expect(result.forecastPeriods!.length, greaterThan(1));
         
         final tempoPeriod = result.forecastPeriods!.where((p) => p.isConcurrent).first;
         expect(tempoPeriod.type, contains('TEMPO'));
@@ -68,7 +67,7 @@ void main() {
         final result = decoderService.decodeTaf(tafText);
         
         expect(result, isNotNull);
-        expect(result!.forecastPeriods!.length, greaterThan(1));
+        expect(result.forecastPeriods!.length, greaterThan(1));
         
         final probPeriod = result.forecastPeriods!.where((p) => p.isConcurrent).first;
         expect(probPeriod.type, equals('PROB40 TEMPO'));
@@ -81,7 +80,7 @@ void main() {
         final result = decoderService.decodeTaf(tafText);
         
         expect(result, isNotNull);
-        expect(result!.forecastPeriods!.length, greaterThan(1));
+        expect(result.forecastPeriods!.length, greaterThan(1));
         
         final becmgPeriod = result.forecastPeriods!.where((p) => p.type == 'BECMG').first;
         expect(becmgPeriod.weather['Wind'], contains('120°'));
@@ -98,8 +97,8 @@ void main() {
         
         // Test at 02:00 on 28th (during PROB40 TEMPO)
         final activePeriods = decoderService.findActivePeriodsAtTime(
-          DateTime(2025, 6, 28, 2, 0),
-          result!.forecastPeriods!
+          DateTime(2025, 7, 28, 2, 0),
+          result.forecastPeriods!
         );
         
         expect(activePeriods['baseline'], isNotNull);

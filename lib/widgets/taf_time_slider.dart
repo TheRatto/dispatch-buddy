@@ -14,11 +14,11 @@ class TafTimeSlider extends StatelessWidget {
   final ValueChanged<double> onChanged;
 
   const TafTimeSlider({
-    Key? key,
+    super.key,
     required this.timeline,
     required this.sliderValue,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,14 +36,14 @@ class TafTimeSlider extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Time Slider',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Expanded(
               child: Center(
                 child: Text(
@@ -71,12 +71,12 @@ class TafTimeSlider extends StatelessWidget {
               max: 1.0,
               divisions: timeline.length > 1 ? (timeline.length - 1) : 1,
               onChanged: onChanged,
-              activeColor: Color(0xFF14B8A6),
+              activeColor: const Color(0xFF14B8A6),
             ),
             // Show current time instead of all labels
             Text(
               'Time: ${DateFormat('MMM d, HH:mm').format(timeline[(sliderValue * (timeline.length - 1)).round()])}',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ],
         ),

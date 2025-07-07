@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class DiagramScreen extends StatelessWidget {
+  const DiagramScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Airport Diagram'),
+        title: const Text('Airport Diagram'),
       ),
-      body: Center(
+      body: const Center(
         child: Text('Airport Diagram - Coming Soon'),
       ),
     );

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/flight_provider.dart';
 import 'summary_screen.dart';
 import 'airport_detail_screen.dart';
 import 'raw_data_screen.dart';
 
 class BriefingTabsScreen extends StatefulWidget {
+  const BriefingTabsScreen({super.key});
+
   @override
   _BriefingTabsScreenState createState() => _BriefingTabsScreenState();
 }
@@ -14,9 +14,9 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    SummaryScreen(),
-    AirportDetailScreen(),
-    RawDataScreen(),
+    const SummaryScreen(),
+    const AirportDetailScreen(),
+    const RawDataScreen(),
   ];
 
   @override
@@ -31,7 +31,7 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF1E3A8A),
+        selectedItemColor: const Color(0xFF1E3A8A),
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(

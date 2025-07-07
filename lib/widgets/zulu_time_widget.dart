@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class ZuluTimeWidget extends StatefulWidget {
-  const ZuluTimeWidget({Key? key}) : super(key: key);
+  const ZuluTimeWidget({super.key});
 
   @override
   _ZuluTimeWidgetState createState() => _ZuluTimeWidgetState();

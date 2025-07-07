@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/decoded_weather_models.dart';
-import '../services/decoder_service.dart';
 import '../services/taf_state_manager.dart';
 import '../constants/weather_colors.dart';
 
@@ -21,7 +20,7 @@ class DecodedWeatherCard extends StatelessWidget {
   final List<DecodedForecastPeriod>? allPeriods;
 
   const DecodedWeatherCard({
-    Key? key,
+    super.key,
     required this.baseline,
     required this.completeWeather,
     required this.concurrentPeriods,
@@ -29,7 +28,7 @@ class DecodedWeatherCard extends StatelessWidget {
     this.airport,
     this.sliderValue,
     this.allPeriods,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,14 +43,14 @@ class DecodedWeatherCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Decoded TAF',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Expanded(
               child: Center(
                 child: Text(
@@ -72,7 +71,7 @@ class DecodedWeatherCard extends StatelessWidget {
     List<DecodedForecastPeriod> concurrentPeriods
   ) {
     return ConstrainedBox(
-      constraints: BoxConstraints(
+      constraints: const BoxConstraints(
         maxHeight: 290,
       ),
       child: Card(
@@ -87,7 +86,7 @@ class DecodedWeatherCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Decoded TAF',
                           style: TextStyle(
                             fontSize: 14,
@@ -97,24 +96,24 @@ class DecodedWeatherCard extends StatelessWidget {
                         if (concurrentPeriods.isNotEmpty) _buildConcurrentKeyWithBecmg(concurrentPeriods, baseline),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     // Wind/Visibility row (dynamic height)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildGridItemWithConcurrent('Wind', completeWeather['Wind'], concurrentPeriods, 'Wind'),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         _buildGridItemWithConcurrent('Visibility', completeWeather['Visibility'], concurrentPeriods, 'Visibility'),
                       ],
                     ),
                     // Minimum spacing between sections
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     // Weather/Cloud row (dynamic height)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildGridItemWithConcurrent('Weather', completeWeather['Weather'], concurrentPeriods, 'Weather'),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         _buildGridItemWithConcurrent('Cloud', completeWeather['Cloud'], concurrentPeriods, 'Cloud'),
                       ],
                     ),
@@ -176,8 +175,8 @@ class DecodedWeatherCard extends StatelessWidget {
     // Add BECMG key if baseline is BECMG and we're in transition period
     if (baseline?.type == 'BECMG' && _isInBecmgTransition(baseline!)) {
       children.add(
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0),
+        const Padding(
+          padding: EdgeInsets.only(left: 4.0),
           child: Text(
             'BECMG',
             style: TextStyle(
@@ -274,7 +273,7 @@ class DecodedWeatherCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildGridItemWithConcurrent('Wind', completeWeather['Wind'], concurrentPeriods, 'Wind'),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               _buildGridItemWithConcurrent('Visibility', completeWeather['Visibility'], concurrentPeriods, 'Visibility'),
             ],
           ),
@@ -285,7 +284,7 @@ class DecodedWeatherCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildGridItemWithConcurrent('Weather', completeWeather['Weather'], concurrentPeriods, 'Weather', isPhenomenaOrRemark: true),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               _buildGridItemWithConcurrent('Cloud', completeWeather['Cloud'], concurrentPeriods, 'Cloud'),
             ],
           ),

@@ -11,7 +11,7 @@ class FlightPlanFormCard extends StatelessWidget {
   final String Function(String?)? flightLevelValidator;
 
   const FlightPlanFormCard({
-    Key? key,
+    super.key,
     required this.routeController,
     required this.flightLevelController,
     required this.selectedDateTime,
@@ -20,7 +20,7 @@ class FlightPlanFormCard extends StatelessWidget {
     required this.onDateTimeTap,
     this.routeValidator,
     this.flightLevelValidator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,17 +30,17 @@ class FlightPlanFormCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Flight Plan Details',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextFormField(
               controller: routeController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Route',
                 hintText: 'e.g., YPPH YSSY',
                 border: OutlineInputBorder(),
@@ -53,18 +53,18 @@ class FlightPlanFormCard extends StatelessWidget {
                 return null;
               },
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             // Local/Zulu Time Toggle
             Row(
               children: [
-                Text(
+                const Text(
                   'Time Format:',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
@@ -84,12 +84,12 @@ class FlightPlanFormCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             // ETD Date/Time Picker
             InkWell(
               onTap: onDateTimeTap,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(4),
@@ -97,7 +97,7 @@ class FlightPlanFormCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(Icons.schedule, color: Colors.grey.shade600),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,17 +109,17 @@ class FlightPlanFormCard extends StatelessWidget {
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             _formatDateTime(selectedDateTime),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               color: Colors.black87,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           if (isZuluTime) ...[
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'Local: ${_formatLocalTime(selectedDateTime)}',
                               style: TextStyle(
@@ -128,7 +128,7 @@ class FlightPlanFormCard extends StatelessWidget {
                               ),
                             ),
                           ] else ...[
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'Zulu: ${_formatZuluTime(selectedDateTime)}',
                               style: TextStyle(
@@ -145,10 +145,10 @@ class FlightPlanFormCard extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextFormField(
               controller: flightLevelController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Flight Level',
                 hintText: 'e.g., FL350',
                 border: OutlineInputBorder(),
@@ -171,9 +171,9 @@ class FlightPlanFormCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xFF1E3A8A) : Colors.transparent,
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

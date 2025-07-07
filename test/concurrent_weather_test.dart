@@ -16,7 +16,7 @@ void main() {
       final result = decoderService.decodeTaf(tafText);
       
       expect(result, isNotNull);
-      expect(result!.forecastPeriods!.length, greaterThan(2)); // INITIAL + TEMPO + PROB30
+      expect(result.forecastPeriods!.length, greaterThan(2)); // INITIAL + TEMPO + PROB30
       
       // Find concurrent periods
       final concurrentPeriods = result.forecastPeriods!.where((p) => p.isConcurrent).toList();
@@ -43,7 +43,7 @@ void main() {
       
       expect(result, isNotNull);
       
-      final concurrentPeriods = result!.forecastPeriods!.where((p) => p.isConcurrent).toList();
+      final concurrentPeriods = result.forecastPeriods!.where((p) => p.isConcurrent).toList();
       expect(concurrentPeriods.length, equals(1));
       
       final prob40Period = concurrentPeriods.first;
@@ -59,7 +59,7 @@ void main() {
       
       expect(result, isNotNull);
       
-      final concurrentPeriods = result!.forecastPeriods!.where((p) => p.isConcurrent).toList();
+      final concurrentPeriods = result.forecastPeriods!.where((p) => p.isConcurrent).toList();
       expect(concurrentPeriods.length, equals(1));
       
       final tempoPeriod = concurrentPeriods.first;
@@ -75,7 +75,7 @@ void main() {
       
       expect(result, isNotNull);
       
-      final concurrentPeriods = result!.forecastPeriods!.where((p) => p.isConcurrent).toList();
+      final concurrentPeriods = result.forecastPeriods!.where((p) => p.isConcurrent).toList();
       expect(concurrentPeriods.length, equals(1));
       
       final prob30Period = concurrentPeriods.first;
@@ -89,7 +89,7 @@ void main() {
       
       expect(result, isNotNull);
       
-      final concurrentPeriods = result!.forecastPeriods!.where((p) => p.isConcurrent).toList();
+      final concurrentPeriods = result.forecastPeriods!.where((p) => p.isConcurrent).toList();
       expect(concurrentPeriods.length, equals(1));
       
       final tempoPeriod = concurrentPeriods.first;

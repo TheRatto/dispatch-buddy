@@ -19,14 +19,14 @@ class TafAirportSelector extends StatefulWidget {
   final Function(BuildContext, String)? onAirportLongPress;
 
   const TafAirportSelector({
-    Key? key,
+    super.key,
     required this.airports,
     required this.selectedAirport,
     required this.onAirportSelected,
     this.onCacheClear,
     this.onAddAirport,
     this.onAirportLongPress,
-  }) : super(key: key);
+  });
 
   @override
   State<TafAirportSelector> createState() => _TafAirportSelectorState();
@@ -95,7 +95,7 @@ class _TafAirportSelectorState extends State<TafAirportSelector> {
                     widget.onAirportSelected(icao);
                   },
                 ),
-              )).toList(),
+              )),
               // Add button
               if (widget.onAddAirport != null) Padding(
                 padding: const EdgeInsets.only(right: 8.0),
@@ -122,7 +122,7 @@ class _TafAirportSelectorState extends State<TafAirportSelector> {
                   ],
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   Icons.chevron_left,
                   color: Colors.white70,
@@ -149,7 +149,7 @@ class _TafAirportSelectorState extends State<TafAirportSelector> {
                   ],
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   Icons.chevron_right,
                   color: Colors.white70,
@@ -167,12 +167,12 @@ class _TafAirportSelectorState extends State<TafAirportSelector> {
       onTap: onTap,
       onLongPress: widget.onAirportLongPress != null ? () => widget.onAirportLongPress!(context, icao) : null,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xFFF97316) : Colors.grey[700]!,
+          color: isSelected ? const Color(0xFFF97316) : Colors.grey[700]!,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Color(0xFFF97316) : Colors.grey[600]!,
+            color: isSelected ? const Color(0xFFF97316) : Colors.grey[600]!,
             width: 1,
           ),
         ),
@@ -192,7 +192,7 @@ class _TafAirportSelectorState extends State<TafAirportSelector> {
     return GestureDetector(
       onTap: () => widget.onAddAirport!(context),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.grey[700]!,
           borderRadius: BorderRadius.circular(20),
@@ -201,7 +201,7 @@ class _TafAirportSelectorState extends State<TafAirportSelector> {
             width: 1,
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(

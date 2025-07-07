@@ -22,7 +22,7 @@ void main() {
             create: (context) => FlightProvider(),
           ),
         ],
-        child: MyApp(),
+        child: const MyApp(),
       ),
     );
 

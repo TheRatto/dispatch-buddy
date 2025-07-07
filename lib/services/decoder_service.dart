@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
-import '../models/weather.dart';
 import '../models/decoded_weather_models.dart';
 import 'period_detector.dart';
 import 'weather_parser.dart';
@@ -21,20 +18,20 @@ class DecoderService {
   }
 
   DecodedWeather decodeTaf(String rawText) {
-    print('DEBUG: 🚀 decodeTaf called with rawText: \"$rawText\"');
+    print('DEBUG: 🚀 decodeTaf called with rawText: "$rawText"');
     
     // Check if this is KJFK TAF
     if (rawText.contains('KJFK')) {
       print('DEBUG: 🎯 KJFK TAF detected!');
-      print('DEBUG: KJFK raw text: \"$rawText\"');
+      print('DEBUG: KJFK raw text: "$rawText"');
       print('DEBUG: KJFK TAF length: ${rawText.length}');
-      print('DEBUG: KJFK TAF first 100 chars: \"${rawText.substring(0, rawText.length > 100 ? 100 : rawText.length)}\"');
+      print('DEBUG: KJFK TAF first 100 chars: "${rawText.substring(0, rawText.length > 100 ? 100 : rawText.length)}"');
     }
     
     // Check if this is EGLL TAF
     if (rawText.contains('EGLL')) {
       print('DEBUG: 🎯 EGLL TAF detected!');
-      print('DEBUG: EGLL raw text: \"$rawText\"');
+      print('DEBUG: EGLL raw text: "$rawText"');
     }
     
     final decoder = DecoderService();
@@ -42,7 +39,7 @@ class DecoderService {
     // Parse TAF header
     final headerMatch = _tafHeaderPattern.firstMatch(rawText);
     if (headerMatch == null) {
-      print('DEBUG: No TAF header found in: \"$rawText\"');
+      print('DEBUG: No TAF header found in: "$rawText"');
       return _createEmptyDecodedWeather('', DateTime.now(), rawText, 'TAF');
     }
     
@@ -110,7 +107,7 @@ class DecoderService {
   }
 
   List<DecodedForecastPeriod> _parseTafPeriods(String rawText) {
-    print('DEBUG: 🔍 _parseTafPeriods called with rawText: \"$rawText\"');
+    print('DEBUG: 🔍 _parseTafPeriods called with rawText: "$rawText"');
     
     // Add debug logging for KJFK
     if (rawText.contains('KJFK')) {
@@ -125,7 +122,7 @@ class DecoderService {
       if (rawText.contains('KJFK')) {
         print('DEBUG: 🔍 KJFK period matches found: ${matches.length}');
         for (final match in matches) {
-          print('DEBUG: 🔍   - \"${match.group(0)}\" at position ${match.start}');
+          print('DEBUG: 🔍   - "${match.group(0)}" at position ${match.start}');
         }
       }
       
@@ -161,6 +158,24 @@ class DecoderService {
               'type': 'baseline',
               'periodType': 'INITIAL',
             });
+          }
+        } else {
+          // No explicit initial text, but we need to create an INITIAL period
+          // to preserve the weather conditions from the TAF header
+          // Extract weather from the TAF header (before the first period)
+          final tafHeaderMatch = RegExp(r'^TAF\s+[A-Z]{4}\s+\d{6}Z\s+\d{4}/\d{4}\s+(.+?)(?=\s+(?:FM|BECMG|TEMPO|INTER|PROB30|PROB40))', dotAll: true).firstMatch(rawText);
+          if (tafHeaderMatch != null) {
+            final headerWeather = tafHeaderMatch.group(1)?.trim();
+            if (headerWeather != null && headerWeather.isNotEmpty) {
+              sections.add({
+                'start': 0,
+                'end': firstPeriod.start,
+                'text': headerWeather,
+                'type': 'baseline',
+                'periodType': 'INITIAL',
+              });
+              print('DEBUG: 🔍 Created INITIAL period from TAF header: "$headerWeather"');
+            }
           }
         }
         
@@ -235,7 +250,7 @@ class DecoderService {
       for (final section in sections) {
         final periodType = section['periodType'] as String;
         final sectionText = section['text'] as String;
-        final isBaseline = section['type'] == 'baseline';
+        var isBaseline = section['type'] == 'baseline';
         
         // Parse time information from the section
         DateTime? startTime;
@@ -245,13 +260,38 @@ class DecoderService {
         if (periodType == 'INITIAL') {
           // Initial period uses TAF validity period
           startTime = tafStartTime;
-          endTime = _findNextBaselinePeriodStartFromText(
-            sections.map((s) => s['text'] as String).toList(),
-            sections.indexOf(section),
-            tafStartTime,
-            tafEndTime
-          );
+          DateTime? endTimeCandidate;
+          for (int i = 1; i < sections.length; i++) {
+            final nextSection = sections[i];
+            final nextType = nextSection['periodType'] as String;
+            if (nextType == 'FM') {
+              // FM: end at FM start
+              final timeMatch = RegExp(r'FM(\d{2})(\d{2})(\d{2})').firstMatch(nextSection['text'] as String);
+              if (timeMatch != null) {
+                final day = int.parse(timeMatch.group(1)!);
+                final hour = int.parse(timeMatch.group(2)!);
+                final minute = int.parse(timeMatch.group(3)!);
+                endTimeCandidate = _createDateTimeWithMonthTransition(day, hour, minute);
+                break;
+              }
+            } else if (nextType == 'BECMG') {
+              // BECMG: end at BECMG END
+              final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(nextSection['text'] as String);
+              if (timeMatch != null) {
+                final toDay = int.parse(timeMatch.group(3)!);
+                final toHour = int.parse(timeMatch.group(4)!);
+                endTimeCandidate = _createDateTimeWithMonthTransition(toDay, toHour);
+                break;
+              }
+            }
+          }
+          endTime = endTimeCandidate ?? tafEndTime;
           timeString = 'INITIAL';
+          print('DEBUG: 🔍 INITIAL period: $startTime to $endTime');
+          if (endTime != null && startTime.isAtSameMomentAs(endTime)) {
+            endTime = startTime.add(const Duration(hours: 1));
+            print('DEBUG: 🔍 Extended INITIAL period to: $startTime to $endTime');
+          }
         } else if (periodType.startsWith('FM')) {
           // FM periods have time in format FMddhhmm
           final timeMatch = RegExp(r'FM(\d{2})(\d{2})(\d{2})').firstMatch(sectionText);
@@ -291,7 +331,7 @@ class DecoderService {
             }
           }
         } else if (periodType == 'BECMG') {
-          // BECMG periods have transition time
+          // BECMG periods are concurrent (transitional)
           final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(sectionText);
           if (timeMatch != null) {
             final fromDay = int.parse(timeMatch.group(1)!);
@@ -299,15 +339,11 @@ class DecoderService {
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
             startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            // BECMG periods persist until the next baseline period starts
-            endTime = _findNextBaselinePeriodStartFromText(
-              sections.map((s) => s['text'] as String).toList(),
-              sections.indexOf(section),
-              startTime,
-              tafEndTime
-            );
+            endTime = _createDateTimeWithMonthTransition(toDay, toHour);
             timeString = 'BECMG ${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
+            print('DEBUG: 🔍 BECMG transition period: $startTime to $endTime');
           }
+          isBaseline = false; // Mark BECMG as concurrent
         } else if (periodType.contains('PROB30') || periodType.contains('PROB40')) {
           // PROB30/40 periods have time range
           final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(sectionText);
@@ -317,7 +353,7 @@ class DecoderService {
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
             startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            endTime = _createEndDateTimeWithMonthTransition(startTime!, toDay, toHour);
+            endTime = _createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
             timeString = '${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
           }
         } else if (periodType == 'TEMPO' || periodType == 'INTER') {
@@ -329,10 +365,10 @@ class DecoderService {
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
             startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            endTime = _createEndDateTimeWithMonthTransition(startTime!, toDay, toHour);
+            endTime = _createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
             timeString = '${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
             
-            print('DEBUG: 🔍 Parsed ${periodType} time: $timeString');
+            print('DEBUG: 🔍 Parsed $periodType time: $timeString');
             print('DEBUG: 🔍   From day: $fromDay, hour: $fromHour');
             print('DEBUG: 🔍   To day: $toDay, hour: $toHour');
             print('DEBUG: 🔍   Start time: $startTime');
@@ -344,7 +380,7 @@ class DecoderService {
         // Parse weather from the section
         final weather = _parseWeatherFromTafSegment(sectionText);
         
-        print('DEBUG: 🔍 Parsed weather for ${periodType}: $weather');
+        print('DEBUG: 🔍 Parsed weather for $periodType: $weather');
         
         // Calculate changed elements for concurrent periods
         Set<String> changedElements = {};
@@ -364,7 +400,7 @@ class DecoderService {
             final baselineValue = baselineWeather[key];
             
             // Consider it changed if the value is present and not empty/null
-            if (value != null && value.isNotEmpty && value != '-') {
+            if (value.isNotEmpty && value != '-') {
               // For concurrent periods, include ALL weather elements that are present
               // (not just those that are different from baseline)
               changedElements.add(key);
@@ -393,19 +429,72 @@ class DecoderService {
       
       print('DEBUG: 🔍 Final periods created: ${periods.map((p) => '${p.type} (${p.time})').toList()}');
       
-      // Add detailed debug logging for each period
-      print('DEBUG: 🔍 === DETAILED PERIOD DEBUG ===');
-      for (int i = 0; i < periods.length; i++) {
-        final period = periods[i];
-        print('DEBUG: 🔍 Period $i: ${period.type}');
-        print('DEBUG: 🔍   Time string: "${period.time}"');
-        print('DEBUG: 🔍   Start time: ${period.startTime}');
-        print('DEBUG: 🔍   End time: ${period.endTime}');
-        print('DEBUG: 🔍   Is concurrent: ${period.isConcurrent}');
-        print('DEBUG: 🔍   Weather: ${period.weather}');
-        print('DEBUG: 🔍   Changed elements: ${period.changedElements}');
+      // After all periods are created, create new baseline periods after BECMG transitions
+      final postBecmgPeriods = <DecodedForecastPeriod>[];
+      for (final period in periods) {
+        if (period.type == 'BECMG' && period.endTime != null) {
+          // Find the next baseline period start time
+          DateTime? nextBaselineStart;
+          for (final nextPeriod in periods) {
+            if (!nextPeriod.isConcurrent && nextPeriod.startTime != null && nextPeriod.startTime!.isAfter(period.endTime!)) {
+              nextBaselineStart = nextPeriod.startTime;
+              break;
+            }
+          }
+          final postBecmgEndTime = nextBaselineStart ?? tafEndTime;
+          if (postBecmgEndTime != null && period.endTime!.isBefore(postBecmgEndTime)) {
+                      // Find the previous baseline period to inherit from
+          DecodedForecastPeriod? previousBaseline;
+          for (final p in periods.reversed) {
+            if (!p.isConcurrent && p.endTime != null && p.endTime!.isAtSameMomentAs(period.endTime!)) {
+              previousBaseline = p;
+              break;
+            }
+          }
+          
+          // If no exact match found, find the most recent baseline that was active before this BECMG
+          if (previousBaseline == null) {
+            for (final p in periods.reversed) {
+              if (!p.isConcurrent && p.endTime != null && p.endTime!.isBefore(period.endTime!)) {
+                previousBaseline = p;
+                break;
+              }
+            }
+          }
+          
+          // Create weather map starting with previous baseline
+          Map<String, String> postBecmgWeather = {};
+          if (previousBaseline != null) {
+            postBecmgWeather.addAll(previousBaseline.weather);
+            print('DEBUG: 🔍 POST_BECMG inheriting from ${previousBaseline.type}: ${previousBaseline.weather}');
+          }
+          
+          // Apply only the changes from BECMG
+          for (final key in period.changedElements) {
+            if (period.weather[key] != null && period.weather[key]!.isNotEmpty && period.weather[key] != '-') {
+              postBecmgWeather[key] = period.weather[key]!;
+              print('DEBUG: 🔍 POST_BECMG applying change: $key = ${period.weather[key]}');
+            }
+          }
+          
+          final postBecmgPeriod = DecodedForecastPeriod(
+            type: 'POST_BECMG',
+            time: 'POST_${period.time}',
+            description: 'Conditions after ${period.time}',
+            weather: postBecmgWeather,
+            changedElements: period.changedElements, // Keep the same changed elements
+            startTime: period.endTime,
+            endTime: postBecmgEndTime,
+            isConcurrent: false,
+            rawSection: period.rawSection,
+          );
+            postBecmgPeriods.add(postBecmgPeriod);
+            print('DEBUG: 🔍 Created post-BECMG period: ${postBecmgPeriod.startTime} to ${postBecmgPeriod.endTime}');
+          }
+        }
       }
-      print('DEBUG: 🔍 === END DETAILED PERIOD DEBUG ===');
+      periods.addAll(postBecmgPeriods);
+      periods.sort((a, b) => (a.startTime ?? DateTime.now()).compareTo(b.startTime ?? DateTime.now()));
 
     return periods;
     } catch (e) {
@@ -435,16 +524,20 @@ class DecoderService {
           final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(periodStr);
           final fromDay = timeMatch?.group(1);
           final fromHour = timeMatch?.group(2);
+          final toDay = timeMatch?.group(3);
+          final toHour = timeMatch?.group(4);
           
-          if (fromDay != null && fromHour != null) {
-            return _createDateTimeWithMonthTransition(int.parse(fromDay), int.parse(fromHour));
+          if (fromDay != null && fromHour != null && toDay != null && toHour != null) {
+            // For BECMG periods, return the END time (not start time)
+            // This ensures baseline periods end when BECMG ends, not when it starts
+            return _createDateTimeWithMonthTransition(int.parse(toDay), int.parse(toHour));
           }
         }
       }
     }
     
     // If no next baseline period, use the TAF validity period end time
-    return tafEndTime ?? currentStartTime.add(Duration(hours: 24));
+    return tafEndTime ?? currentStartTime.add(const Duration(hours: 24));
   }
 
   DateTime _parseTafCommencementTime(String rawText) {
@@ -536,7 +629,7 @@ class DecoderService {
       }
     }
     
-    print('DEBUG: TAF validity period: ${adjustedStartTime} to ${adjustedEndTime}');
+    print('DEBUG: TAF validity period: $adjustedStartTime to $adjustedEndTime');
     
     // Create hourly timeline
     final timeline = <DateTime>[];
@@ -544,7 +637,7 @@ class DecoderService {
     
     while (currentTime.isBefore(adjustedEndTime) || currentTime.isAtSameMomentAs(adjustedEndTime)) {
       timeline.add(currentTime);
-      currentTime = currentTime.add(Duration(hours: 1));
+      currentTime = currentTime.add(const Duration(hours: 1));
     }
     
     print('DEBUG: Created timeline with ${timeline.length} hourly points');
@@ -635,7 +728,7 @@ class DecoderService {
       print('DEBUG: First period match in formatted: ${firstPeriodMatch?.group(0)} at position ${firstPeriodMatch?.start}');
       
       if (firstPeriodMatch != null) {
-        final formattedStart = 0;
+        const formattedStart = 0;
         final formattedEnd = firstPeriodMatch.start;
         final formattedSection = formattedText.substring(formattedStart, formattedEnd).trim();
         print('DEBUG: Formatted INITIAL section: "$formattedSection"');

@@ -293,7 +293,7 @@ class WeatherParser {
       description += 'Variable';
     } else if (directionStr != null) {
       // Preserve the original 3-digit format with leading zeros
-      description += '${directionStr}°';
+      description += '$directionStr°';
     } else {
       description += 'unknown direction';
     }
@@ -424,9 +424,9 @@ class WeatherParser {
     if (visibility == null) return 'Visibility data unavailable';
     
     String prefix = isGreaterThan ? '>' : '';
-    if (unit == 'SM') return 'Visibility ${prefix}${visibility}SM';
+    if (unit == 'SM') return 'Visibility $prefix${visibility}SM';
     if (visibility == 9999) return '>10km';
-    return 'Visibility ${prefix}${visibility}m';
+    return 'Visibility $prefix${visibility}m';
   }
 
   static String describeClouds(String? cloudCover, bool isCavok, bool isNcd) {
@@ -462,7 +462,7 @@ class WeatherParser {
 
   static String describePressure(int? qnh, String unit) {
     if (qnh == null) return 'Pressure data unavailable';
-    if (unit == 'inHg') return '${qnh!/100} inHg';
+    if (unit == 'inHg') return '${qnh/100} inHg';
     return 'QNH ${qnh}hPa';
   }
 

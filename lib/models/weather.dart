@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'decoded_weather_models.dart';
 import '../services/decoder_service.dart' as decoder;
 
@@ -98,9 +97,9 @@ class Weather {
     }
     
     // TAFs don't have current wind/visibility like METARs, so use defaults
-    final windDirection = 0;
-    final windSpeed = 0;
-    final visibility = 9999;
+    const windDirection = 0;
+    const windSpeed = 0;
+    const visibility = 9999;
     
     // Parse temperature and dew point (if available in TAF)
     final temp = _parseDouble(json['temp']) ?? 0.0;
@@ -187,7 +186,7 @@ class Weather {
         decoded.conditionsDescription,
     ];
     
-    return parts.where((part) => part.isNotEmpty && part != null).join('. ');
+    return parts.where((part) => part.isNotEmpty).join('. ');
   }
 
   Map<String, dynamic> toJson() {

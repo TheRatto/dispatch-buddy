@@ -6,11 +6,11 @@ class GridItem extends StatelessWidget {
   final bool isPhenomenaOrRemark;
 
   const GridItem({
-    Key? key,
+    super.key,
     required this.label,
     this.value,
     this.isPhenomenaOrRemark = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +37,10 @@ class GridItem extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 1),
+          const SizedBox(height: 1),
           Text(
             displayValue,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),

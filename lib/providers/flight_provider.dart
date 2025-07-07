@@ -13,6 +13,7 @@ class FlightProvider with ChangeNotifier {
   bool _isLoading = false;
   Map<String, List<Weather>> _metarsByIcao = {};
   Map<String, List<Weather>> _tafsByIcao = {};
+  String? _selectedAirport; // Shared airport selection across all tabs
 
   FlightProvider() {
     // Load saved flights when the provider is initialized
@@ -25,10 +26,17 @@ class FlightProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
   Map<String, List<Weather>> get tafsByIcao => _tafsByIcao;
+  String? get selectedAirport => _selectedAirport;
 
   // Set loading state
   void setLoading(bool loading) {
     _isLoading = loading;
+    notifyListeners();
+  }
+
+  // Set selected airport (shared across all tabs)
+  void setSelectedAirport(String? icao) {
+    _selectedAirport = icao;
     notifyListeners();
   }
 
@@ -62,7 +70,7 @@ class FlightProvider with ChangeNotifier {
     await loadSavedFlights();
   }
 
-  // Update flight data
+  // Update flight data - NO CACHING
   void updateFlightData({
     List<Airport>? airports,
     List<Notam>? notams,
@@ -70,8 +78,14 @@ class FlightProvider with ChangeNotifier {
   }) {
     if (_currentFlight != null) {
       if (airports != null) _currentFlight!.airports = airports;
-      if (notams != null) _currentFlight!.notams = notams;
-      if (weather != null) _currentFlight!.weather = weather;
+      if (notams != null) {
+        print('DEBUG: 🔍 FlightProvider - Setting ${notams.length} fresh NOTAMs (no cache)');
+        _currentFlight!.notams = notams;
+      }
+      if (weather != null) {
+        print('DEBUG: 🔍 FlightProvider - Setting ${weather.length} fresh weather items (no cache)');
+        _currentFlight!.weather = weather;
+      }
       _groupWeatherData();
       notifyListeners();
     }
@@ -104,15 +118,31 @@ class FlightProvider with ChangeNotifier {
     }
   }
 
-  // Refresh flight data by refetching from APIs
+  // Refresh flight data by refetching from APIs - NO CACHING
   Future<void> refreshFlightData() async {
+    print('DEBUG: 🔄 refreshFlightData() called!');
     if (_currentFlight == null || _currentFlight!.airports.isEmpty) {
+      print('DEBUG: ⚠️ No current flight or airports, skipping refresh');
       return;
     }
 
+    print('DEBUG: 🔄 Force refreshing flight data - NO CACHING...');
     setLoading(true);
     
     try {
+      // Clear existing data to force fresh fetch
+      _currentFlight!.notams.clear();
+      _currentFlight!.weather.clear();
+      _metarsByIcao.clear();
+      _tafsByIcao.clear();
+      
+      // Force notify listeners to clear UI
+      notifyListeners();
+      
+      // Clear ALL database cache - no caching for aviation safety
+      final dbService = DatabaseService();
+      await dbService.clearAllData();
+      
       final apiService = ApiService();
       final icaos = _currentFlight!.airports.map((airport) => airport.icao).toList();
       
@@ -130,6 +160,12 @@ class FlightProvider with ChangeNotifier {
       // Flatten the list of lists into a single list
       final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
       final List<Weather> allWeather = [...metars, ...tafs];
+      
+      print('DEBUG: 🔍 FlightProvider - Total NOTAMs after flattening: ${allNotams.length}');
+      print('DEBUG: 🔍 FlightProvider - NOTAMs per airport:');
+      for (int i = 0; i < icaos.length; i++) {
+        print('DEBUG: 🔍   ${icaos[i]}: ${notamResults[i].length} NOTAMs');
+      }
       
       // Update the current flight with fresh data
       updateFlightData(

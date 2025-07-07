@@ -8,11 +8,11 @@ class TafCompactDetails extends StatelessWidget {
   final List<DecodedForecastPeriod> concurrentPeriods;
 
   const TafCompactDetails({
-    Key? key,
+    super.key,
     required this.baseline,
     required this.completeWeather,
     required this.concurrentPeriods,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class TafCompactDetails extends StatelessWidget {
                 concurrentPeriods: concurrentPeriods,
                 weatherType: 'Wind',
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               GridItemWithConcurrent(
                 label: 'Visibility',
                 value: completeWeather['Visibility'],
@@ -52,7 +52,7 @@ class TafCompactDetails extends StatelessWidget {
                 weatherType: 'Weather',
                 isPhenomenaOrRemark: true,
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               GridItemWithConcurrent(
                 label: 'Cloud',
                 value: completeWeather['Cloud'],

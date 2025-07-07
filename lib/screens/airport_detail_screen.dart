@@ -5,11 +5,13 @@ import '../models/airport.dart';
 import '../widgets/zulu_time_widget.dart';
 
 class AirportDetailScreen extends StatelessWidget {
+  const AirportDetailScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Airport Details'),
+        title: const Text('Airport Details'),
         actions: const [
           ZuluTimeWidget(),
           SizedBox(width: 8),
@@ -20,18 +22,18 @@ class AirportDetailScreen extends StatelessWidget {
           final flight = flightProvider.currentFlight;
           
           if (flight == null) {
-            return Center(
+            return const Center(
               child: Text('No flight data available'),
             );
           }
 
           return ListView.builder(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             itemCount: flight.airports.length,
             itemBuilder: (context, index) {
               final airport = flight.airports[index];
               return Card(
-                margin: EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 16),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -39,15 +41,15 @@ class AirportDetailScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.airplanemode_active, color: Color(0xFF1E3A8A)),
-                          SizedBox(width: 12),
+                          const Icon(Icons.airplanemode_active, color: Color(0xFF1E3A8A)),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   '${airport.name} (${airport.icao})',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -63,7 +65,7 @@ class AirportDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       _buildSystemsList(airport),
                     ],
                   ),
@@ -87,14 +89,14 @@ class AirportDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'System Status',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         ...systems.map((system) => _buildSystemRow(
           system['name'] as String,
           system['status'] as SystemStatus,
@@ -110,15 +112,15 @@ class AirportDetailScreen extends StatelessWidget {
     
     switch (status) {
       case SystemStatus.green:
-        color = Color(0xFF10B981);
+        color = const Color(0xFF10B981);
         statusText = 'Operational';
         break;
       case SystemStatus.yellow:
-        color = Color(0xFFF59E0B);
+        color = const Color(0xFFF59E0B);
         statusText = 'Partial';
         break;
       case SystemStatus.red:
-        color = Color(0xFFEF4444);
+        color = const Color(0xFFEF4444);
         statusText = 'Affected';
         break;
     }
@@ -128,15 +130,15 @@ class AirportDetailScreen extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, color: color, size: 20),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               name,
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),

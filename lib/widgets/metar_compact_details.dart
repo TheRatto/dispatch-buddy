@@ -6,15 +6,15 @@ class MetarCompactDetails extends StatelessWidget {
   final Weather metar;
 
   const MetarCompactDetails({
-    Key? key,
+    super.key,
     required this.metar,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     if (metar.decodedWeather == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.0),
         child: Text('No decoded data available.'),
       );
     }
@@ -39,7 +39,7 @@ class MetarCompactDetails extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GridItem(label: 'Wind', value: decoded.windDescription.replaceFirst('Wind ', '')),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               GridItem(label: 'Visibility', value: isCavok ? 'CAVOK' : decoded.visibilityDescription.replaceFirst('Visibility ', '')),
             ],
           ),
@@ -47,7 +47,7 @@ class MetarCompactDetails extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GridItem(label: 'Weather', value: decoded.conditionsDescription, isPhenomenaOrRemark: true),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               GridItem(label: 'Cloud', value: decoded.cloudDescription),
             ],
           ),
@@ -55,7 +55,7 @@ class MetarCompactDetails extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GridItem(label: 'Temp / Dew Point', value: '$temp / $dewPoint'),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               GridItem(label: 'QNH', value: decoded.pressureDescription.replaceFirst('QNH ', '')),
             ],
           ),
@@ -64,8 +64,8 @@ class MetarCompactDetails extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GridItem(label: 'RVR', value: decoded.rvrDescription.replaceFirst('Runway Visual Range: ', '')),
-                SizedBox(width: 16),
-                Expanded(child: SizedBox()), // Placeholder for alignment
+                const SizedBox(width: 16),
+                const Expanded(child: SizedBox()), // Placeholder for alignment
               ],
             ),
            Row(

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -27,19 +28,26 @@ class ApiService {
   Future<http.Response> _makeRequestWithRetry(Uri uri, {Map<String, String>? headers, int retries = 3}) async {
     for (int i = 0; i < retries; i++) {
       try {
-        final response = await http.get(uri, headers: headers);
+        // SATCOM-optimized timeout: shorter initial timeout, longer for retries
+        final timeout = Duration(seconds: i == 0 ? 8 : 15);
+        
+        final response = await http.get(uri, headers: headers)
+            .timeout(timeout);
+            
         if (response.statusCode == 200) {
           return response;
         } else if (response.statusCode >= 500) { // Server error, worth retrying
           print('Attempt ${i + 1} failed with status ${response.statusCode}. Retrying...');
-          await Future.delayed(Duration(seconds: 1)); // Wait before retrying
+          // Exponential backoff for SATCOM: 2s, 4s, 8s
+          await Future.delayed(Duration(seconds: 2 * (i + 1)));
         } else { // Client error, don't retry
           return response;
         }
       } catch (e) {
         print('Attempt ${i + 1} failed with exception: $e. Retrying...');
         if (i < retries - 1) {
-          await Future.delayed(Duration(seconds: 1));
+          // Exponential backoff for SATCOM: 2s, 4s, 8s
+          await Future.delayed(Duration(seconds: 2 * (i + 1)));
         } else {
           rethrow; // Rethrow on the last attempt
         }
@@ -50,36 +58,148 @@ class ApiService {
 
   Future<List<Notam>> fetchNotams(String icao) async {
     try {
-      final url = _getUrl(_notamBaseUrl,
-          queryParams: {
-            'icaoLocation': icao, 
-            'sortBy': 'effectiveStartDate', 
-            'sortOrder': 'Desc'
-          });
-
-      final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
-      final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
-
-      final response = await _makeRequestWithRetry(
-        Uri.parse(url),
-        headers: {
-          'Accept': 'application/json',
-          'Origin': 'https://localhost',
-          'client_id': clientId,
-          'client_secret': clientSecret,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        final List<dynamic> items = data['items'] ?? [];
+      print('DEBUG: 🔍 Attempting to fetch NOTAMs for $icao with offset-based pagination...');
+      
+      final List<Notam> allNotams = [];
+      final Set<String> seenNotamIds = {}; // Track NOTAM IDs to avoid duplicates
+      const int pageSize = 50; // Use 50 as page size since that seems to be the limit
+      int totalFetched = 0;
+      int offset = 0;
+      
+      // Try multiple sorting strategies to get different NOTAMs
+      final List<Map<String, String>> sortStrategies = [
+        {'sortBy': 'effectiveStartDate', 'sortOrder': 'Desc'}, // Most recent first
+        {'sortBy': 'effectiveStartDate', 'sortOrder': 'Asc'},  // Oldest first
+        {'sortBy': 'effectiveEndDate', 'sortOrder': 'Desc'},   // Longest duration first
+        {'sortBy': 'effectiveEndDate', 'sortOrder': 'Asc'},    // Shortest duration first
+      ];
+      
+      for (int strategyIndex = 0; strategyIndex < sortStrategies.length; strategyIndex++) {
+        final strategy = sortStrategies[strategyIndex];
+        print('DEBUG: 🔍 Trying sort strategy ${strategyIndex + 1}: ${strategy['sortBy']} ${strategy['sortOrder']}');
         
-        return items.map((item) => Notam.fromFaaJson(item)).toList();
-      } else {
-        throw Exception('Failed to load NOTAMs for $icao: ${response.statusCode}');
+        offset = 0; // Reset offset for each strategy
+        int strategyFetched = 0;
+        
+        while (true) {
+          print('DEBUG: 🔍 Fetching page for $icao (strategy ${strategyIndex + 1}): offset=$offset, limit=$pageSize');
+          
+          final Map<String, String> queryParams = {
+            'icaoLocation': icao, 
+            'sortBy': strategy['sortBy']!, 
+            'sortOrder': strategy['sortOrder']!,
+            'limit': pageSize.toString(),
+            'offset': offset.toString(),
+            'timestamp': DateTime.now().millisecondsSinceEpoch.toString(), // Ensure fresh data
+          };
+          
+          final url = _getUrl(_notamBaseUrl, queryParams: queryParams);
+
+          final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+          final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+
+          print('DEBUG: 🔍 API URL: $url');
+
+          final response = await _makeRequestWithRetry(
+            Uri.parse(url),
+            headers: {
+              'Accept': 'application/json',
+              'Origin': 'https://localhost',
+              'client_id': clientId,
+              'client_secret': clientSecret,
+              'Connection': 'close', // SATCOM optimization: close connection after request
+              'Cache-Control': 'no-cache, no-store, must-revalidate', // NO CACHING for aviation safety
+            },
+          );
+
+          if (response.statusCode == 200) {
+            final Map<String, dynamic> data = json.decode(response.body);
+            final List<dynamic> items = data['items'] ?? [];
+            
+            print('DEBUG: ✅ Strategy ${strategyIndex + 1}, Page ${(offset / pageSize) + 1}: Fetched ${items.length} NOTAMs for $icao');
+            print('DEBUG: 🔍 API response body length: ${response.body.length} characters');
+            
+            if (items.isEmpty) {
+              print('DEBUG: 🔍 No more NOTAMs found for $icao in strategy ${strategyIndex + 1} (empty page)');
+              break; // No more results for this strategy
+            }
+            
+            // Process items and track unique NOTAMs
+            final List<Notam> pageNotams = [];
+            int newNotamsInPage = 0;
+            
+            for (final item in items) {
+              final notam = Notam.fromFaaJson(item);
+              if (!seenNotamIds.contains(notam.id)) {
+                seenNotamIds.add(notam.id);
+                pageNotams.add(notam);
+                newNotamsInPage++;
+              } else {
+                print('DEBUG: 🔍 Skipping duplicate NOTAM: ${notam.id}');
+              }
+            }
+            
+            // Only log sample NOTAMs occasionally to reduce console spam
+            if (pageNotams.isNotEmpty && allNotams.length < 10) {
+              for (int i = 0; i < math.min(3, pageNotams.length); i++) {
+                final notam = pageNotams[i];
+                print('DEBUG: 🔍 NEW NOTAM ${allNotams.length + i + 1}: ${notam.id} - Valid: ${notam.validFrom} to ${notam.validTo}');
+              }
+            }
+            
+            allNotams.addAll(pageNotams);
+            totalFetched += items.length;
+            strategyFetched += items.length;
+            
+            print('DEBUG: 🔍 Strategy ${strategyIndex + 1} summary: ${items.length} total fetched, $newNotamsInPage new unique NOTAMs');
+            print('DEBUG: 🔍 Total unique NOTAMs so far: ${allNotams.length}');
+            
+            // If we got fewer items than requested, we've reached the end for this strategy
+            if (items.length < pageSize) {
+              print('DEBUG: 🔍 Reached end of NOTAMs for $icao in strategy ${strategyIndex + 1} (got ${items.length} < $pageSize)');
+              break;
+            }
+            
+            // If we're getting mostly duplicates, move to next strategy
+            if (newNotamsInPage < items.length * 0.3) { // Less than 30% new NOTAMs
+              print('DEBUG: 🔍 Strategy ${strategyIndex + 1} producing mostly duplicates (${newNotamsInPage}/${items.length} new). Moving to next strategy.');
+              break;
+            }
+            
+            offset += pageSize;
+            
+            // Safety check: don't go beyond 200 NOTAMs per strategy (4 pages)
+            if (strategyFetched >= 200) {
+              print('DEBUG: ⚠️ Reached safety limit of 200 NOTAMs for strategy ${strategyIndex + 1}');
+              break;
+            }
+            
+            // Small delay between requests to be respectful
+            await Future.delayed(const Duration(milliseconds: 100));
+            
+          } else {
+            print('Warning: NOTAM API returned status ${response.statusCode} for $icao strategy ${strategyIndex + 1}. Moving to next strategy.');
+            break;
+          }
+        }
+        
+        // If we've found a good number of unique NOTAMs, we can stop
+        if (allNotams.length >= 150) {
+          print('DEBUG: ✅ Found sufficient NOTAMs (${allNotams.length}). Stopping pagination.');
+          break;
+        }
       }
+      
+      print('DEBUG: ✅ Successfully fetched ${allNotams.length} unique NOTAMs for $icao via multi-strategy pagination');
+      print('DEBUG: 🔍 Total API responses: $totalFetched');
+      print('DEBUG: 🔍 Total unique NOTAMs: ${allNotams.length}');
+      
+      return allNotams;
+      
     } catch (e) {
-      throw Exception('Failed to load NOTAMs for $icao: $e');
+      print('Warning: Failed to load NOTAMs for $icao: $e');
+      print('This is likely due to SATCOM network limitations. Continuing with empty NOTAM list.');
+      return [];
     }
   }
 
@@ -250,5 +370,305 @@ class ApiService {
       conditions: 'No data',
       type: type,
     );
+  }
+
+  // Helper method to test network connectivity
+  Future<bool> testNetworkConnectivity() async {
+    try {
+      // Test basic internet connectivity with a reliable service
+      final response = await http.get(Uri.parse('https://httpbin.org/status/200'))
+          .timeout(const Duration(seconds: 10));
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Network connectivity test failed: $e');
+      return false;
+    }
+  }
+
+  // Helper method to test FAA API accessibility
+  Future<bool> testFaaApiAccess() async {
+    try {
+      final response = await http.get(Uri.parse('https://external-api.faa.gov/health'))
+          .timeout(const Duration(seconds: 15));
+      return response.statusCode == 200;
+    } catch (e) {
+      print('FAA API accessibility test failed: $e');
+      return false;
+    }
+  }
+
+  // SATCOM-optimized NOTAM fetching with fallback strategies
+  Future<List<Notam>> fetchNotamsWithSatcomFallback(String icao) async {
+    print('DEBUG: 🛰️ Attempting SATCOM-optimized NOTAM fetch for $icao');
+    
+    // Strategy 1: Try the main multi-strategy pagination approach
+    try {
+      final notams = await fetchNotams(icao);
+      if (notams.isNotEmpty) {
+        print('DEBUG: ✅ Strategy 1 succeeded for $icao: ${notams.length} NOTAMs');
+        return notams;
+      }
+    } catch (e) {
+      print('DEBUG: ❌ Strategy 1 failed for $icao: $e');
+    }
+    
+    // Strategy 2: Try with different API endpoints (if available)
+    try {
+      // Try alternative endpoint format
+      final alternativeUrl = 'https://external-api.faa.gov/notamapi/v1/notams/search';
+      final url = _getUrl(alternativeUrl, queryParams: {
+        'icaoLocation': icao,
+        'limit': '100', // Try higher limit
+        'sortBy': 'effectiveStartDate',
+        'sortOrder': 'Desc',
+        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+      });
+
+      final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+      final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+
+      print('DEBUG: 🔄 Trying Strategy 2 (alternative endpoint) for $icao...');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'Connection': 'close',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> items = data['items'] ?? [];
+        print('DEBUG: ✅ Strategy 2 succeeded for $icao: ${items.length} NOTAMs');
+        return items.map((item) => Notam.fromFaaJson(item)).toList();
+      }
+    } catch (e) {
+      print('DEBUG: ❌ Strategy 2 failed for $icao: $e');
+    }
+    
+    // Strategy 3: Try with minimal parameters and different sorting
+    try {
+      final url = _getUrl(_notamBaseUrl, queryParams: {
+        'icaoLocation': icao,
+        'limit': '50',
+        'sortBy': 'effectiveEndDate', // Try different sort
+        'sortOrder': 'Desc',
+        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+      });
+
+      final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+      final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+
+      print('DEBUG: 🔄 Trying Strategy 3 (minimal params) for $icao...');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'Connection': 'close',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      ).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> items = data['items'] ?? [];
+        print('DEBUG: ✅ Strategy 3 succeeded for $icao: ${items.length} NOTAMs');
+        return items.map((item) => Notam.fromFaaJson(item)).toList();
+      }
+    } catch (e) {
+      print('DEBUG: ❌ Strategy 3 failed for $icao: $e');
+    }
+    
+    // Strategy 4: Try with no sorting at all (let API decide order)
+    try {
+      final url = _getUrl(_notamBaseUrl, queryParams: {
+        'icaoLocation': icao,
+        'limit': '50',
+        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+      });
+
+      final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+      final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+
+      print('DEBUG: 🔄 Trying Strategy 4 (no sorting) for $icao...');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'Connection': 'close',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> items = data['items'] ?? [];
+        print('DEBUG: ✅ Strategy 4 succeeded for $icao: ${items.length} NOTAMs');
+        return items.map((item) => Notam.fromFaaJson(item)).toList();
+      }
+    } catch (e) {
+      print('DEBUG: ❌ Strategy 4 failed for $icao: $e');
+    }
+    
+    // Strategy 5: Try with different airport code format (remove K prefix for US airports)
+    try {
+      String modifiedIcao = icao;
+      if (icao.startsWith('K') && icao.length == 4) {
+        modifiedIcao = icao.substring(1); // Remove K prefix
+        print('DEBUG: 🔄 Trying Strategy 5 with modified ICAO: $icao -> $modifiedIcao');
+      } else {
+        print('DEBUG: 🔄 Trying Strategy 5 with original ICAO: $icao');
+      }
+      
+      final url = _getUrl(_notamBaseUrl, queryParams: {
+        'icaoLocation': modifiedIcao,
+        'limit': '50',
+        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+      });
+
+      final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+      final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'Connection': 'close',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> items = data['items'] ?? [];
+        print('DEBUG: ✅ Strategy 5 succeeded for $icao: ${items.length} NOTAMs');
+        return items.map((item) => Notam.fromFaaJson(item)).toList();
+      }
+    } catch (e) {
+      print('DEBUG: ❌ Strategy 5 failed for $icao: $e');
+    }
+    
+    print('DEBUG: ❌ All SATCOM strategies failed for $icao. Returning empty list.');
+    return [];
+  }
+
+  // Diagnostic method to test FAA NOTAM API parameters
+  Future<Map<String, dynamic>> testFaaNotamApiParameters(String icao) async {
+    print('DEBUG: 🔬 Testing FAA NOTAM API parameters for $icao');
+    
+    final results = <String, dynamic>{};
+    final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+    final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+    
+    // Test different parameter combinations
+    final List<Map<String, dynamic>> testCases = [
+      {
+        'name': 'Basic (limit=50)',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50'},
+      },
+      {
+        'name': 'With sorting (effectiveStartDate Desc)',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50', 'sortBy': 'effectiveStartDate', 'sortOrder': 'Desc'},
+      },
+      {
+        'name': 'With sorting (effectiveEndDate Desc)',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50', 'sortBy': 'effectiveEndDate', 'sortOrder': 'Desc'},
+      },
+      {
+        'name': 'With offset (offset=50)',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50', 'offset': '50'},
+      },
+      {
+        'name': 'Higher limit (limit=100)',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '100'},
+      },
+      {
+        'name': 'With effectiveStartDate filter',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50', 'effectiveStartDate': DateTime.now().subtract(Duration(days: 30)).toIso8601String()},
+      },
+      {
+        'name': 'With effectiveEndDate filter',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50', 'effectiveEndDate': DateTime.now().add(Duration(days: 30)).toIso8601String()},
+      },
+      {
+        'name': 'Alternative endpoint (/search)',
+        'url': 'https://external-api.faa.gov/notamapi/v1/notams/search',
+        'params': <String, String>{'icaoLocation': icao, 'limit': '50'},
+      },
+    ];
+    
+    for (final testCase in testCases) {
+      try {
+        final url = (testCase['url'] as String?) ?? _notamBaseUrl;
+        final params = Map<String, String>.from(testCase['params'] as Map<String, String>);
+        params['timestamp'] = DateTime.now().millisecondsSinceEpoch.toString();
+        
+        final testUrl = _getUrl(url, queryParams: params);
+        print('DEBUG: 🔬 Testing: ${testCase['name']}');
+        print('DEBUG: 🔬 URL: $testUrl');
+        
+        final response = await http.get(
+          Uri.parse(testUrl),
+          headers: {
+            'Accept': 'application/json',
+            'client_id': clientId,
+            'client_secret': clientSecret,
+            'Connection': 'close',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        ).timeout(const Duration(seconds: 10));
+        
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          final List<dynamic> items = data['items'] ?? [];
+          final totalCount = data['totalCount'] ?? 'unknown';
+          
+          results[testCase['name'] as String] = {
+            'status': 'success',
+            'statusCode': response.statusCode,
+            'notamCount': items.length,
+            'totalCount': totalCount,
+            'responseSize': response.body.length,
+          };
+          
+          print('DEBUG: ✅ ${testCase['name']}: ${items.length} NOTAMs, total: $totalCount');
+        } else {
+          results[testCase['name'] as String] = {
+            'status': 'error',
+            'statusCode': response.statusCode,
+            'error': 'HTTP ${response.statusCode}',
+          };
+          print('DEBUG: ❌ ${testCase['name']}: HTTP ${response.statusCode}');
+        }
+      } catch (e) {
+        results[testCase['name'] as String] = {
+          'status': 'error',
+          'error': e.toString(),
+        };
+        print('DEBUG: ❌ ${testCase['name']}: $e');
+      }
+      
+      // Small delay between tests
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+    
+    print('DEBUG: 🔬 FAA NOTAM API parameter test results:');
+    for (final entry in results.entries) {
+      print('DEBUG: 🔬 ${entry.key}: ${entry.value}');
+    }
+    
+    return results;
   }
 } 

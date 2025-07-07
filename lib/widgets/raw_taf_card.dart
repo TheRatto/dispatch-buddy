@@ -17,10 +17,10 @@ class RawTafCard extends StatefulWidget {
   final Map<String, dynamic>? activePeriods;
 
   const RawTafCard({
-    Key? key,
+    super.key,
     required this.taf,
     this.activePeriods,
-  }) : super(key: key);
+  });
 
   @override
   State<RawTafCard> createState() => _RawTafCardState();
@@ -104,13 +104,13 @@ class _RawTafCardState extends State<RawTafCard> {
       // No active periods, show unformatted text
       textSpan = TextSpan(
         text: formattedRawText, 
-        style: TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
+        style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
       );
     }
     
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -119,7 +119,7 @@ class _RawTafCardState extends State<RawTafCard> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
@@ -128,7 +128,7 @@ class _RawTafCardState extends State<RawTafCard> {
                   controller: _scrollController,
                   child: SelectableText.rich(
                     textSpan,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 12,
                       height: 1.2,
@@ -142,12 +142,12 @@ class _RawTafCardState extends State<RawTafCard> {
                   right: 4,
                   bottom: 4,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -191,7 +191,7 @@ class _RawTafCardState extends State<RawTafCard> {
         // Add RMK line without highlighting
         children.add(TextSpan(
           text: line + (isLastLine ? '' : '\n'),
-          style: TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
+          style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
         ));
         continue;
       }
@@ -211,14 +211,49 @@ class _RawTafCardState extends State<RawTafCard> {
             highlightColor = WeatherColors.fm;
             print('DEBUG: Highlighting specific FM line: "$line" (time: ${baseline.time})');
           }
-        } else if (baseline.type == 'BECMG' && line.startsWith('BECMG')) {
-          // Check if this is the specific BECMG period that's active
-          // BECMG is transitional - it persists until the next FM period
-          if (_matchesBecmgPeriod(line, baseline)) {
-            // Use indigo during transition period
-            final isInTransition = _isInBecmgTransition(baseline);
-            highlightColor = isInTransition ? WeatherColors.becmg : WeatherColors.fm;
-            print('DEBUG: Highlighting specific BECMG line: "$line" (time: ${baseline.time}) - ${isInTransition ? "TRANSITION" : "ACTIVE"}');
+        } else if (baseline.type == 'POST_BECMG' && line.startsWith('BECMG')) {
+          // Highlight the BECMG line that matches the POST_BECMG time window
+          // Try multiple matching strategies
+          bool matched = false;
+          
+          // Strategy 1: Direct replacement
+          final postBecmgTime = baseline.time.replaceFirst('POST_BECMG ', 'BECMG ');
+          print('DEBUG: POST_BECMG matching - baseline time: "${baseline.time}", postBecmgTime: "$postBecmgTime", line: "$line"');
+          
+          if (line.contains(postBecmgTime)) {
+            matched = true;
+            print('DEBUG: POST_BECMG matched with strategy 1');
+          }
+          
+          // Strategy 2: Extract time from POST_BECMG and match BECMG line
+          if (!matched) {
+            final timeMatch = RegExp(r'POST_BECMG (\d{2}\d{2}/\d{2}\d{2})').firstMatch(baseline.time);
+            if (timeMatch != null) {
+              final timeString = timeMatch.group(1)!;
+              if (line.contains('BECMG $timeString')) {
+                matched = true;
+                print('DEBUG: POST_BECMG matched with strategy 2 - time: $timeString');
+              }
+            }
+          }
+          
+          // Strategy 3: Extract time from BECMG line and match POST_BECMG
+          if (!matched) {
+            final becmgTimeMatch = RegExp(r'BECMG (\d{2}\d{2}/\d{2}\d{2})').firstMatch(line);
+            if (becmgTimeMatch != null) {
+              final becmgTime = becmgTimeMatch.group(1)!;
+              if (baseline.time.contains(becmgTime)) {
+                matched = true;
+                print('DEBUG: POST_BECMG matched with strategy 3 - BECMG time: $becmgTime');
+              }
+            }
+          }
+          
+          if (matched) {
+            highlightColor = WeatherColors.fm; // Use FM color for established conditions
+            print('DEBUG: Highlighting BECMG line as POST_BECMG (now baseline): "$line" (time: ${baseline.time})');
+          } else {
+            print('DEBUG: POST_BECMG line NOT matched: "$line" does not match "${baseline.time}"');
           }
         }
       }
@@ -227,7 +262,14 @@ class _RawTafCardState extends State<RawTafCard> {
       for (final period in concurrent) {
         bool shouldHighlight = false;
         
-        if (period.type.contains('TEMPO') && line.startsWith('TEMPO')) {
+        if (period.type == 'BECMG' && line.startsWith('BECMG')) {
+          // BECMG as concurrent (during transition) - highlight in purple
+          if (_matchesBecmgPeriod(line, period)) {
+            highlightColor = WeatherColors.becmg; // Purple for transition
+            shouldHighlight = true;
+            print('DEBUG: Highlighting BECMG transition line: "$line" (time: ${period.time}) - TRANSITION');
+          }
+        } else if (period.type.contains('TEMPO') && line.startsWith('TEMPO')) {
           // Check if this is the specific TEMPO period that's active
           if (_matchesPeriodTime(line, period)) {
             highlightColor = WeatherColors.getColorForProbCombination(period.type);
@@ -308,28 +350,7 @@ class _RawTafCardState extends State<RawTafCard> {
     return matches;
   }
   
-  bool _isInBecmgTransition(DecodedForecastPeriod becmgPeriod) {
-    if (becmgPeriod.type != 'BECMG' || becmgPeriod.startTime == null || becmgPeriod.endTime == null) {
-      return false;
-    }
-    
-    // Parse the transition time from the period time string
-    final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(becmgPeriod.time);
-    if (timeMatch == null) return false;
-    
-    final fromDay = int.parse(timeMatch.group(1)!);
-    final fromHour = int.parse(timeMatch.group(2)!);
-    final toDay = int.parse(timeMatch.group(3)!);
-    final toHour = int.parse(timeMatch.group(4)!);
-    
-    final transitionStart = DateTime(DateTime.now().year, DateTime.now().month, fromDay, fromHour, 0);
-    final transitionEnd = DateTime(DateTime.now().year, DateTime.now().month, toDay, toHour, 0);
-    
-    // For now, use current time - in a real implementation, this would use the slider time
-    final currentTime = DateTime.now();
-    
-    return currentTime.isAfter(transitionStart) && currentTime.isBefore(transitionEnd);
-  }
+
 
   bool _shouldApplyBackgroundHighlight(Color? highlightColor, DecodedForecastPeriod? baseline, List<DecodedForecastPeriod> concurrent) {
     if (highlightColor == null) return false;
@@ -344,7 +365,8 @@ class _RawTafCardState extends State<RawTafCard> {
     if (baseline != null) {
       if (baseline.type == 'INITIAL' ||
           baseline.type == 'FM' ||
-          baseline.type == 'BECMG') {
+          baseline.type == 'BECMG' ||
+          baseline.type == 'POST_BECMG') {
         return false; // No background highlighting for these
       }
     }

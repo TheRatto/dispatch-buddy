@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 /// - Empty raw data state
 /// - Exact styling preserved from original implementation
 class TafEmptyStates extends StatelessWidget {
-  const TafEmptyStates({Key? key}) : super(key: key);
+  const TafEmptyStates({super.key});
 
   /// Empty decoded card state
   static Widget emptyDecodedCard() {
@@ -18,14 +18,14 @@ class TafEmptyStates extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Decoded TAF',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Expanded(
               child: Center(
                 child: Text(
@@ -48,14 +48,14 @@ class TafEmptyStates extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Raw TAF',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Expanded(
               child: Center(
                 child: Text(
@@ -78,14 +78,14 @@ class TafEmptyStates extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Performance Stats',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Expanded(
               child: Center(
                 child: Text(

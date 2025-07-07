@@ -5,10 +5,10 @@ class DateTimePickerDialog extends StatefulWidget {
   final bool isZuluTime;
 
   const DateTimePickerDialog({
-    Key? key,
+    super.key,
     required this.initialDateTime,
     required this.isZuluTime,
-  }) : super(key: key);
+  });
 
   @override
   _DateTimePickerDialogState createState() => _DateTimePickerDialogState();
@@ -31,7 +31,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SingleChildScrollView(
         child: Container(
-          padding: EdgeInsets.all(12), // Reduced padding
+          padding: const EdgeInsets.all(12), // Reduced padding
           child: LayoutBuilder(
             builder: (context, constraints) {
               bool isWide = constraints.maxWidth > 500;
@@ -46,21 +46,21 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _buildTitle(),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               _buildTimeFormatToggle(),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               _buildDatePickerWidget(),
                             ],
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              SizedBox(height: 60),
+                              const SizedBox(height: 60),
                               _buildTimePickerWidget(),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               _buildPreview(),
                             ],
                           ),
@@ -71,15 +71,15 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildTitle(),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         _buildTimeFormatToggle(),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         _buildDatePickerWidget(),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         _buildTimePickerWidget(),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         _buildPreview(),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         _buildConfirmButton(),
                       ],
                     );
@@ -89,7 +89,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                 children: [
                   content,
                   if (isWide) ...[
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     _buildConfirmButton(),
                   ]
                 ],
@@ -102,7 +102,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
   }
 
   Widget _buildTitle() {
-    return Row(
+    return const Row(
       children: [
         Icon(Icons.schedule, color: Color(0xFF1E3A8A)),
         SizedBox(width: 12),
@@ -121,14 +121,14 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
+        const Text(
           'Time Format:',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Container(
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
@@ -152,21 +152,21 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
 
   Widget _buildDatePickerWidget() {
     return Container(
-      padding: EdgeInsets.all(8), // Reduced padding
+      padding: const EdgeInsets.all(8), // Reduced padding
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          const Text(
             'Select Date',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           SizedBox(
             height: 260, // Reduced height
             child: CalendarDatePicker(
               initialDate: _selectedDateTime,
               firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(Duration(days: 365)),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
               onDateChanged: (date) {
                 setState(() {
                   _selectedDateTime = DateTime(
@@ -179,7 +179,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                 });
               },
               selectableDayPredicate: (date) =>
-                  date.isAfter(DateTime.now().subtract(Duration(days: 1))),
+                  date.isAfter(DateTime.now().subtract(const Duration(days: 1))),
             ),
           ),
         ],
@@ -189,15 +189,15 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
 
   Widget _buildTimePickerWidget() {
     return Container(
-      padding: EdgeInsets.all(8), // Reduced padding
+      padding: const EdgeInsets.all(8), // Reduced padding
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          const Text(
             'Select Time',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           SizedBox(
             height: 100, // Reduced height
             child: Row(
@@ -205,7 +205,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                 Expanded(
                   child: ListWheelScrollView.useDelegate(
                     itemExtent: 30,
-                    physics: FixedExtentScrollPhysics(),
+                    physics: const FixedExtentScrollPhysics(),
                     controller: FixedExtentScrollController(
                       initialItem: 1000 + _selectedDateTime.hour,
                     ),
@@ -216,7 +216,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                         return Center(
                           child: Text(
                             hour.toString().padLeft(2, '0'),
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                           ),
                         );
                       },
@@ -235,11 +235,11 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                     },
                   ),
                 ),
-                Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 Expanded(
                   child: ListWheelScrollView.useDelegate(
                     itemExtent: 30,
-                    physics: FixedExtentScrollPhysics(),
+                    physics: const FixedExtentScrollPhysics(),
                     controller: FixedExtentScrollController(
                       initialItem: 1000 + _selectedDateTime.minute,
                     ),
@@ -250,7 +250,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                         return Center(
                           child: Text(
                             minute.toString().padLeft(2, '0'),
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                           ),
                         );
                       },
@@ -279,26 +279,26 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
 
   Widget _buildPreview() {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Color(0xFF1E3A8A).withOpacity(0.1),
+        color: const Color(0xFF1E3A8A).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Color(0xFF1E3A8A).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.3)),
       ),
       child: Column(
         children: [
-          Text(
+          const Text(
             'Preview',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E3A8A)),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             _isZuluTime
                 ? _formatZuluTime(_selectedDateTime)
                 : _formatLocalTime(_selectedDateTime),
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
           Text(
             _isZuluTime
                 ? 'Local: ${_formatLocalTime(_selectedDateTime)}'
@@ -316,18 +316,18 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
         Expanded(
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
             onPressed: () => Navigator.of(context).pop(_selectedDateTime),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF1E3A8A),
+              backgroundColor: const Color(0xFF1E3A8A),
               foregroundColor: Colors.white,
             ),
-            child: Text('Confirm'),
+            child: const Text('Confirm'),
           ),
         ),
       ],
@@ -338,9 +338,9 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xFF1E3A8A) : Colors.transparent,
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

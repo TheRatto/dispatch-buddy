@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
-import '../models/weather.dart';
-import '../models/notam.dart';
 import '../widgets/zulu_time_widget.dart';
 
 class DecodedScreen extends StatelessWidget {
+  const DecodedScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Decoded Info'),
+          title: const Text('Decoded Info'),
           actions: const [
             ZuluTimeWidget(),
             SizedBox(width: 8),
           ],
-          bottom: TabBar(
+          bottom: const TabBar(
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             indicatorColor: Color(0xFFF97316), // Accent Orange
             indicatorWeight: 3.0,
@@ -35,7 +35,7 @@ class DecodedScreen extends StatelessWidget {
             final flight = flightProvider.currentFlight;
             
             if (flight == null) {
-              return Center(
+              return const Center(
                 child: Text('No flight data available'),
               );
             }
@@ -60,12 +60,12 @@ class DecodedScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.warning_amber_outlined, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'No NOTAMs Available',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'No current notices to airmen',
               style: TextStyle(color: Colors.grey[600]),
@@ -82,23 +82,23 @@ class DecodedScreen extends StatelessWidget {
             await flightProvider.refreshFlightData();
           },
           child: ListView.builder(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             itemCount: flight.notams.length,
             itemBuilder: (context, index) {
               final notam = flight.notams[index];
               return Card(
-                margin: EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 16),
                 child: ExpansionTile(
                   title: Text(
                     '${notam.id} - ${notam.affectedSystem}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     '${notam.icao} | ${_formatDateTime(notam.validFrom)} - ${_formatDateTime(notam.validTo)}',
                   ),
                   leading: Icon(
                     notam.isCritical ? Icons.error : Icons.warning,
-                    color: notam.isCritical ? Color(0xFFEF4444) : Color(0xFFF59E0B),
+                    color: notam.isCritical ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
                   ),
                   children: [
                     Padding(
@@ -106,44 +106,178 @@ class DecodedScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Basic NOTAM Information
+                          Text(
+                            'NOTAM Details:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow('NOTAM ID', notam.id),
+                          _buildInfoRow('ICAO', notam.icao),
+                          _buildInfoRow('Type', notam.type.toString().split('.').last),
+                          if (notam.qCode != null) _buildInfoRow('Q Code', notam.qCode!),
+                          _buildInfoRow('Affected System', notam.affectedSystem),
+                          _buildInfoRow('Critical', notam.isCritical ? 'Yes' : 'No'),
                           _buildInfoRow('Effective From', _formatDateTime(notam.validFrom)),
                           _buildInfoRow('Effective To', _formatDateTime(notam.validTo)),
-                          _buildInfoRow('Affected System', notam.affectedSystem),
-                          _buildInfoRow('Type', notam.type.toString().split('.').last),
-                          SizedBox(height: 16),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Raw NOTAM Data
                           Text(
-                            'Raw NOTAM:',
+                            'Raw NOTAM Data:',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[700],
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Container(
                             width: double.infinity,
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
-                              notam.rawText,
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 12,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildRawInfoRow('NOTAM ID', notam.id),
+                                _buildRawInfoRow('ICAO', notam.icao),
+                                _buildRawInfoRow('Type', notam.type.toString().split('.').last),
+                                if (notam.qCode != null) _buildRawInfoRow('Q Code', notam.qCode!),
+                                _buildRawInfoRow('Affected System', notam.affectedSystem),
+                                _buildRawInfoRow('Critical', notam.isCritical ? 'Yes' : 'No'),
+                                _buildRawInfoRow('Valid From', notam.validFrom.toIso8601String()),
+                                _buildRawInfoRow('Valid To', notam.validTo.toIso8601String()),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Raw Text:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                SelectableText(
+                                  notam.rawText,
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 11,
+                                    height: 1.3,
+                                    color: Colors.grey[900],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(height: 16),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Decoded Text (if available)
+                          if (notam.decodedText.isNotEmpty) ...[
+                            Text(
+                              'Decoded Summary:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue[200]!),
+                              ),
+                              child: Text(
+                                notam.decodedText,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.blue[800],
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            Text(
+                              'Decoded Summary:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: Text(
+                                'No decoded summary available yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Additional Debug Information
                           Text(
-                            'Decoded:',
+                            'Debug Information:',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[700],
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Text(notam.decodedText),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange[200]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Raw Text Length: ${notam.rawText.length} characters',
+                                  style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                                ),
+                                Text(
+                                  'Contains "RWY": ${notam.rawText.toLowerCase().contains('rwy')}',
+                                  style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                                ),
+                                Text(
+                                  'Contains "NAVAID": ${notam.rawText.toLowerCase().contains('navaid')}',
+                                  style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                                ),
+                                Text(
+                                  'Contains "AIRSPACE": ${notam.rawText.toLowerCase().contains('airspace')}',
+                                  style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                                ),
+                                Text(
+                                  'First 100 chars: "${notam.rawText.length > 100 ? notam.rawText.substring(0, 100) + '...' : notam.rawText}"',
+                                  style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -164,12 +298,12 @@ class DecodedScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'No METARs Available',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'No current weather observations',
               style: TextStyle(color: Colors.grey[600]),
@@ -188,25 +322,25 @@ class DecodedScreen extends StatelessWidget {
             await flightProvider.refreshFlightData();
           },
           child: ListView.builder(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             itemCount: metars.length,
             itemBuilder: (context, index) {
               final metar = metars[index];
               return Card(
-                margin: EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 16),
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.cloud, color: Colors.blue),
-                          SizedBox(width: 8),
+                          const Icon(Icons.cloud, color: Colors.blue),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'METAR ${metar.icao}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -218,7 +352,7 @@ class DecodedScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       // Always show the four main headings regardless of data availability
                       Builder(
                         builder: (context) {
@@ -249,7 +383,7 @@ class DecodedScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'Raw METAR:',
                         style: TextStyle(
@@ -257,17 +391,17 @@ class DecodedScreen extends StatelessWidget {
                           color: Colors.grey[700],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: SelectableText(
                           metar.rawText,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
                           ),
@@ -291,12 +425,12 @@ class DecodedScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'No TAFs Available',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'No terminal aerodrome forecasts',
               style: TextStyle(color: Colors.grey[600]),
@@ -315,25 +449,25 @@ class DecodedScreen extends StatelessWidget {
             await flightProvider.refreshFlightData();
           },
           child: ListView.builder(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             itemCount: tafs.length,
             itemBuilder: (context, index) {
               final taf = tafs[index];
               return Card(
-                margin: EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 16),
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.cloud, color: Colors.green),
-                          SizedBox(width: 8),
+                          const Icon(Icons.cloud, color: Colors.green),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'TAF ${taf.icao}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -345,7 +479,7 @@ class DecodedScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       // Always show the four main headings regardless of data availability
                       Builder(
                         builder: (context) {
@@ -389,7 +523,7 @@ class DecodedScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'Raw TAF:',
                         style: TextStyle(
@@ -397,17 +531,17 @@ class DecodedScreen extends StatelessWidget {
                           color: Colors.grey[700],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: SelectableText(
                           taf.rawText,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
                           ),
@@ -426,7 +560,7 @@ class DecodedScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -434,7 +568,7 @@ class DecodedScreen extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
           Expanded(
@@ -445,9 +579,42 @@ class DecodedScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRawInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                color: Colors.grey[700],
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value.isEmpty ? 'N/A' : value,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[900],
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDecodedInfo(String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -455,7 +622,7 @@ class DecodedScreen extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
           Expanded(

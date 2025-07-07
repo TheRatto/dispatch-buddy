@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 class DecodedForecastPeriod {
   final String type; // BECMG, TEMPO, FM, INTER

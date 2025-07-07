@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/decoded_weather_models.dart';
 import '../models/weather.dart';
 import 'grid_item.dart';
 import '../constants/weather_colors.dart';
@@ -10,11 +9,11 @@ class TafPeriodCard extends StatelessWidget {
   final List<TimePeriod> allPeriods;
 
   const TafPeriodCard({
-    Key? key,
+    super.key,
     required this.period,
     required this.timePeriodStrings,
     required this.allPeriods,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +48,7 @@ class TafPeriodCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -58,7 +57,7 @@ class TafPeriodCard extends StatelessWidget {
                   value: weather['Wind'],
                   isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Wind'),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 GridItem(
                   label: 'Visibility',
                   value: weather['Visibility'],
@@ -74,7 +73,7 @@ class TafPeriodCard extends StatelessWidget {
                   value: weather['Weather'],
                   isPhenomenaOrRemark: true,
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 GridItem(
                   label: 'Cloud',
                   value: weather['Cloud'],

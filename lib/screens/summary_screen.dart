@@ -3,30 +3,31 @@ import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../models/airport.dart';
 import 'airport_detail_screen.dart';
-import 'raw_data_screen.dart';
 import '../widgets/zulu_time_widget.dart';
 
 class SummaryScreen extends StatelessWidget {
+  const SummaryScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dispatch Summary'),
+        title: const Text('Dispatch Summary'),
         actions: [
           const ZuluTimeWidget(),
           IconButton(
-            icon: Icon(Icons.edit),
+            icon: const Icon(Icons.edit),
             onPressed: () {
               Navigator.pop(context); // Go back to input screen
             },
             tooltip: 'Edit Flight Plan',
           ),
           IconButton(
-            icon: Icon(Icons.save),
+            icon: const Icon(Icons.save),
             onPressed: () {
               context.read<FlightProvider>().saveCurrentFlight();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Briefing saved')),
+                const SnackBar(content: Text('Briefing saved')),
               );
             },
           ),
@@ -37,7 +38,7 @@ class SummaryScreen extends StatelessWidget {
           final flight = flightProvider.currentFlight;
           
           if (flight == null) {
-            return Center(
+            return const Center(
               child: Text('No flight data available'),
             );
           }
@@ -47,22 +48,22 @@ class SummaryScreen extends StatelessWidget {
               // Route Header
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(16),
-                color: Color(0xFF1E3A8A),
+                padding: const EdgeInsets.all(16),
+                color: const Color(0xFF1E3A8A),
                 child: Column(
                   children: [
                     Text(
                       '${flight.departure} → ${flight.destination}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       'ETD: ${flight.etd.day}/${flight.etd.month}/${flight.etd.year} ${flight.etd.hour.toString().padLeft(2, '0')}:${flight.etd.minute.toString().padLeft(2, '0')} | ${flight.flightLevel}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
                       ),
@@ -74,7 +75,7 @@ class SummaryScreen extends StatelessWidget {
               // Summary Cards
               Expanded(
                 child: ListView(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   children: [
                     _buildSummaryCard(
                       context,
@@ -82,25 +83,25 @@ class SummaryScreen extends StatelessWidget {
                       flight.departure,
                       flight.airports.firstWhere((a) => a.icao == flight.departure),
                       Icons.flight_takeoff,
-                      Color(0xFF10B981),
+                      const Color(0xFF10B981),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     _buildSummaryCard(
                       context,
                       'Enroute',
                       'Flight Level ${flight.flightLevel}',
                       null,
                       Icons.flight,
-                      Color(0xFF3B82F6),
+                      const Color(0xFF3B82F6),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     _buildSummaryCard(
                       context,
                       'Arrival',
                       flight.destination,
                       flight.airports.firstWhere((a) => a.icao == flight.destination),
                       Icons.flight_land,
-                      Color(0xFFF59E0B),
+                      const Color(0xFFF59E0B),
                     ),
                   ],
                 ),
@@ -130,14 +131,14 @@ class SummaryScreen extends StatelessWidget {
             Row(
               children: [
                 Icon(icon, color: color, size: 24),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -158,20 +159,20 @@ class SummaryScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => AirportDetailScreen(),
+                          builder: (context) => const AirportDetailScreen(),
                         ),
                       );
                     },
-                    child: Text('View Details'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,
                       foregroundColor: Colors.white,
                     ),
+                    child: const Text('View Details'),
                   ),
               ],
             ),
             if (airport != null) ...[
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildSystemStatus(airport),
             ],
           ],
@@ -184,20 +185,20 @@ class SummaryScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'System Status',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
             _buildStatusIndicator('Runways', airport.systems['runways']),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             _buildStatusIndicator('Navaids', airport.systems['navaids']),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             _buildStatusIndicator('Taxiways', airport.systems['taxiways']),
           ],
         ),
@@ -211,15 +212,15 @@ class SummaryScreen extends StatelessWidget {
     
     switch (status) {
       case SystemStatus.green:
-        color = Color(0xFF10B981);
+        color = const Color(0xFF10B981);
         icon = Icons.check_circle;
         break;
       case SystemStatus.yellow:
-        color = Color(0xFFF59E0B);
+        color = const Color(0xFFF59E0B);
         icon = Icons.warning;
         break;
       case SystemStatus.red:
-        color = Color(0xFFEF4444);
+        color = const Color(0xFFEF4444);
         icon = Icons.error;
         break;
       default:
@@ -230,7 +231,7 @@ class SummaryScreen extends StatelessWidget {
     return Column(
       children: [
         Icon(icon, color: color, size: 20),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(

@@ -10,13 +10,13 @@ class GridItemWithConcurrent extends StatelessWidget {
   final bool isPhenomenaOrRemark;
 
   const GridItemWithConcurrent({
-    Key? key,
+    super.key,
     required this.label,
     this.value,
     required this.concurrentPeriods,
     required this.weatherType,
     this.isPhenomenaOrRemark = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

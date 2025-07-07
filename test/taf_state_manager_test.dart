@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
 import 'package:dispatch_buddy/services/taf_state_manager.dart';
 import 'package:dispatch_buddy/models/weather.dart';
 import 'package:dispatch_buddy/models/decoded_weather_models.dart';

@@ -17,32 +17,34 @@ Future<void> main() async {
           create: (context) => FlightProvider(),
         ),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Dispatch Buddy',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
-        primaryColor: Color(0xFF1E3A8A), // Deep Blue
+        primaryColor: const Color(0xFF1E3A8A), // Deep Blue
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF1E3A8A),
-          secondary: Color(0xFF3B82F6), // Sky Blue
+          seedColor: const Color(0xFF1E3A8A),
+          secondary: const Color(0xFF3B82F6), // Sky Blue
         ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: 'SF Pro Display',
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1E3A8A),
           foregroundColor: Colors.white,
           elevation: 0,
         ),
       ),
-      home: HomeScreen(),
+      home: const HomeScreen(),
     );
   }
 }

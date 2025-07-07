@@ -18,6 +18,7 @@ class WeatherColors {
     if (periodType.contains('INITIAL')) return initial;
     if (periodType.contains('FM')) return fm;
     if (periodType.contains('BECMG')) return becmg;
+    if (periodType.contains('POST_BECMG')) return fm; // POST_BECMG uses FM color for established conditions
     if (periodType.contains('TEMPO')) return tempo;
     if (periodType.contains('INTER')) return inter;
     if (periodType.contains('PROB30')) return prob30;

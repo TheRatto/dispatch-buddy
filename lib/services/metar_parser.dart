@@ -65,13 +65,13 @@ class MetarParser {
     
     // Parse visibility from the remaining string to avoid capturing time elements
     final visibilityMatch = _visibilityPattern.firstMatch(textAfterWind);
-    final visibilitySM_match = _visibilitySMPattern.firstMatch(textAfterWind);
+    final visibilitysmMatch = _visibilitySMPattern.firstMatch(textAfterWind);
 
     int? visibility;
     String visibilityUnit = 'm';
 
-    if (visibilitySM_match != null) {
-      visibility = int.parse(visibilitySM_match.group(1)!);
+    if (visibilitysmMatch != null) {
+      visibility = int.parse(visibilitysmMatch.group(1)!);
       visibilityUnit = 'SM';
     } else if (visibilityMatch != null) {
       visibility = visibilityMatch.group(1) != null ? int.tryParse(visibilityMatch.group(1)!) : null;
@@ -91,7 +91,7 @@ class MetarParser {
           prefix = '< ';
         }
         final distance = value.replaceAll(RegExp(r'^[PM]'), '');
-        return 'R${runway}: ${prefix}${distance}ft';
+        return 'R$runway: $prefix${distance}ft';
       }).join(', ');
     }
     
@@ -147,7 +147,7 @@ class MetarParser {
         final direction = peakWindMatch.group(1)!;
         final speed = peakWindMatch.group(2)!;
         final time = peakWindMatch.group(3)!;
-        parsedRemarks.add('Peak wind ${direction}° at ${speed}kt at ${time} past hour');
+        parsedRemarks.add('Peak wind $direction° at ${speed}kt at $time past hour');
       }
       
       // Wind shifts
@@ -221,21 +221,21 @@ class MetarParser {
       if (tempDewMatch != null) {
         final temp = WeatherParser.parseTempExtreme(tempDewMatch.group(1)!);
         final dew = WeatherParser.parseTempExtreme(tempDewMatch.group(2)!);
-        parsedRemarks.add('Temperature extremes: ${temp}°C / ${dew}°C');
+        parsedRemarks.add('Temperature extremes: $temp°C / $dew°C');
       }
       
       // 6-hour max temp
       final maxTempMatch = _sixHourMaxTempPattern.firstMatch(remarks);
       if (maxTempMatch != null) {
         final temp = WeatherParser.parseTempExtreme(maxTempMatch.group(1)!);
-        parsedRemarks.add('6-hour maximum temperature: ${temp}°C');
+        parsedRemarks.add('6-hour maximum temperature: $temp°C');
       }
       
       // 6-hour min temp
       final minTempMatch = _sixHourMinTempPattern.firstMatch(remarks);
       if (minTempMatch != null) {
         final temp = WeatherParser.parseTempExtreme(minTempMatch.group(1)!);
-        parsedRemarks.add('6-hour minimum temperature: ${temp}°C');
+        parsedRemarks.add('6-hour minimum temperature: $temp°C');
       }
       
       // Automated station type

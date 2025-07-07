@@ -1,10 +1,6 @@
-import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/flight.dart';
-import '../models/airport.dart';
-import '../models/notam.dart';
-import '../models/weather.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -88,50 +84,27 @@ class DatabaseService {
     ''');
   }
 
+  // DISABLED: No caching for aviation safety - always fetch fresh data
   Future<void> saveFlight(Flight flight) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      // Insert flight
-      await txn.insert('flights', flight.toDbJson(), conflictAlgorithm: ConflictAlgorithm.replace);
-      
-      // Insert airports
-      for (var airport in flight.airports) {
-        await txn.insert('airports', airport.toDbJson(flight.id), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      
-      // Insert NOTAMs
-      for (var notam in flight.notams) {
-        await txn.insert('notams', notam.toDbJson(flight.id), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-
-      // Insert weather
-      for (var weatherItem in flight.weather) {
-        await txn.insert('weather', weatherItem.toDbJson(flight.id), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-    });
+    print('DEBUG: 🚫 Flight saving DISABLED for aviation safety - no caching');
+    // Do nothing - don't save to database to ensure fresh data
   }
 
+  // DISABLED: No caching for aviation safety - always fetch fresh data
   Future<List<Flight>> getSavedFlights() async {
+    print('DEBUG: 🚫 Database caching DISABLED for aviation safety');
+    return []; // Return empty list to force fresh API calls
+  }
+  
+  // Clear all cached data
+  Future<void> clearAllData() async {
     final db = await database;
-    final List<Map<String, dynamic>> flightMaps = await db.query('flights', orderBy: 'createdAt DESC');
-    
-    if (flightMaps.isEmpty) return [];
-
-    List<Flight> flights = [];
-    for (var flightMap in flightMaps) {
-      final flightId = flightMap['id'];
-      
-      final airportMaps = await db.query('airports', where: 'flightId = ?', whereArgs: [flightId]);
-      final notamMaps = await db.query('notams', where: 'flightId = ?', whereArgs: [flightId]);
-      final weatherMaps = await db.query('weather', where: 'flightId = ?', whereArgs: [flightId]);
-      
-      flights.add(Flight.fromDb(
-        flightMap,
-        airportMaps,
-        notamMaps,
-        weatherMaps,
-      ));
-    }
-    return flights;
+    await db.transaction((txn) async {
+      await txn.delete('notams');
+      await txn.delete('weather');
+      await txn.delete('airports');
+      await txn.delete('flights');
+    });
+    print('DEBUG: 🗑️ Cleared all cached data from database');
   }
 } 
