@@ -58,24 +58,6 @@ class TafTab extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          // Airport selector
-          if (airports.isNotEmpty) ...[
-            SizedBox(
-              height: 40,
-              child: RepaintBoundary(
-                child: TafAirportSelector(
-                  airports: airports,
-                  selectedAirport: flightProvider.selectedAirport ?? airports.first,
-                  onAirportSelected: (String airport) {
-                    flightProvider.setSelectedAirport(airport);
-                  },
-                  onAddAirport: null,
-                  onAirportLongPress: null,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-          ],
           
           // TAFs list
           Expanded(

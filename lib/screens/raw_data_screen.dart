@@ -210,24 +210,64 @@ class _RawDataScreenState extends State<RawDataScreen> {
             if (flight == null) {
               return const Center(child: Text('No flight data available'));
             }
-            return TabBarView(
+            
+            // Get airports from TAFs (most comprehensive source)
+            final airports = flightProvider.tafsByIcao.keys.toList();
+            
+            // Initialize selected airport if not set
+            if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
+              if (airports.isNotEmpty) {
+                flightProvider.setSelectedAirport(airports.first);
+              }
+            }
+            
+            return Column(
               children: [
-                _buildNotamsTab(context, flight.notams, flightProvider),
-                RefreshIndicator(
-                  onRefresh: () async {
-                    _clearCache();
-                    await flightProvider.refreshFlightData();
-                  },
-                  child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                // Fixed airport selector at top
+                if (airports.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 40,
+                    child: RepaintBoundary(
+                      child: Center(
+                        child: TafAirportSelector(
+                          airports: airports,
+                          selectedAirport: flightProvider.selectedAirport ?? airports.first,
+                          onAirportSelected: (String airport) {
+                            flightProvider.setSelectedAirport(airport);
+                          },
+                          onAddAirport: _showAddAirportDialog,
+                          onAirportLongPress: _showEditAirportDialog,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                
+                // Tab content below
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildNotamsTab(context, flight.notams, flightProvider),
+                      RefreshIndicator(
+                        onRefresh: () async {
+                          _clearCache();
+                          await flightProvider.refreshFlightData();
+                        },
+                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                      ),
+                      RefreshIndicator(
+                        onRefresh: () async {
+                          _clearCache();
+                          await flightProvider.refreshFlightData();
+                        },
+                        child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
+                      ),
+                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                    ],
+                  ),
                 ),
-                RefreshIndicator(
-                  onRefresh: () async {
-                    _clearCache();
-                    await flightProvider.refreshFlightData();
-                  },
-                  child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
-                ),
-                _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
               ],
             );
           },
@@ -262,24 +302,6 @@ class _RawDataScreenState extends State<RawDataScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // Airport selector
-            if (airports.isNotEmpty) ...[
-              SizedBox(
-                height: 40,
-                child: RepaintBoundary(
-                  child: TafAirportSelector(
-                    airports: airports,
-                    selectedAirport: flightProvider.selectedAirport ?? airports.first,
-                    onAirportSelected: (String airport) {
-                      flightProvider.setSelectedAirport(airport);
-                    },
-                    onAddAirport: _showAddAirportDialog,
-                    onAirportLongPress: _showEditAirportDialog,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-            ],
             
             // Time filter
             Container(
@@ -913,29 +935,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         controller: _tafs2ScrollController,
         child: Padding(
-      padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
-        children: [
-              // Airport selector
-              SizedBox(
-                height: 40,
-                child: RepaintBoundary(
-                  child: TafAirportSelector(
-                    airports: tafsByIcao.keys.toList(),
-                    selectedAirport: flightProvider.selectedAirport!,
-                    onAirportSelected: (String airport) {
-                      print('DEBUG: TAFs2 tab - Airport selected: $airport');
-                      flightProvider.setSelectedAirport(airport);
-                      setState(() {
-                        sliderValue = _sliderPositions[airport] ?? 0.0;
-                      });
-                    },
-                    onAddAirport: _showAddAirportDialog,
-                    onAirportLongPress: _showEditAirportDialog,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
+            children: [
               
               // Decoded weather card
               SizedBox(
@@ -956,11 +958,12 @@ class _RawDataScreenState extends State<RawDataScreen> {
                           sliderValue: sliderValue,
                           allPeriods: forecastPeriods,
                           taf: selectedTaf,
+                          timeline: selectedTaf.decodedWeather?.timeline,
                         )
                       : const Center(child: Text('No decoded data available')),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
               
               // Raw TAF card
               SizedBox(
@@ -975,8 +978,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
               ),
               
               // Time Slider - now part of scrollable content
+              const SizedBox(height: 4),
               SizedBox(
-            height: 89,
+                height: 89,
                 child: RepaintBoundary(
                   child: selectedTaf.decodedWeather?.timeline.isNotEmpty == true
                       ? TafTimeSlider(
@@ -1055,6 +1059,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
       sliderValue: _sliderPositions[flightProvider.selectedAirport!],
       allPeriods: allPeriods,
       taf: null, // This method is not used in the current implementation
+      timeline: null, // This method is not used in the current implementation
     );
   }
 

@@ -339,7 +339,7 @@ class DecoderService {
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
             startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            endTime = _createDateTimeWithMonthTransition(toDay, toHour);
+            endTime = _createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
             timeString = 'BECMG ${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
             print('DEBUG: 🔍 BECMG transition period: $startTime to $endTime');
           }
@@ -530,7 +530,9 @@ class DecoderService {
           if (fromDay != null && fromHour != null && toDay != null && toHour != null) {
             // For BECMG periods, return the END time (not start time)
             // This ensures baseline periods end when BECMG ends, not when it starts
-            return _createDateTimeWithMonthTransition(int.parse(toDay), int.parse(toHour));
+            // Create a temporary start time to use for month transition logic
+            final tempStartTime = _createDateTimeWithMonthTransition(int.parse(fromDay), int.parse(fromHour));
+            return _createEndDateTimeWithMonthTransition(tempStartTime, int.parse(toDay), int.parse(toHour));
           }
         }
       }
@@ -611,33 +613,21 @@ class DecoderService {
     final endDay = int.parse(endDate.substring(0, 2));
     final endHour = int.parse(endDate.substring(2, 4));
     
-    // Create DateTime objects (assuming current month/year)
-    final now = DateTime.now();
-    final startTime = DateTime(now.year, now.month, startDay, startHour);
-    final endTime = DateTime(now.year, now.month, endDay, endHour);
+    // Use helper methods for proper month transition handling
+    final startTime = _createDateTimeWithMonthTransition(startDay, startHour);
+    final endTime = _createEndDateTimeWithMonthTransition(startTime, endDay, endHour);
     
-    // Handle month/year rollover
-    DateTime adjustedStartTime = startTime;
-    DateTime adjustedEndTime = endTime;
-    
-    if (endTime.isBefore(startTime)) {
-      // End time is in next month
-      if (now.month == 12) {
-        adjustedEndTime = DateTime(now.year + 1, 1, endDay, endHour);
-      } else {
-        adjustedEndTime = DateTime(now.year, now.month + 1, endDay, endHour);
-      }
-    }
+    print('DEBUG: TAF validity period: $startTime to $endTime');
     
     // Subtract one hour from end time to avoid showing the exact end time
     // where there's no weather data
-    final effectiveEndTime = adjustedEndTime.subtract(const Duration(hours: 1));
+    final effectiveEndTime = endTime.subtract(const Duration(hours: 1));
     
-    print('DEBUG: TAF validity period: $adjustedStartTime to $adjustedEndTime (effective end: $effectiveEndTime)');
+    print('DEBUG: TAF validity period: $startTime to $endTime (effective end: $effectiveEndTime)');
     
     // Create hourly timeline
     final timeline = <DateTime>[];
-    DateTime currentTime = adjustedStartTime;
+    DateTime currentTime = startTime;
     
     while (currentTime.isBefore(effectiveEndTime) || currentTime.isAtSameMomentAs(effectiveEndTime)) {
       timeline.add(currentTime);

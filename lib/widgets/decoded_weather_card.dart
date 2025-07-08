@@ -21,6 +21,7 @@ class DecodedWeatherCard extends StatefulWidget {
   final double? sliderValue;
   final List<DecodedForecastPeriod>? allPeriods;
   final Weather? taf; // Add TAF for age calculation
+  final List<DateTime>? timeline; // Add timeline parameter
 
   const DecodedWeatherCard({
     super.key,
@@ -32,6 +33,7 @@ class DecodedWeatherCard extends StatefulWidget {
     this.sliderValue,
     this.allPeriods,
     this.taf,
+    this.timeline,
   });
 
   @override
@@ -331,32 +333,40 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
 
   /// Get the current time based on slider value
   DateTime _getCurrentTimeFromSlider() {
-    if (widget.sliderValue == null || widget.allPeriods == null || widget.allPeriods!.isEmpty) {
+    if (widget.sliderValue == null) {
       return DateTime.now();
     }
     
-    // Find the timeline from the periods
-    final timeline = <DateTime>[];
-    for (final period in widget.allPeriods!) {
-      if (period.startTime != null) {
-        timeline.add(period.startTime!);
+    // Use the passed timeline if available, otherwise fall back to creating from periods
+    List<DateTime> timeline;
+    if (widget.timeline != null && widget.timeline!.isNotEmpty) {
+      timeline = widget.timeline!;
+    } else if (widget.allPeriods != null && widget.allPeriods!.isNotEmpty) {
+      // Fallback: Find the timeline from the periods
+      timeline = <DateTime>[];
+      for (final period in widget.allPeriods!) {
+        if (period.startTime != null) {
+          timeline.add(period.startTime!);
+        }
+        if (period.endTime != null) {
+          timeline.add(period.endTime!);
+        }
       }
-      if (period.endTime != null) {
-        timeline.add(period.endTime!);
+      
+      if (timeline.isEmpty) {
+        return DateTime.now();
       }
-    }
-    
-    if (timeline.isEmpty) {
+      
+      // Sort and deduplicate timeline
+      timeline.sort();
+      timeline = timeline.toSet().toList()..sort();
+    } else {
       return DateTime.now();
     }
-    
-    // Sort and deduplicate timeline
-    timeline.sort();
-    final uniqueTimeline = timeline.toSet().toList()..sort();
     
     // Calculate current time based on slider position
-    final index = (widget.sliderValue! * (uniqueTimeline.length - 1)).round();
-    return uniqueTimeline[index.clamp(0, uniqueTimeline.length - 1)];
+    final index = (widget.sliderValue! * (timeline.length - 1)).round();
+    return timeline[index.clamp(0, timeline.length - 1)];
   }
 
   Widget _buildTafCompactDetails(
