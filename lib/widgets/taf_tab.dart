@@ -83,7 +83,7 @@ class TafTab extends StatelessWidget {
                                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: filteredTafs.length,
-                    itemBuilder: (context, index) {
+      itemBuilder: (context, index) {
                       final taf = filteredTafs[index];
         final decodedTaf = taf.decodedWeather;
         
@@ -102,11 +102,11 @@ class TafTab extends StatelessWidget {
         // Create TimePeriod objects for the old tab display
         final timePeriods = <TimePeriod>[
           ...decodedTaf.forecastPeriods!.map((period) => TimePeriod(
-            startTime: period.startTime ?? DateTime.now(),
+          startTime: period.startTime ?? DateTime.now(),
             endTime: period.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-            baselinePeriod: period,
-            concurrentPeriods: [],
-            rawTafSection: period.rawSection ?? '',
+          baselinePeriod: period,
+          concurrentPeriods: [],
+          rawTafSection: period.rawSection ?? '',
           )),
         ];
         

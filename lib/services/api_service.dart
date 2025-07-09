@@ -95,27 +95,27 @@ class ApiService {
           
           final url = _getUrl(_notamBaseUrl, queryParams: queryParams);
 
-          final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
-          final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
+      final clientId = dotenv.env['FAA_CLIENT_ID'] ?? '';
+      final clientSecret = dotenv.env['FAA_CLIENT_SECRET'] ?? '';
 
           print('DEBUG: 🔍 API URL: $url');
 
-          final response = await _makeRequestWithRetry(
-            Uri.parse(url),
-            headers: {
-              'Accept': 'application/json',
-              'Origin': 'https://localhost',
-              'client_id': clientId,
-              'client_secret': clientSecret,
+      final response = await _makeRequestWithRetry(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Origin': 'https://localhost',
+          'client_id': clientId,
+          'client_secret': clientSecret,
               'Connection': 'close', // SATCOM optimization: close connection after request
               'Cache-Control': 'no-cache, no-store, must-revalidate', // NO CACHING for aviation safety
-            },
-          );
+        },
+      );
 
-          if (response.statusCode == 200) {
-            final Map<String, dynamic> data = json.decode(response.body);
-            final List<dynamic> items = data['items'] ?? [];
-            
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> items = data['items'] ?? [];
+        
             print('DEBUG: ✅ Strategy ${strategyIndex + 1}, Page ${(offset / pageSize) + 1}: Fetched ${items.length} NOTAMs for $icao');
             print('DEBUG: 🔍 API response body length: ${response.body.length} characters');
             
@@ -177,7 +177,7 @@ class ApiService {
             // Small delay between requests to be respectful
             await Future.delayed(const Duration(milliseconds: 100));
             
-          } else {
+      } else {
             print('Warning: NOTAM API returned status ${response.statusCode} for $icao strategy ${strategyIndex + 1}. Moving to next strategy.');
             break;
           }

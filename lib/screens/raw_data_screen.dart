@@ -62,7 +62,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
   String? _lastTafHash; // Hash of the last processed TAF data
   String? _lastTimelineHash; // Hash of the last processed timeline
   
-
+  
   
 
   
@@ -248,23 +248,23 @@ class _RawDataScreenState extends State<RawDataScreen> {
                 // Tab content below
                 Expanded(
                   child: TabBarView(
-                    children: [
-                      _buildNotamsTab(context, flight.notams, flightProvider),
-                      RefreshIndicator(
-                        onRefresh: () async {
+              children: [
+                _buildNotamsTab(context, flight.notams, flightProvider),
+                RefreshIndicator(
+                  onRefresh: () async {
                           _clearCache();
-                          await flightProvider.refreshFlightData();
-                        },
-                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
-                      ),
-                      RefreshIndicator(
-                        onRefresh: () async {
+                    await flightProvider.refreshFlightData();
+                  },
+                  child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                ),
+                RefreshIndicator(
+                  onRefresh: () async {
                           _clearCache();
-                          await flightProvider.refreshFlightData();
-                        },
-                        child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
-                      ),
-                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                    await flightProvider.refreshFlightData();
+                  },
+                  child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
+                ),
+                _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
                     ],
                   ),
                 ),
@@ -415,31 +415,31 @@ class _RawDataScreenState extends State<RawDataScreen> {
           Expanded(
             child: filteredNotamsByTime.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
                         const Icon(Icons.check_circle, size: 64, color: Color(0xFF10B981)),
                         const SizedBox(height: 16),
-                        Text(
+            Text(
                           _selectedTimeFilter == 'All NOTAMs' 
                               ? 'No NOTAMs available'
                               : 'No NOTAMs for the next $_selectedTimeFilter',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
+            ),
                         const SizedBox(height: 8),
-                        Text(
+            Text(
                           _selectedTimeFilter == 'All NOTAMs'
                               ? 'No NOTAMs for ${flightProvider.selectedAirport}'
                               : 'No active or upcoming NOTAMs in the next $_selectedTimeFilter for ${flightProvider.selectedAirport}',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: filteredNotamsByTime.length,
-                                        itemBuilder: (context, index) {
+      itemBuilder: (context, index) {
           final notam = filteredNotamsByTime[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -448,8 +448,24 @@ class _RawDataScreenState extends State<RawDataScreen> {
               '${notam.id} - ${notam.affectedSystem}${notam.qCode != null ? ' (${notam.qCode})' : ''}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                 '${notam.icao} | ${_formatDateTime(notam.validFrom)} - ${_formatDateTime(notam.validTo)}',
+                ),
+                if (notam.qCode != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${Notam.getQCodeSubjectDescription(notam.qCode)} - ${Notam.getQCodeStatusDescription(notam.qCode)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
             ),
             leading: Icon(
               notam.isCritical ? Icons.error : Icons.warning,
@@ -482,7 +498,11 @@ class _RawDataScreenState extends State<RawDataScreen> {
                           _buildRawInfoRow('NOTAM ID', notam.id),
                           _buildRawInfoRow('ICAO', notam.icao),
                           _buildRawInfoRow('Type', notam.type.toString().split('.').last),
-                          if (notam.qCode != null) _buildRawInfoRow('Q Code', notam.qCode!),
+                          if (notam.qCode != null) ...[
+                            _buildRawInfoRow('Q Code', notam.qCode!),
+                            _buildRawInfoRow('Q Code Subject', Notam.getQCodeSubjectDescription(notam.qCode)),
+                            _buildRawInfoRow('Q Code Status', Notam.getQCodeStatusDescription(notam.qCode)),
+                          ],
                           _buildRawInfoRow('Affected System', notam.affectedSystem),
                           _buildRawInfoRow('Critical', notam.isCritical ? 'Yes' : 'No'),
                           _buildRawInfoRow('Valid From', notam.validFrom.toIso8601String()),
@@ -622,7 +642,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: filteredMetars.length,
-                                            itemBuilder: (context, index) {
+      itemBuilder: (context, index) {
           final metar = filteredMetars[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -935,9 +955,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         controller: _tafs2ScrollController,
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
           child: Column(
-            children: [
+        children: [
               
               // Decoded weather card
               SizedBox(
@@ -980,7 +1000,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
               // Time Slider - now part of scrollable content
               const SizedBox(height: 4),
               SizedBox(
-                height: 89,
+            height: 89,
                 child: RepaintBoundary(
                   child: selectedTaf.decodedWeather?.timeline.isNotEmpty == true
                       ? TafTimeSlider(

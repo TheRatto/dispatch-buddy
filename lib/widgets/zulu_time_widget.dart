@@ -37,14 +37,14 @@ class _ZuluTimeWidgetState extends State<ZuluTimeWidget> {
   }
 
   void _updateZuluTime() {
-    final now = DateTime.now().toUtc();
+      final now = DateTime.now().toUtc();
     final day = now.day.toString().padLeft(2, '0');
     final hour = now.hour.toString().padLeft(2, '0');
     final minute = now.minute.toString().padLeft(2, '0');
     
-    setState(() {
+      setState(() {
       _currentZuluTime = '$day $hour:$minute Z';
-    });
+      });
   }
 
   @override
@@ -75,8 +75,8 @@ class _ZuluTimeWidgetState extends State<ZuluTimeWidget> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.showIcon) ...[
-            const Icon(Icons.access_time, size: 16, color: Colors.white70),
-            const SizedBox(width: 4),
+          const Icon(Icons.access_time, size: 16, color: Colors.white70),
+          const SizedBox(width: 4),
           ],
           Text(
             _currentZuluTime,

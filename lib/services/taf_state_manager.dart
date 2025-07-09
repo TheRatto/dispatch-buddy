@@ -17,7 +17,7 @@ class TafStateManager {
   String? _lastTimelineHash;
   DateTime? _lastMetricsReset;
   
-
+  
   
   /// Generates hash for TAF data to detect changes
   String _generateTafHash(Weather taf) {
@@ -167,7 +167,7 @@ class TafStateManager {
     
     // Calculate complete weather with inheritance
     final completeWeather = Map<String, String>.from(period.weather);
-
+    
     // Special logic for POST_BECMG: inherit from previous baseline, then apply only changed elements
     if (period.type == 'POST_BECMG') {
       // Find the corresponding BECMG period (same time window)
@@ -193,16 +193,16 @@ class TafStateManager {
         }
       }
     } else {
-      // For each weather element, search back through all previous periods for the most recent non-missing value
-      for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
-        if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
-          // Search back through all previous periods
-          for (final p in allPeriods.reversed) {
-            if (p.startTime != null && p.startTime!.isBefore(period.startTime!)) {
-              if (p.weather[key] != null && p.weather[key]!.isNotEmpty && p.weather[key] != '-') {
-                completeWeather[key] = p.weather[key]!;
-                debugPrint('DEBUG: Inherited $key from ${p.type}: ${p.weather[key]}');
-                break;
+    // For each weather element, search back through all previous periods for the most recent non-missing value
+    for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
+      if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
+        // Search back through all previous periods
+        for (final p in allPeriods.reversed) {
+          if (p.startTime != null && p.startTime!.isBefore(period.startTime!)) {
+            if (p.weather[key] != null && p.weather[key]!.isNotEmpty && p.weather[key] != '-') {
+              completeWeather[key] = p.weather[key]!;
+              debugPrint('DEBUG: Inherited $key from ${p.type}: ${p.weather[key]}');
+              break;
               }
             }
           }

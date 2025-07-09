@@ -136,15 +136,15 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
             Row(
               children: [
                 if (_ageText.isNotEmpty)
-                  Text(
+            Text(
                     _ageText,
-                    style: TextStyle(
+              style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',
-                    ),
-                  ),
+              ),
+            ),
                 const Spacer(),
               ],
             ),
@@ -185,15 +185,15 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                     Row(
                       children: [
                         if (_ageText.isNotEmpty)
-                          Text(
+                        Text(
                             _ageText,
-                            style: TextStyle(
+                          style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               fontFamily: 'monospace',
-                            ),
                           ),
+                        ),
                         const Spacer(),
                         if (concurrentPeriods.isNotEmpty) _buildConcurrentKeyWithBecmg(concurrentPeriods, baseline),
                       ],
@@ -345,20 +345,20 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
       // Fallback: Find the timeline from the periods
       timeline = <DateTime>[];
       for (final period in widget.allPeriods!) {
-        if (period.startTime != null) {
-          timeline.add(period.startTime!);
-        }
-        if (period.endTime != null) {
-          timeline.add(period.endTime!);
-        }
+      if (period.startTime != null) {
+        timeline.add(period.startTime!);
       }
-      
-      if (timeline.isEmpty) {
-        return DateTime.now();
+      if (period.endTime != null) {
+        timeline.add(period.endTime!);
       }
-      
-      // Sort and deduplicate timeline
-      timeline.sort();
+    }
+    
+    if (timeline.isEmpty) {
+      return DateTime.now();
+    }
+    
+    // Sort and deduplicate timeline
+    timeline.sort();
       timeline = timeline.toSet().toList()..sort();
     } else {
       return DateTime.now();
