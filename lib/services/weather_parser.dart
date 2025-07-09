@@ -5,7 +5,7 @@ class WeatherParser {
   static final _tafVisibilityPattern = RegExp(r'\b(\d{4}|CAVOK)\b');
   static final _tafVisibilitySMPattern = RegExp(r'\b(P?\d+SM)\b');
   static final _cloudLayerPattern = RegExp(r'\b(FEW|SCT|BKN|OVC)(\d{3})(TCU|CB)?\b');
-  static final _weatherPattern = RegExp(r'(?<!\w)([+-]?(?:TSRA|SHRA|TS|SH|FZ|MI|BC|DR|BL|DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS|VCTS|SHSN|SHGR|SHGS|SHPL|SHIC|SHUP|SHBR|SHFG|SHFU|SHVA|SHDU|SHSA|SHHZ|SHPY|SHPO|SHSQ|SHFC|SHSS|SHDS|SHVCTS|SHFZ|SHMI|SHBC|SHDR|SHBL))\b');
+  static final _weatherPattern = RegExp(r'(?<!\w)([+-]?(?:TSRA|SHRA|TS|SH|FZ|MI|BC|DR|BL|DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS|VCTS|VCSH|SHSN|SHGR|SHGS|SHPL|SHIC|SHUP|SHBR|SHFG|SHFU|SHVA|SHDU|SHSA|SHHZ|SHPY|SHPO|SHSQ|SHFC|SHSS|SHDS|SHVCTS|SHFZ|SHMI|SHBC|SHDR|SHBL))\b');
   static final _cavokPattern = RegExp(r'\bCAVOK\b');
 
   /// Parse all weather elements from a TAF/METAR segment
@@ -356,6 +356,7 @@ class WeatherParser {
       case 'DS': description = 'Duststorm'; break;
       case 'TS': description = 'Thunderstorm'; break;
       case 'VCTS': description = 'Vicinity Thunderstorms'; break;
+      case 'VCSH': description = 'Vicinity Showers'; break;
       case 'SH': description = 'Showers'; break;
       case 'FZ': description = 'Freezing'; break;
       case 'MI': description = 'Shallow'; break;

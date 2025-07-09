@@ -117,8 +117,8 @@ class TafStateManager {
     for (final period in forecastPeriods) {
       if (period.isConcurrent) {
         if (period.startTime != null && period.endTime != null) {
-          final isActive = (period.startTime!.isBefore(currentTime) || period.startTime!.isAtSameMomentAs(currentTime)) && 
-                          period.endTime!.isAfter(currentTime);
+          final isActive = (currentTime.isAfter(period.startTime!) || currentTime.isAtSameMomentAs(period.startTime!)) && 
+                          currentTime.isBefore(period.endTime!);
           
           if (isActive) {
             activeConcurrent.add(period);
@@ -193,12 +193,12 @@ class TafStateManager {
         }
       }
     } else {
-    // For each weather element, search back through all previous periods for the most recent non-missing value
+    // For each weather element, search back through previous BASELINE periods for the most recent non-missing value
     for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
       if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
-        // Search back through all previous periods
+        // Search back through previous BASELINE periods only (not concurrent)
         for (final p in allPeriods.reversed) {
-          if (p.startTime != null && p.startTime!.isBefore(period.startTime!)) {
+          if (p.startTime != null && p.startTime!.isBefore(period.startTime!) && !p.isConcurrent) {
             if (p.weather[key] != null && p.weather[key]!.isNotEmpty && p.weather[key] != '-') {
               completeWeather[key] = p.weather[key]!;
               debugPrint('DEBUG: Inherited $key from ${p.type}: ${p.weather[key]}');
