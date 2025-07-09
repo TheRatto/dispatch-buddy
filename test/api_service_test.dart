@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dispatch_buddy/models/notam.dart';
+import 'package:dispatch_buddy/services/notam_grouping_service.dart';
 
 void main() {
   group('NOTAM Model Tests', () {
@@ -322,6 +323,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
+          group: NotamGroup.movementAreas,
         );
 
         final json = originalNotam.toJson();
@@ -349,6 +351,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
+          group: NotamGroup.movementAreas,
         );
 
         final dbJson = originalNotam.toDbJson('FLIGHT123');
@@ -378,6 +381,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(validNotam.validFrom.isBefore(validNotam.validTo), isTrue);
@@ -395,6 +399,7 @@ void main() {
           decodedText: 'Currently active NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(activeNotam.validFrom.isBefore(now), isTrue);

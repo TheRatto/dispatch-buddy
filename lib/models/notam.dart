@@ -1,5 +1,18 @@
 enum NotamType { runway, navaid, taxiway, lighting, procedure, other, airspace }
 
+// New NOTAM grouping enum based on operational significance
+enum NotamGroup {
+  movementAreas,    // Group 1: Runways, Taxiways, Aprons, Parking
+  navigationAids,   // Group 2: ILS, VOR, NDB, DME, etc.
+  departureApproachProcedures, // Group 3: SIDs, STARs, Approaches
+  airportAtcAvailability, // Group 4: Airport closure, ATC services
+  lighting,         // Group 5: Runway/taxiway lighting
+  hazardsObstacles, // Group 6: Obstacles, construction, hazards
+  airspace,         // Group 7: Airspace restrictions, GPS outages
+  proceduralAdmin,  // Group 8: Administrative procedures
+  other            // Group 9: Fallback for unmapped codes
+}
+
 class Notam {
   final String id;
   final String icao;
@@ -11,6 +24,7 @@ class Notam {
   final String affectedSystem;
   final bool isCritical;
   final String? qCode; // Q code from NOTAM text
+  final NotamGroup group; // New: Group assignment
 
   Notam({
     required this.id,
@@ -23,6 +37,7 @@ class Notam {
     required this.affectedSystem,
     required this.isCritical,
     this.qCode,
+    required this.group,
   });
 
   // Extract Q code from NOTAM text using regex
@@ -42,55 +57,59 @@ class Notam {
     return match?.group(0);
   }
 
-  // Determine NOTAM type based on Q code (using first letter of subject - second letter)
+  // Determine NOTAM type based on Q code (using subject code - letters 2-3)
   static NotamType determineTypeFromQCode(String? qCode) {
     if (qCode == null || qCode.length != 5 || !qCode.startsWith('Q')) {
       return NotamType.other;
     }
     
-    // Extract subject identifier (second letter - first letter of subject)
-    final subjectFirstLetter = qCode.substring(1, 2);
+    // Extract subject identifier (letters 2-3)
+    final subject = qCode.substring(1, 3);
     
-    switch (subjectFirstLetter) {
-      // Airspace Organization (A)
-      case 'A':
-        return NotamType.airspace;
-      
-      // Communications and Surveillance Facilities (C)
-      case 'C':
-        return NotamType.navaid;
-      
-      // Facilities and Services (F)
-      case 'F':
-        return NotamType.procedure;
-      
-      // GNSS Services (G)
-      case 'G':
-        return NotamType.navaid;
-      
-      // Instrument and Microwave Landing System (I)
-      case 'I':
-        return NotamType.navaid;
-      
-      // Lighting Facilities (L)
-      case 'L':
-        return NotamType.lighting;
-      
-      // Movement and Landing Area (M)
-      case 'M':
-        return NotamType.runway;
-      
-      // Navigation Aids (N)
-      case 'N':
-        return NotamType.navaid;
-      
-      // Taxiway (T)
-      case 'T':
-        return NotamType.taxiway;
-      
-      default:
-        return NotamType.other;
+    // Movement and Landing Area (M)
+    if (['MR', 'MS', 'MT', 'MU', 'MW'].contains(subject)) {
+      return NotamType.runway;
     }
+    if (['MX', 'MY', 'TW'].contains(subject)) {
+      return NotamType.taxiway;
+    }
+    if (['MK', 'MN', 'MP'].contains(subject)) {
+      return NotamType.other; // Parking, apron, stands
+    }
+    
+    // Navigation Aids (I, N)
+    if (['IC', 'ID', 'IG', 'II', 'IL', 'IM', 'IN', 'IO', 'IS', 'IT', 'IU', 'IW', 'IX', 'IY',
+         'NA', 'NB', 'NC', 'ND', 'NF', 'NL', 'NM', 'NN', 'NO', 'NT', 'NV'].contains(subject)) {
+      return NotamType.navaid;
+    }
+    
+    // Lighting Facilities (L)
+    if (['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
+         'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
+      return NotamType.lighting;
+    }
+    
+    // Airspace (A)
+    if (['AA', 'AC', 'AD', 'AE', 'AF', 'AH', 'AL', 'AN', 'AO', 'AP', 'AR', 'AT', 'AU', 'AV', 'AX', 'AZ',
+         'RA', 'RD', 'RM', 'RO', 'RP', 'RR', 'RT', 'GA', 'GW'].contains(subject)) {
+      return NotamType.airspace;
+    }
+    
+    // Procedures (P)
+    if (['PA', 'PB', 'PC', 'PD', 'PE', 'PH', 'PI', 'PK', 'PU', 'PR'].contains(subject)) {
+      return NotamType.procedure;
+    }
+    
+    // Hazards and Obstacles (O)
+    if (['OB'].contains(subject)) {
+      return NotamType.other; // Obstacles
+    }
+    if (['OL'].contains(subject)) {
+      return NotamType.lighting; // Obstacle Lights
+    }
+    
+    // Default to other for unmapped codes
+    return NotamType.other;
   }
 
   // Get human-readable description of Q code subject
@@ -421,6 +440,61 @@ class Notam {
     return qCode.substring(3, 5);
   }
 
+  // Determine NOTAM group based on Q code
+  static NotamGroup determineGroupFromQCode(String? qCode) {
+    if (qCode == null || qCode.length != 5 || !qCode.startsWith('Q')) {
+      return NotamGroup.other;
+    }
+    
+    final subject = qCode.substring(1, 3);
+    
+    // Movement Areas (Group 1)
+    if (['MR', 'MX', 'MS', 'MT', 'MU', 'MW', 'MY', 'MK', 'MN', 'MP'].contains(subject)) {
+      return NotamGroup.movementAreas;
+    }
+    
+    // Navigation Aids (Group 2)
+    if (['IC', 'ID', 'IG', 'II', 'IL', 'IM', 'IN', 'IO', 'IS', 'IT', 'IU', 'IW', 'IX', 'IY',
+         'NA', 'NB', 'NC', 'ND', 'NF', 'NL', 'NM', 'NN', 'NO', 'NT', 'NV'].contains(subject)) {
+      return NotamGroup.navigationAids;
+    }
+    
+    // Departure/Approach Procedures (Group 3)
+    if (['PA', 'PB', 'PC', 'PD', 'PE', 'PH', 'PI', 'PK', 'PU'].contains(subject)) {
+      return NotamGroup.departureApproachProcedures;
+    }
+    
+    // Airport and ATC Availability (Group 4)
+    if (['FA', 'FF', 'FU', 'FM'].contains(subject)) {
+      return NotamGroup.airportAtcAvailability;
+    }
+    
+    // Lighting (Group 5)
+    if (['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
+         'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
+      return NotamGroup.lighting;
+    }
+    
+    // Hazards and Obstacles (Group 6)
+    if (['OB', 'OL'].contains(subject)) {
+      return NotamGroup.hazardsObstacles;
+    }
+    
+    // Airspace (Group 7)
+    if (['AA', 'AC', 'AD', 'AE', 'AF', 'AH', 'AL', 'AN', 'AO', 'AP', 'AR', 'AT', 'AU', 'AV', 'AX', 'AZ',
+         'RA', 'RD', 'RM', 'RO', 'RP', 'RR', 'RT', 'GA', 'GW'].contains(subject)) {
+      return NotamGroup.airspace;
+    }
+    
+    // Procedural and Admin (Group 8)
+    if (['PF', 'PL', 'PN', 'PO', 'PR', 'PT', 'PX', 'PZ'].contains(subject)) {
+      return NotamGroup.proceduralAdmin;
+    }
+    
+    // Default to other for unmapped codes
+    return NotamGroup.other;
+  }
+
   factory Notam.fromJson(Map<String, dynamic> json) {
     return Notam(
       id: json['id'],
@@ -433,6 +507,9 @@ class Notam {
       affectedSystem: json['affectedSystem'],
       isCritical: json['isCritical'],
       qCode: json['qCode'],
+      group: json['group'] != null 
+          ? NotamGroup.values.firstWhere((e) => e.toString() == 'NotamGroup.${json['group']}')
+          : determineGroupFromQCode(json['qCode']),
     );
   }
 
@@ -541,6 +618,9 @@ class Notam {
       type = NotamType.airspace;
       }
     }
+
+    // Determine NOTAM group based on Q code
+    NotamGroup group = determineGroupFromQCode(qCode);
     
     return Notam(
       id: notam['number'] ?? 'N/A',
@@ -553,6 +633,7 @@ class Notam {
       affectedSystem: notam['featureType'] ?? 'N/A',
       isCritical: notam['classification'] == 'CRITICAL',
       qCode: qCode,
+      group: group,
     );
   }
 
@@ -568,6 +649,9 @@ class Notam {
       affectedSystem: json['affectedSystem'],
       isCritical: json['isCritical'] == 1,
       qCode: json['qCode'],
+      group: json['group'] != null 
+          ? NotamGroup.values.firstWhere((e) => e.toString() == 'NotamGroup.${json['group']}')
+          : determineGroupFromQCode(json['qCode']),
     );
   }
 
@@ -583,6 +667,7 @@ class Notam {
       'affectedSystem': affectedSystem,
       'isCritical': isCritical,
       'qCode': qCode,
+      'group': group.toString().split('.').last,
     };
   }
 
@@ -599,6 +684,7 @@ class Notam {
       'affectedSystem': affectedSystem,
       'isCritical': isCritical ? 1 : 0,
       'qCode': qCode,
+      'group': group.toString().split('.').last,
     };
   }
 } 

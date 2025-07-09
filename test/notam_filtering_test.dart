@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dispatch_buddy/models/notam.dart';
+import 'package:dispatch_buddy/services/notam_grouping_service.dart';
 
 void main() {
   group('NOTAM Model Tests', () {
@@ -21,6 +22,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
+          group: NotamGroup.movementAreas,
         );
 
         expect(notam.id, 'TEST123');
@@ -45,6 +47,7 @@ void main() {
           decodedText: 'Currently active NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(activeNotam.validFrom.isBefore(now), isTrue);
@@ -62,6 +65,7 @@ void main() {
           decodedText: 'Future active NOTAM',
           affectedSystem: 'NAVAID',
           isCritical: false,
+          group: NotamGroup.navigationAids,
         );
 
         expect(futureNotam.validFrom.isAfter(now), isTrue);
@@ -79,6 +83,7 @@ void main() {
           decodedText: 'Past NOTAM',
           affectedSystem: 'TAXIWAY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(pastNotam.validFrom.isBefore(now), isTrue);
@@ -98,6 +103,7 @@ void main() {
           decodedText: 'Runway 06/24 closed for maintenance',
           affectedSystem: 'RWY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(runwayNotam.type, NotamType.runway);
@@ -115,6 +121,7 @@ void main() {
           decodedText: 'ILS approach unavailable',
           affectedSystem: 'NAVAID',
           isCritical: false,
+          group: NotamGroup.navigationAids,
         );
 
         expect(navaidNotam.type, NotamType.navaid);
@@ -132,6 +139,7 @@ void main() {
           decodedText: 'Taxiway A closed',
           affectedSystem: 'TAXIWAY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(taxiwayNotam.type, NotamType.taxiway);
@@ -149,6 +157,7 @@ void main() {
           decodedText: 'Airspace restricted',
           affectedSystem: 'AIRSPACE',
           isCritical: false,
+          group: NotamGroup.airspace,
         );
 
         expect(airspaceNotam.type, NotamType.airspace);
@@ -166,6 +175,7 @@ void main() {
           decodedText: 'General information',
           affectedSystem: 'OTHER',
           isCritical: false,
+          group: NotamGroup.other,
         );
 
         expect(otherNotam.type, NotamType.other);
@@ -185,6 +195,7 @@ void main() {
           decodedText: 'Critical runway closure',
           affectedSystem: 'RWY',
           isCritical: true,
+          group: NotamGroup.movementAreas,
         );
 
         expect(criticalNotam.isCritical, isTrue);
@@ -201,6 +212,7 @@ void main() {
           decodedText: 'Normal taxiway maintenance',
           affectedSystem: 'TAXIWAY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(normalNotam.isCritical, isFalse);
@@ -219,6 +231,7 @@ void main() {
           decodedText: 'Decoded serialization test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
+          group: NotamGroup.movementAreas,
         );
 
         final json = originalNotam.toJson();
@@ -246,6 +259,7 @@ void main() {
           decodedText: 'Decoded database test NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         final dbJson = originalNotam.toDbJson('FLIGHT123');
@@ -275,6 +289,7 @@ void main() {
           decodedText: 'Valid NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
+          group: NotamGroup.movementAreas,
         );
 
         expect(validNotam.validFrom.isBefore(validNotam.validTo), isTrue);
@@ -291,6 +306,7 @@ void main() {
           decodedText: 'Permanent NOTAM',
           affectedSystem: 'OTHER',
           isCritical: false,
+          group: NotamGroup.other,
         );
 
         expect(permanentNotam.validTo.isAfter(now.add(Duration(days: 365 * 5))), isTrue);
