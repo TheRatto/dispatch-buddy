@@ -5,12 +5,12 @@ This document outlines the implementation plan for adding NOTAM grouping functio
 
 ## 📊 Current Status
 - **Phase 1**: ✅ **COMPLETED** (Foundation - NOTAM grouping infrastructure)
-- **Phase 2**: 🔄 **READY TO START** (Text-based classification)
+- **Phase 2**: ✅ **COMPLETED** (Text-based classification)
 - **Phase 3**: ⏳ **PENDING** (UI Components)
 - **Phase 4**: ⏳ **PENDING** (Integration)
 - **Phase 5**: ⏳ **PENDING** (Advanced Features)
 
-**Next**: Begin Phase 2 - Text-based classification for non-Q code NOTAMs
+**Next**: Begin Phase 3 - UI Components for grouped NOTAM display
 
 ## 🎯 Feature Goals
 - Group NOTAMs by affected system/operational significance
@@ -272,22 +272,44 @@ PZ - ADIZ procedure
 
 **Note**: Q code coverage review needed - need to verify all ICAO Q code subjects are included in our groupings. This will be addressed in Phase 2.
 
-### Phase 2: Text-Based Classification (Week 2)
+### Phase 2: Text-Based Classification (Week 2) ✅ **COMPLETED**
 **Goal**: Implement fallback classification for non-Q code NOTAMs
 
 #### Tasks:
-- [ ] **2.1** Create keyword mapping for each group
-- [ ] **2.2** Implement text analysis function
-- [ ] **2.3** Add confidence scoring for text-based matches
-- [ ] **2.4** Create fallback logic (Q code → text → "Other")
-- [ ] **2.5** Add unit tests for text classification
-- [ ] **2.6** Test with real NOTAM data
+- [x] **2.1** Create keyword mapping for each group
+- [x] **2.2** Implement text analysis function
+- [x] **2.3** Add confidence scoring for text-based matches
+- [x] **2.4** Create fallback logic (Q code → text → "Other")
+- [x] **2.5** Add unit tests for text classification
+- [x] **2.6** Test with real NOTAM data
 
 #### Acceptance Criteria:
-- Non-Q code NOTAMs are properly classified
-- Keyword matching is accurate and comprehensive
-- Fallback logic works correctly
-- Performance is acceptable (<100ms per NOTAM)
+- [x] Non-Q code NOTAMs are properly classified
+- [x] Keyword matching is accurate and comprehensive
+- [x] Fallback logic works correctly
+- [x] Performance is acceptable (<100ms per NOTAM)
+
+#### Implementation Summary:
+**Text Analysis Approach:**
+- Regex-based whole word/phrase matching with word boundaries (`\bkeyword\b`)
+- Prevents false substring matches (e.g., "min" in "administrative")
+- Phrase-first matching by sorting keywords by length (longest first)
+- Weighted scoring system with group priority tiebreakers
+- Minimum score threshold (only assign groups if score > 0)
+
+**Keyword Coverage:**
+- Movement Areas: Runway, taxiway, apron, parking, braking action, contaminants
+- Navigation Aids: ILS, VOR, NDB, DME, minimums, approach procedures
+- Lighting: HIRL, REIL, PAPI, VASIS, approach lighting, aerodrome beacon
+- Airport/ATC: Airport closure, ATC services, fuel, fire, bird/drone hazards
+- Hazards/Obstacles: Obstacles, cranes, construction, wildlife, unlit hazards
+- Airspace: Restricted/prohibited areas, military, GPS/RNAV outages
+- Procedural/Admin: Curfew, noise, PPR, slots, administrative procedures
+
+**Test Coverage:**
+- 23 comprehensive unit tests covering all groups
+- Edge cases: ambiguous keywords, overlapping terms, substring prevention
+- All tests passing with robust classification accuracy
 
 ### Phase 3: UI Components (Week 3)
 **Goal**: Create the grouped NOTAM display interface

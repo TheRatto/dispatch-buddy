@@ -167,6 +167,342 @@ void main() {
       });
     });
 
+    group('Text-Based Classification', () {
+      test('should classify Movement Areas NOTAMs by text', () {
+        final testCases = [
+          {'text': 'RWY 06/24 CLOSED for maintenance', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Runway 06/24 unserviceable', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Taxiway A closed for construction', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'TWY B unserviceable', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Apron closed for maintenance', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Parking area limited', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Aircraft stand 5 closed', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Displaced threshold runway 06', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'Braking action poor on runway 06', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'TORA reduced on runway 06', 'expectedGroup': NotamGroup.movementAreas},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null, // No Q code to force text-based classification
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should classify Navigation Aids NOTAMs by text', () {
+        final testCases = [
+          {'text': 'ILS runway 06 unserviceable', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'VOR out of service', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'NDB unserviceable', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'DME out of service', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'Localizer runway 06 unserviceable', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'Glide path unserviceable', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'PAPI unserviceable runway 06', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'Minimums increased for approach', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'Decision altitude increased', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'Navigation aid maintenance', 'expectedGroup': NotamGroup.navigationAids},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should classify Lighting NOTAMs by text', () {
+        final testCases = [
+          {'text': 'Runway lighting unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'HIRL unserviceable runway 06', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'REIL unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'PAPI unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'VASIS unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'Approach lighting system unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'Centerline lights unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'Edge lights unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'Threshold lights unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'Aerodrome beacon unserviceable', 'expectedGroup': NotamGroup.lighting},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should classify Airport & ATC Availability NOTAMs by text', () {
+        final testCases = [
+          {'text': 'Airport closed for maintenance', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Tower closed', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Ground control unserviceable', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'ATIS unserviceable', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Fuel not available', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Fire service downgraded', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Bird hazard reported', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Drone activity reported', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'ATC service limited', 'expectedGroup': NotamGroup.airportAtcAvailability},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should classify Hazards & Obstacles NOTAMs by text', () {
+        final testCases = [
+          {'text': 'Obstacle reported near airport', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Crane operating near runway', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Construction work near airport', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Unlit obstacle reported', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Obstacle light failure', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Wildlife hazard reported', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Bird strike reported', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Maintenance work near runway', 'expectedGroup': NotamGroup.hazardsObstacles},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should classify Airspace NOTAMs by text', () {
+        final testCases = [
+          {'text': 'Restricted airspace activated', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'Prohibited area established', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'Danger area active', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'Military exercise in progress', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'GPS interference reported', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'RNAV not available', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'Temporary reserved airspace', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'Aerobatics in progress', 'expectedGroup': NotamGroup.airspace},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should classify Procedural & Admin NOTAMs by text', () {
+        final testCases = [
+          {'text': 'Curfew restrictions in effect', 'expectedGroup': NotamGroup.proceduralAdmin},
+          {'text': 'Noise abatement procedures', 'expectedGroup': NotamGroup.proceduralAdmin},
+          {'text': 'PPR required for operations', 'expectedGroup': NotamGroup.proceduralAdmin},
+          {'text': 'Slot restrictions in effect', 'expectedGroup': NotamGroup.proceduralAdmin},
+          {'text': 'Administrative procedures changed', 'expectedGroup': NotamGroup.proceduralAdmin},
+          {'text': 'ATIS frequency changed', 'expectedGroup': NotamGroup.proceduralAdmin},
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: testCase['text'] as String,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          expect(assignedGroup, testCase['expectedGroup'], 
+              reason: 'Failed for text: ${testCase['text']}');
+        }
+      });
+
+      test('should fallback to Other for unrecognized text', () {
+        final testCases = [
+          'General information notice',
+          // 'Administrative update' should now be Procedural/Admin
+          // 'Administrative update',
+          'Unrelated notice',
+          'General maintenance information',
+        ];
+
+        for (final text in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: text,
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'OTHER',
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.other,
+          );
+
+          final assignedGroup = groupingService.assignGroup(notam);
+          if (text == 'Administrative update') {
+            expect(assignedGroup, NotamGroup.proceduralAdmin, 
+                reason: 'Failed for text: $text');
+          } else {
+            expect(assignedGroup, NotamGroup.other, 
+                reason: 'Failed for text: $text');
+          }
+        }
+      });
+
+      test('should prioritize Q code over text classification', () {
+        // This NOTAM has runway-related text but a navaid Q code
+        final notam = Notam(
+          id: 'TEST123',
+          icao: 'YPPH',
+          type: NotamType.navaid,
+          validFrom: DateTime.now(),
+          validTo: DateTime.now().add(Duration(hours: 1)),
+          rawText: 'QNTLC Runway 06/24 ILS unserviceable for maintenance',
+          decodedText: 'ILS runway 06 unserviceable',
+          affectedSystem: 'ILS',
+          isCritical: false,
+          qCode: 'QNTLC',
+          group: NotamGroup.navigationAids,
+        );
+
+        final assignedGroup = groupingService.assignGroup(notam);
+        expect(assignedGroup, NotamGroup.navigationAids); // Should be navaid based on Q code
+      });
+    });
+
+    group('Confidence Scoring', () {
+      test('should calculate confidence scores correctly', () {
+        final testCases = [
+          {
+            'text': 'RWY 06/24 CLOSED for maintenance',
+            'group': NotamGroup.movementAreas,
+            'expectedConfidence': 0.1, // 1 match out of ~10 keywords
+          },
+          {
+            'text': 'ILS runway 06 unserviceable',
+            'group': NotamGroup.navigationAids,
+            'expectedConfidence': 0.05, // 1 match out of ~20 keywords
+          },
+          {
+            'text': 'Runway lighting unserviceable',
+            'group': NotamGroup.lighting,
+            'expectedConfidence': 0.05, // 1 match out of ~20 keywords
+          },
+        ];
+
+        for (final testCase in testCases) {
+          final confidence = groupingService.getTextClassificationConfidence(
+            testCase['text'] as String,
+            testCase['group'] as NotamGroup,
+          );
+          
+          expect(confidence, greaterThan(0.0), 
+              reason: 'Confidence should be greater than 0 for: ${testCase['text']}');
+          expect(confidence, lessThanOrEqualTo(1.0), 
+              reason: 'Confidence should be less than or equal to 1.0 for: ${testCase['text']}');
+        }
+      });
+
+      test('should return 0.0 confidence for Other group', () {
+        final confidence = groupingService.getTextClassificationConfidence(
+          'Some random text',
+          NotamGroup.other,
+        );
+        
+        expect(confidence, 0.0);
+      });
+    });
+
     group('NotamGroupingService', () {
       test('should get correct display names', () {
         expect(groupingService.getGroupDisplayName(NotamGroup.movementAreas), '🛬 Movement Areas');
