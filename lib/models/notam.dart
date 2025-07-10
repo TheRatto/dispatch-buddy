@@ -112,7 +112,7 @@ class Notam {
     return NotamType.other;
   }
 
-  // Get human-readable description of Q code subject
+  // Get sanitized human-readable description of Q code subject
   static String getQCodeSubjectDescription(String? qCode) {
     if (qCode == null || qCode.length != 5 || !qCode.startsWith('Q')) {
       return 'Unknown';
@@ -120,216 +120,219 @@ class Notam {
     
     final subject = qCode.substring(1, 3);
     
+    String description;
     switch (subject) {
       // Airspace Organization (A)
-      case 'AA': return 'Minimum Altitude';
-      case 'AC': return 'Class B/C/D/E Surface Area';
-      case 'AD': return 'Air Defense Identification Zone';
-      case 'AE': return 'Control Area';
-      case 'AF': return 'Flight Information Region';
-      case 'AH': return 'Upper Control Area';
-      case 'AL': return 'Minimum Usable Flight Level';
-      case 'AN': return 'Area Navigation Route';
-      case 'AO': return 'Oceanic Control Area';
-      case 'AP': return 'Reporting Point';
-      case 'AR': return 'ATS Route';
-      case 'AT': return 'Terminal Control Area';
-      case 'AU': return 'Upper Flight Information Region';
-      case 'AV': return 'Upper Advisory Area';
-      case 'AX': return 'Significant Point';
-      case 'AZ': return 'Aerodrome Traffic Zone';
+      case 'AA': description = 'Minimum Altitude'; break;
+      case 'AC': description = 'Class B/C/D/E Surface Area'; break;
+      case 'AD': description = 'Air Defense Identification Zone'; break;
+      case 'AE': description = 'Control Area'; break;
+      case 'AF': description = 'Flight Information Region'; break;
+      case 'AH': description = 'Upper Control Area'; break;
+      case 'AL': description = 'Minimum Usable Flight Level'; break;
+      case 'AN': description = 'Area Navigation Route'; break;
+      case 'AO': description = 'Oceanic Control Area'; break;
+      case 'AP': description = 'Reporting Point'; break;
+      case 'AR': description = 'ATS Route'; break;
+      case 'AT': description = 'Terminal Control Area'; break;
+      case 'AU': description = 'Upper Flight Information Region'; break;
+      case 'AV': description = 'Upper Advisory Area'; break;
+      case 'AX': description = 'Significant Point'; break;
+      case 'AZ': description = 'Aerodrome Traffic Zone'; break;
       
       // Communications and Surveillance (C)
-      case 'CA': return 'Air/Ground Facility';
-      case 'CB': return 'ADS-B';
-      case 'CC': return 'ADS-C';
-      case 'CD': return 'CPDLC';
-      case 'CE': return 'En Route Surveillance Radar';
-      case 'CG': return 'GCA System';
-      case 'CL': return 'SELCAL';
-      case 'CM': return 'Surface Movement Radar';
-      case 'CP': return 'Precision Approach Radar';
-      case 'CR': return 'SRE of PAR';
-      case 'CS': return 'SSR';
-      case 'CT': return 'Terminal Area Surveillance Radar';
+      case 'CA': description = 'Air/Ground Facility'; break;
+      case 'CB': description = 'ADS-B'; break;
+      case 'CC': description = 'ADS-C'; break;
+      case 'CD': description = 'CPDLC'; break;
+      case 'CE': description = 'En Route Surveillance Radar'; break;
+      case 'CG': description = 'GCA System'; break;
+      case 'CL': description = 'SELCAL'; break;
+      case 'CM': description = 'Surface Movement Radar'; break;
+      case 'CP': description = 'Precision Approach Radar'; break;
+      case 'CR': description = 'SRE of PAR'; break;
+      case 'CS': description = 'SSR'; break;
+      case 'CT': description = 'Terminal Area Surveillance Radar'; break;
       
       // Facilities and Services (F)
-      case 'FA': return 'Aerodrome';
-      case 'FB': return 'Friction Measuring Device';
-      case 'FC': return 'Ceiling Measurement Equipment';
-      case 'FD': return 'Docking System';
-      case 'FE': return 'Oxygen';
-      case 'FF': return 'Fire Fighting and Rescue';
-      case 'FG': return 'Ground Movement Control';
-      case 'FH': return 'Helicopter Alighting Area';
-      case 'FI': return 'Aircraft De-icing';
-      case 'FJ': return 'Oils';
-      case 'FL': return 'Landing Direction Indicator';
-      case 'FM': return 'Meteorological Service';
-      case 'FO': return 'Fog Dispersal System';
-      case 'FP': return 'Heliport';
-      case 'FS': return 'Snow Removal Equipment';
-      case 'FT': return 'Transmissometer';
-      case 'FU': return 'Fuel Availability';
-      case 'FW': return 'Wind Direction Indicator';
-      case 'FZ': return 'Customs/Immigration';
+      case 'FA': description = 'Aerodrome'; break;
+      case 'FB': description = 'Friction Measuring Device'; break;
+      case 'FC': description = 'Ceiling Measurement Equipment'; break;
+      case 'FD': description = 'Docking System'; break;
+      case 'FE': description = 'Oxygen'; break;
+      case 'FF': description = 'Fire Fighting and Rescue'; break;
+      case 'FG': description = 'Ground Movement Control'; break;
+      case 'FH': description = 'Helicopter Alighting Area'; break;
+      case 'FI': description = 'Aircraft De-icing'; break;
+      case 'FJ': description = 'Oils'; break;
+      case 'FL': description = 'Landing Direction Indicator'; break;
+      case 'FM': description = 'Meteorological Service'; break;
+      case 'FO': description = 'Fog Dispersal System'; break;
+      case 'FP': description = 'Heliport'; break;
+      case 'FS': description = 'Snow Removal Equipment'; break;
+      case 'FT': description = 'Transmissometer'; break;
+      case 'FU': description = 'Fuel Availability'; break;
+      case 'FW': description = 'Wind Direction Indicator'; break;
+      case 'FZ': description = 'Customs/Immigration'; break;
       
       // GNSS Services (G)
-      case 'GA': return 'GNSS Airfield-Specific Operations';
-      case 'GW': return 'GNSS Area-Wide Operations';
+      case 'GA': description = 'GNSS Airfield-Specific Operations'; break;
+      case 'GW': description = 'GNSS Area-Wide Operations'; break;
       
       // Instrument and Microwave Landing System (I)
-      case 'IC': return 'ILS';
-      case 'ID': return 'ILS DME';
-      case 'IG': return 'Glide Path (ILS)';
-      case 'II': return 'Inner Marker (ILS)';
-      case 'IL': return 'Localizer (ILS)';
-      case 'IM': return 'Middle Marker (ILS)';
-      case 'IN': return 'Localizer (Non-ILS)';
-      case 'IO': return 'Outer Marker (ILS)';
-      case 'IS': return 'ILS Category I';
-      case 'IT': return 'ILS Category II';
-      case 'IU': return 'ILS Category III';
-      case 'IW': return 'MLS';
-      case 'IX': return 'Locator, Outer (ILS)';
-      case 'IY': return 'Locator, Middle (ILS)';
+      case 'IC': description = 'ILS'; break;
+      case 'ID': description = 'ILS DME'; break;
+      case 'IG': description = 'Glide Path (ILS)'; break;
+      case 'II': description = 'Inner Marker (ILS)'; break;
+      case 'IL': description = 'Localizer (ILS)'; break;
+      case 'IM': description = 'Middle Marker (ILS)'; break;
+      case 'IN': description = 'Localizer (Non-ILS)'; break;
+      case 'IO': description = 'Outer Marker (ILS)'; break;
+      case 'IS': description = 'ILS Category I'; break;
+      case 'IT': description = 'ILS Category II'; break;
+      case 'IU': description = 'ILS Category III'; break;
+      case 'IW': description = 'MLS'; break;
+      case 'IX': description = 'Locator, Outer (ILS)'; break;
+      case 'IY': description = 'Locator, Middle (ILS)'; break;
       
       // Lighting Facilities (L)
-      case 'LA': return 'Approach Lighting System';
-      case 'LB': return 'Aerodrome Beacon';
-      case 'LC': return 'Runway Centre Line Lights';
-      case 'LD': return 'Landing Direction Indicator Lights';
-      case 'LE': return 'Runway Edge Lights';
-      case 'LF': return 'Sequenced Flashing Lights';
-      case 'LG': return 'Pilot-Controlled Lighting';
-      case 'LH': return 'High Intensity Runway Lights';
-      case 'LI': return 'Runway End Identifier Lights';
-      case 'LJ': return 'Runway Alignment Indicator Lights';
-      case 'LK': return 'CAT II Components of ALS';
-      case 'LL': return 'Low Intensity Runway Lights';
-      case 'LM': return 'Medium Intensity Runway Lights';
-      case 'LP': return 'PAPI';
-      case 'LR': return 'All Landing Area Lighting Facilities';
-      case 'LS': return 'Stopway Lights';
-      case 'LT': return 'Threshold Lights';
-      case 'LU': return 'Helicopter Approach Path Indicator';
-      case 'LV': return 'VASIS';
-      case 'LW': return 'Heliport Lighting';
-      case 'LX': return 'Taxiway Centre Line Lights';
-      case 'LY': return 'Taxiway Edge Lights';
-      case 'LZ': return 'Runway Touchdown Zone Lights';
+      case 'LA': description = 'Approach Lighting System'; break;
+      case 'LB': description = 'Aerodrome Beacon'; break;
+      case 'LC': description = 'Runway Centre Line Lights'; break;
+      case 'LD': description = 'Landing Direction Indicator Lights'; break;
+      case 'LE': description = 'Runway Edge Lights'; break;
+      case 'LF': description = 'Sequenced Flashing Lights'; break;
+      case 'LG': description = 'Pilot-Controlled Lighting'; break;
+      case 'LH': description = 'High Intensity Runway Lights'; break;
+      case 'LI': description = 'Runway End Identifier Lights'; break;
+      case 'LJ': description = 'Runway Alignment Indicator Lights'; break;
+      case 'LK': description = 'CAT II Components of ALS'; break;
+      case 'LL': description = 'Low Intensity Runway Lights'; break;
+      case 'LM': description = 'Medium Intensity Runway Lights'; break;
+      case 'LP': description = 'PAPI'; break;
+      case 'LR': description = 'All Landing Area Lighting Facilities'; break;
+      case 'LS': description = 'Stopway Lights'; break;
+      case 'LT': description = 'Threshold Lights'; break;
+      case 'LU': description = 'Helicopter Approach Path Indicator'; break;
+      case 'LV': description = 'VASIS'; break;
+      case 'LW': description = 'Heliport Lighting'; break;
+      case 'LX': description = 'Taxiway Centre Line Lights'; break;
+      case 'LY': description = 'Taxiway Edge Lights'; break;
+      case 'LZ': description = 'Runway Touchdown Zone Lights'; break;
       
       // Movement and Landing Area (M)
-      case 'MA': return 'Movement Area';
-      case 'MB': return 'Bearing Strength';
-      case 'MC': return 'Clearway';
-      case 'MD': return 'Declared Distances';
-      case 'MG': return 'Taxiing Guidance System';
-      case 'MH': return 'Arresting Gear';
-      case 'MK': return 'Parking Area';
-      case 'MM': return 'Daylight Markings';
-      case 'MN': return 'Apron';
-      case 'MO': return 'Stopbar';
-      case 'MP': return 'Aircraft Stands';
-      case 'MR': return 'Runway';
-      case 'MS': return 'Stopway';
-      case 'MT': return 'Threshold';
-      case 'MU': return 'Runway Turning Bay';
-      case 'MW': return 'Strip/Shoulder';
-      case 'MX': return 'Taxiway(s)';
-      case 'MY': return 'Rapid Exit Taxiway';
+      case 'MA': description = 'Movement Area'; break;
+      case 'MB': description = 'Bearing Strength'; break;
+      case 'MC': description = 'Clearway'; break;
+      case 'MD': description = 'Declared Distances'; break;
+      case 'MG': description = 'Taxiing Guidance System'; break;
+      case 'MH': description = 'Arresting Gear'; break;
+      case 'MK': description = 'Parking Area'; break;
+      case 'MM': description = 'Daylight Markings'; break;
+      case 'MN': description = 'Apron'; break;
+      case 'MO': description = 'Stopbar'; break;
+      case 'MP': description = 'Aircraft Stands'; break;
+      case 'MR': description = 'Runway'; break;
+      case 'MS': description = 'Stopway'; break;
+      case 'MT': description = 'Threshold'; break;
+      case 'MU': description = 'Runway Turning Bay'; break;
+      case 'MW': description = 'Strip/Shoulder'; break;
+      case 'MX': description = 'Taxiway(s)'; break;
+      case 'MY': description = 'Rapid Exit Taxiway'; break;
       
       // COM Terminal and En Route Navigation Facilities (N)
-      case 'NA': return 'All Radio Navigation Facilities';
-      case 'NB': return 'Nondirectional Radio Beacon';
-      case 'NC': return 'DECCA';
-      case 'ND': return 'Distance Measuring Equipment (DME)';
-      case 'NF': return 'Fan Marker';
-      case 'NL': return 'Locator';
-      case 'NM': return 'VOR/DME';
-      case 'NN': return 'TACAN';
-      case 'NO': return 'OMEGA';
-      case 'NT': return 'VORTAC';
-      case 'NV': return 'VOR';
+      case 'NA': description = 'All Radio Navigation Facilities'; break;
+      case 'NB': description = 'Nondirectional Radio Beacon'; break;
+      case 'NC': description = 'DECCA'; break;
+      case 'ND': description = 'Distance Measuring Equipment (DME)'; break;
+      case 'NF': description = 'Fan Marker'; break;
+      case 'NL': description = 'Locator'; break;
+      case 'NM': description = 'VOR/DME'; break;
+      case 'NN': description = 'TACAN'; break;
+      case 'NO': description = 'OMEGA'; break;
+      case 'NT': description = 'VORTAC'; break;
+      case 'NV': description = 'VOR'; break;
       
       // Other Information (O)
-      case 'OA': return 'Aeronautical Information Service';
-      case 'OB': return 'Obstacle';
-      case 'OE': return 'Aircraft Entry Requirements';
-      case 'OL': return 'Obstacle Lights';
-      case 'OR': return 'Rescue Coordination Centre';
+      case 'OA': description = 'Aeronautical Information Service'; break;
+      case 'OB': description = 'Obstacle'; break;
+      case 'OE': description = 'Aircraft Entry Requirements'; break;
+      case 'OL': description = 'Obstacle Lights'; break;
+      case 'OR': description = 'Rescue Coordination Centre'; break;
       
       // ATM Air Traffic Procedures (P)
-      case 'PA': return 'Standard Instrument Arrival';
-      case 'PB': return 'Standard VFR Arrival';
-      case 'PC': return 'Contingency Procedures';
-      case 'PD': return 'Standard Instrument Departure';
-      case 'PE': return 'Standard VFR Departure';
-      case 'PF': return 'Flow Control Procedure';
-      case 'PH': return 'Holding Procedure';
-      case 'PI': return 'Instrument Approach Procedure';
-      case 'PK': return 'VFR Approach Procedure';
-      case 'PL': return 'Flight Plan Processing';
-      case 'PM': return 'Aerodrome Operating Minima';
-      case 'PN': return 'Noise Operating Restriction';
-      case 'PO': return 'Obstacle Clearance Altitude and Height';
-      case 'PR': return 'Radio Failure Procedures';
-      case 'PT': return 'Transition Altitude or Transition Level';
-      case 'PU': return 'Missed Approach Procedure';
-      case 'PX': return 'Minimum Holding Altitude';
-      case 'PZ': return 'ADIZ Procedure';
+      case 'PA': description = 'Standard Instrument Arrival'; break;
+      case 'PB': description = 'Standard VFR Arrival'; break;
+      case 'PC': description = 'Contingency Procedures'; break;
+      case 'PD': description = 'Standard Instrument Departure'; break;
+      case 'PE': description = 'Standard VFR Departure'; break;
+      case 'PF': description = 'Flow Control Procedure'; break;
+      case 'PH': description = 'Holding Procedure'; break;
+      case 'PI': description = 'Instrument Approach Procedure'; break;
+      case 'PK': description = 'VFR Approach Procedure'; break;
+      case 'PL': description = 'Flight Plan Processing'; break;
+      case 'PM': description = 'Aerodrome Operating Minima'; break;
+      case 'PN': description = 'Noise Operating Restriction'; break;
+      case 'PO': description = 'Obstacle Clearance Altitude and Height'; break;
+      case 'PR': description = 'Radio Failure Procedures'; break;
+      case 'PT': description = 'Transition Altitude or Transition Level'; break;
+      case 'PU': description = 'Missed Approach Procedure'; break;
+      case 'PX': description = 'Minimum Holding Altitude'; break;
+      case 'PZ': description = 'ADIZ Procedure'; break;
       
       // Navigation Warnings: Airspace Restrictions (R)
-      case 'RA': return 'Airspace Reservation';
-      case 'RD': return 'Danger Area';
-      case 'RM': return 'Military Operating Area';
-      case 'RO': return 'Overflying of...';
-      case 'RP': return 'Prohibited Area';
-      case 'RR': return 'Restricted Area';
-      case 'RT': return 'Temporary Restricted Area';
+      case 'RA': description = 'Airspace Reservation'; break;
+      case 'RD': description = 'Danger Area'; break;
+      case 'RM': description = 'Military Operating Area'; break;
+      case 'RO': description = 'Overflying of...'; break;
+      case 'RP': description = 'Prohibited Area'; break;
+      case 'RR': description = 'Restricted Area'; break;
+      case 'RT': description = 'Temporary Restricted Area'; break;
       
       // ATM Air Traffic and VOLMET Services (S)
-      case 'SA': return 'Automatic Terminal Information Service';
-      case 'SB': return 'ATS Reporting Office';
-      case 'SC': return 'Area Control Centre';
-      case 'SE': return 'Flight Information Service';
-      case 'SF': return 'Aerodrome Flight Information Service';
-      case 'SL': return 'Flow Control Centre';
-      case 'SO': return 'Oceanic Area Control Centre';
-      case 'SP': return 'Approach Control Service';
-      case 'SS': return 'Flight Service Station';
-      case 'ST': return 'Aerodrome Control Tower';
-      case 'SU': return 'Upper Area Control Centre';
-      case 'SV': return 'VOLMET Broadcast';
-      case 'SY': return 'Upper Advisory Service';
+      case 'SA': description = 'Automatic Terminal Information Service'; break;
+      case 'SB': description = 'ATS Reporting Office'; break;
+      case 'SC': description = 'Area Control Centre'; break;
+      case 'SE': description = 'Flight Information Service'; break;
+      case 'SF': description = 'Aerodrome Flight Information Service'; break;
+      case 'SL': description = 'Flow Control Centre'; break;
+      case 'SO': description = 'Oceanic Area Control Centre'; break;
+      case 'SP': description = 'Approach Control Service'; break;
+      case 'SS': description = 'Flight Service Station'; break;
+      case 'ST': description = 'Aerodrome Control Tower'; break;
+      case 'SU': description = 'Upper Area Control Centre'; break;
+      case 'SV': description = 'VOLMET Broadcast'; break;
+      case 'SY': description = 'Upper Advisory Service'; break;
       
       // Navigation Warnings: Warnings (W)
-      case 'WA': return 'Air Display';
-      case 'WB': return 'Aerobatics';
-      case 'WC': return 'Captive Balloon or Kite';
-      case 'WD': return 'Demolition of Explosives';
-      case 'WE': return 'Exercises';
-      case 'WF': return 'Air Refueling';
-      case 'WG': return 'Glider Flying';
-      case 'WH': return 'Blasting';
-      case 'WJ': return 'Banner/Target Towing';
-      case 'WL': return 'Ascent of Free Balloon';
-      case 'WM': return 'Missile, Gun or Rocket Flying';
-      case 'WP': return 'Parachute Jumping Exercise, Paragliding or Hang Gliding';
-      case 'WR': return 'Radioactive Materials or Toxic Chemicals';
-      case 'WS': return 'Burning or Blowing Gas';
-      case 'WT': return 'Mass Movement of Aircraft';
-      case 'WU': return 'Unmanned Aircraft';
-      case 'WV': return 'Formation Flight';
-      case 'WW': return 'Significant Volcanic Activity';
-      case 'WY': return 'Aerial Survey';
-      case 'WZ': return 'Model Flying';
+      case 'WA': description = 'Air Display'; break;
+      case 'WB': description = 'Aerobatics'; break;
+      case 'WC': description = 'Captive Balloon or Kite'; break;
+      case 'WD': description = 'Demolition of Explosives'; break;
+      case 'WE': description = 'Exercises'; break;
+      case 'WF': description = 'Air Refueling'; break;
+      case 'WG': description = 'Glider Flying'; break;
+      case 'WH': description = 'Blasting'; break;
+      case 'WJ': description = 'Banner/Target Towing'; break;
+      case 'WL': description = 'Ascent of Free Balloon'; break;
+      case 'WM': description = 'Missile, Gun or Rocket Flying'; break;
+      case 'WP': description = 'Parachute Jumping Exercise, Paragliding or Hang Gliding'; break;
+      case 'WR': description = 'Radioactive Materials or Toxic Chemicals'; break;
+      case 'WS': description = 'Burning or Blowing Gas'; break;
+      case 'WT': description = 'Mass Movement of Aircraft'; break;
+      case 'WU': description = 'Unmanned Aircraft'; break;
+      case 'WV': description = 'Formation Flight'; break;
+      case 'WW': description = 'Significant Volcanic Activity'; break;
+      case 'WY': description = 'Aerial Survey'; break;
+      case 'WZ': description = 'Model Flying'; break;
       
-      default: return 'Unknown Subject';
+      default: description = 'Unknown Subject'; break;
     }
+    
+    return sanitizeText(description);
   }
 
-  // Get human-readable description of Q code status
+  // Get sanitized human-readable description of Q code status
   static String getQCodeStatusDescription(String? qCode) {
     if (qCode == null || qCode.length != 5 || !qCode.startsWith('Q')) {
       return 'Unknown';
@@ -337,24 +340,25 @@ class Notam {
     
     final status = qCode.substring(3, 5);
     
+    String description;
     switch (status) {
       // Availability (A)
-      case 'AC': return 'Withdrawn for Maintenance';
-      case 'AD': return 'Available for Daylight Operation';
-      case 'AF': return 'Flight Checked and Found Reliable';
-      case 'AG': return 'Ground Checked Only';
-      case 'AH': return 'Hours of Service Now';
-      case 'AK': return 'Resumed Normal Operations';
-      case 'AL': return 'Operative Subject to Prior Conditions';
-      case 'AM': return 'Military Operations Only';
-      case 'AN': return 'Available for Night Ops';
-      case 'AO': return 'Operational';
-      case 'AP': return 'Prior Permission Required';
-      case 'AR': return 'Available on Request';
-      case 'AS': return 'Unserviceable';
-      case 'AU': return 'Not Available';
-      case 'AW': return 'Completely Withdrawn';
-      case 'AX': return 'Previously Promulgated Shutdown Cancelled';
+      case 'AC': description = 'Withdrawn for Maintenance'; break;
+      case 'AD': description = 'Available for Daylight Operation'; break;
+      case 'AF': description = 'Flight Checked and Found Reliable'; break;
+      case 'AG': description = 'Ground Checked Only'; break;
+      case 'AH': description = 'Hours of Service Now'; break;
+      case 'AK': description = 'Resumed Normal Operations'; break;
+      case 'AL': description = 'Operative Subject to Prior Conditions'; break;
+      case 'AM': description = 'Military Operations Only'; break;
+      case 'AN': description = 'Available for Night Ops'; break;
+      case 'AO': description = 'Operational'; break;
+      case 'AP': description = 'Prior Permission Required'; break;
+      case 'AR': description = 'Available on Request'; break;
+      case 'AS': description = 'Unserviceable'; break;
+      case 'AU': description = 'Not Available'; break;
+      case 'AW': description = 'Completely Withdrawn'; break;
+      case 'AX': description = 'Previously Promulgated Shutdown Cancelled'; break;
       
       // Changes (C)
       case 'CA': return 'Activated';
@@ -424,10 +428,12 @@ class Notam {
       case 'LX': return 'Operating but Caution Advised Due To';
       
       // Other (XX)
-      case 'XX': return 'Unknown/Unspecified';
+      case 'XX': description = 'Unknown/Unspecified'; break;
       
-      default: return 'Other';
+      default: description = 'Other'; break;
     }
+    
+    return sanitizeText(description);
   }
 
   // Get Q code status/condition (fourth and fifth letters)
@@ -494,6 +500,74 @@ class Notam {
     // Default to other for unmapped codes
     return NotamGroup.other;
   }
+
+  // Normalize apostrophe characters for better display
+  static String sanitizeText(String text) {
+    if (text.isEmpty) return text;
+    
+    // First, decode HTML entities
+    String sanitized = text
+        .replaceAll('&apos;', "'") // HTML apostrophe entity
+        .replaceAll('&quot;', '"') // HTML quote entity
+        .replaceAll('&amp;', '&') // HTML ampersand entity
+        .replaceAll('&lt;', '<') // HTML less than entity
+        .replaceAll('&gt;', '>') // HTML greater than entity
+        .replaceAll('&nbsp;', ' ') // HTML non-breaking space
+        .replaceAll('&ndash;', '-') // HTML en dash
+        .replaceAll('&mdash;', '-') // HTML em dash
+        .replaceAll('&deg;', 'deg') // HTML degree symbol
+        .replaceAll('&plusmn;', '+/-') // HTML plus-minus
+        .replaceAll('&le;', '<=') // HTML less than or equal
+        .replaceAll('&ge;', '>=') // HTML greater than or equal
+        .replaceAll('&times;', 'x') // HTML multiplication
+        .replaceAll('&divide;', '/'); // HTML division
+    
+    // Then replace problematic Unicode apostrophes with standard ASCII apostrophe
+    // This handles cases like smart quotes, curly apostrophes, etc.
+    sanitized = sanitized
+        .replaceAll('’', "'") // Left single quotation mark
+        .replaceAll('‘', "'") // Right single quotation mark  
+        .replaceAll('“', '"') // Left double quotation mark
+        .replaceAll('”', '"') // Right double quotation mark
+        .replaceAll('…', '...') // Horizontal ellipsis
+        .replaceAll('–', '-') // En dash
+        .replaceAll('—', '-') // Em dash
+        .replaceAll('′', "'") // Prime (feet)
+        .replaceAll('″', '"') // Double prime (inches)
+        .replaceAll('°', 'deg') // Degree symbol
+        .replaceAll('±', '+/-') // Plus-minus sign
+        .replaceAll('≤', '<=') // Less than or equal
+        .replaceAll('≥', '>=') // Greater than or equal
+        .replaceAll('×', 'x') // Multiplication sign
+        .replaceAll('÷', '/'); // Division sign
+    
+    // Debug logging for significant changes
+    if (sanitized != text) {
+      print('DEBUG: 🔧 Text sanitized for NOTAM - Original length: ${text.length}, Sanitized length: ${sanitized.length}');
+      print('DEBUG: 🔧 Original text preview: "${text.length > 100 ? text.substring(0, 100) + '...' : text}"');
+      print('DEBUG: 🔧 Sanitized text preview: "${sanitized.length > 100 ? sanitized.substring(0, 100) + '...' : sanitized}"');
+    }
+    
+    return sanitized;
+  }
+
+  // Helper to extract the E) line(s) from rawText
+  static String extractELine(String text) {
+    final eLineRegExp = RegExp(r'^E\)\s*(.*)', multiLine: true);
+    final matches = eLineRegExp.allMatches(text);
+    if (matches.isNotEmpty) {
+      // If there are multiple E) lines, join them with newlines and sanitize
+      final joined = matches.map((m) => m.group(1)?.trim() ?? '').where((s) => s.isNotEmpty).join('\n');
+      return sanitizeText(joined);
+    }
+    return sanitizeText(text); // fallback
+  }
+
+  // Get sanitized raw text for display (only E) line if present)
+  String get displayRawText => extractELine(rawText);
+  
+  // Get sanitized decoded text for display  
+  String get displayDecodedText => sanitizeText(decodedText);
 
   factory Notam.fromJson(Map<String, dynamic> json) {
     return Notam(

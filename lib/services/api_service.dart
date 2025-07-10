@@ -130,6 +130,18 @@ class ApiService {
             
             for (final item in items) {
               final notam = Notam.fromFaaJson(item);
+              // Debug: Print full JSON for H5496/25 or H4696/25
+              if (notam.id == 'H5496/25' || notam.id == 'H4696/25') {
+                print('DEBUG: FOUND TARGET NOTAM: ${notam.id}');
+                print('DEBUG: FULL FAA JSON: ${jsonEncode(item)}');
+                print('DEBUG: NOTAM TEXT: ${notam.rawText}');
+                print('DEBUG: DECODED TEXT: ${notam.decodedText}');
+                print('DEBUG: Q CODE: ${notam.qCode}');
+                print('DEBUG: Q CODE SUBJECT: ${Notam.getQCodeSubjectDescription(notam.qCode)}');
+                print('DEBUG: Q CODE STATUS: ${Notam.getQCodeStatusDescription(notam.qCode)}');
+              }
+              // Debug: Print all NOTAM IDs to see what we're getting
+              print('DEBUG: Processing NOTAM: ${notam.id}');
               if (!seenNotamIds.contains(notam.id)) {
                 seenNotamIds.add(notam.id);
                 pageNotams.add(notam);
@@ -153,6 +165,10 @@ class ApiService {
             
             print('DEBUG: 🔍 Strategy ${strategyIndex + 1} summary: ${items.length} total fetched, $newNotamsInPage new unique NOTAMs');
             print('DEBUG: 🔍 Total unique NOTAMs so far: ${allNotams.length}');
+            
+            // Debug: Print all NOTAM IDs from this page
+            final notamIds = pageNotams.map((n) => n.id).toList();
+            print('DEBUG: 🔍 NOTAM IDs from this page: $notamIds');
             
             // If we got fewer items than requested, we've reached the end for this strategy
             if (items.length < pageSize) {
@@ -193,6 +209,10 @@ class ApiService {
       print('DEBUG: ✅ Successfully fetched ${allNotams.length} unique NOTAMs for $icao via multi-strategy pagination');
       print('DEBUG: 🔍 Total API responses: $totalFetched');
       print('DEBUG: 🔍 Total unique NOTAMs: ${allNotams.length}');
+      
+      // Debug: Print all NOTAM IDs that were fetched
+      final allNotamIds = allNotams.map((n) => n.id).toList();
+      print('DEBUG: 🔍 ALL NOTAM IDs fetched: $allNotamIds');
       
       return allNotams;
       

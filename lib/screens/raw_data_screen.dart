@@ -16,6 +16,7 @@ import '../widgets/taf_empty_states.dart';
 import '../widgets/metar_tab.dart';
 import '../widgets/taf_tab.dart';
 import '../constants/weather_colors.dart';
+import '../widgets/notam_grouped_list.dart';
 
 class RawDataScreen extends StatefulWidget {
   const RawDataScreen({super.key});
@@ -167,7 +168,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: Column(
@@ -201,6 +202,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
               Tab(text: 'METARs'),
               Tab(text: 'TAFs'),
               Tab(text: 'TAFs2'),
+              Tab(text: 'NOTAMs2'),
             ],
           ),
         ),
@@ -248,23 +250,25 @@ class _RawDataScreenState extends State<RawDataScreen> {
                 // Tab content below
                 Expanded(
                   child: TabBarView(
-              children: [
-                _buildNotamsTab(context, flight.notams, flightProvider),
-                RefreshIndicator(
-                  onRefresh: () async {
+                    children: [
+                      _buildNotamsTab(context, flight.notams, flightProvider),
+                      RefreshIndicator(
+                        onRefresh: () async {
                           _clearCache();
-                    await flightProvider.refreshFlightData();
-                  },
-                  child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
-                ),
-                RefreshIndicator(
-                  onRefresh: () async {
+                          await flightProvider.refreshFlightData();
+                        },
+                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                      ),
+                      RefreshIndicator(
+                        onRefresh: () async {
                           _clearCache();
-                    await flightProvider.refreshFlightData();
-                  },
-                  child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
-                ),
-                _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                          await flightProvider.refreshFlightData();
+                        },
+                        child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
+                      ),
+                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                      // New NOTAMs2 tab: grouped NOTAMs for selected airport
+                      _buildNotams2Tab(context, flight.notams, flightProvider),
                     ],
                   ),
                 ),
@@ -311,7 +315,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
                   const Icon(Icons.access_time, size: 16, color: Color(0xFF1E3A8A)),
                   const SizedBox(width: 8),
                   const Text(
-                    'Show NOTAMs for:',
+                    'Show NOTAMs for next:',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -518,7 +522,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
                           ),
                           const SizedBox(height: 4),
                           SelectableText(
-                            notam.rawText,
+                            notam.displayRawText,
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 11,
@@ -538,7 +542,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(notam.decodedText),
+                    Text(notam.displayDecodedText),
                   ],
                 ),
               ),
@@ -1848,5 +1852,172 @@ class _RawDataScreenState extends State<RawDataScreen> {
       return 'K$icao';
     }
     return icao.toUpperCase();
+  }
+
+  Widget _buildNotams2Tab(BuildContext context, List<Notam> notams, FlightProvider flightProvider) {
+    // Get unique airports from NOTAMs
+    final airports = notams.map((notam) => _normalizeAirportCode(notam.icao)).toSet().toList();
+    // Use selected airport
+    final selectedAirport = flightProvider.selectedAirport ?? (airports.isNotEmpty ? airports.first : null);
+    // Get filtered NOTAMs using caching to prevent unnecessary processing
+    final filteredNotamsByTime = _getFilteredNotams(notams, flightProvider);
+    final filteredNotams = selectedAirport != null
+        ? filteredNotamsByTime.where((n) => _normalizeAirportCode(n.icao) == selectedAirport).toList().cast<Notam>()
+        : <Notam>[];
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+        debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh triggered!');
+        // Clear all caches for fresh data
+        _clearCache();
+        await flightProvider.refreshFlightData();
+        debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh completed!');
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            // Time filter
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time, size: 16, color: Color(0xFF1E3A8A)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Show NOTAMs for next:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _selectedTimeFilter,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => _timeFilterOptions.map((filter) {
+                      return PopupMenuItem<String>(
+                        value: filter,
+                        child: Text(filter),
+                      );
+                    }).toList(),
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedTimeFilter = value;
+                        // Clear NOTAM cache when filter changes
+                        _clearCache();
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: filteredNotams.isEmpty 
+                          ? Colors.grey[200] 
+                          : const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          filteredNotams.isEmpty 
+                              ? Icons.check_circle 
+                              : Icons.warning,
+                          size: 14,
+                          color: filteredNotams.isEmpty 
+                              ? Colors.grey[600] 
+                              : Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${filteredNotams.length}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: filteredNotams.isEmpty 
+                                ? Colors.grey[600] 
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Grouped NOTAM list
+            Expanded(
+              child: NotamGroupedList(
+                notams: filteredNotams,
+                onNotamTap: (notam) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('NOTAM Details: ${notam.id}'),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('ICAO: ${notam.icao}'),
+                            Text('Type: ${notam.type.name}'),
+                            Text('Group: ${notam.group.name}'),
+                            Text('Critical: ${notam.isCritical ? "Yes" : "No"}'),
+                            const SizedBox(height: 8),
+                            Text('Valid From: ${notam.validFrom.toUtc()}'),
+                            Text('Valid To: ${notam.validTo.toUtc()}'),
+                            const SizedBox(height: 8),
+                            Text('Raw Text:'),
+                            Text(notam.displayRawText, style: const TextStyle(fontSize: 12)),
+                            const SizedBox(height: 8),
+                            Text('Decoded Text:'),
+                            Text(notam.displayDecodedText, style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                showGroupHeaders: true,
+                initiallyExpanded: false,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 } 

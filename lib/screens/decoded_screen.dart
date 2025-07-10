@@ -180,7 +180,7 @@ class DecodedScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 SelectableText(
-                                  notam.rawText,
+                                  notam.displayRawText,
                                   style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 11,
@@ -213,7 +213,7 @@ class DecodedScreen extends StatelessWidget {
                                 border: Border.all(color: Colors.blue[200]!),
                               ),
                               child: Text(
-                                notam.decodedText,
+                                notam.displayDecodedText,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.blue[800],
