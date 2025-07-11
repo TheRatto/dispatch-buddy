@@ -762,3 +762,87 @@ class Notam {
     };
   }
 } 
+
+/// Represents the hide/flag status of a NOTAM
+class NotamStatus {
+  final String notamId;
+  final bool isHidden;
+  final bool isFlagged;
+  final DateTime? hiddenAt;
+  final DateTime? flaggedAt;
+  final String? flightContext; // null for permanent, flight ID for per-flight
+
+  const NotamStatus({
+    required this.notamId,
+    this.isHidden = false,
+    this.isFlagged = false,
+    this.hiddenAt,
+    this.flaggedAt,
+    this.flightContext,
+  });
+
+  /// Create a copy with updated values
+  NotamStatus copyWith({
+    String? notamId,
+    bool? isHidden,
+    bool? isFlagged,
+    DateTime? hiddenAt,
+    DateTime? flaggedAt,
+    String? flightContext,
+  }) {
+    return NotamStatus(
+      notamId: notamId ?? this.notamId,
+      isHidden: isHidden ?? this.isHidden,
+      isFlagged: isFlagged ?? this.isFlagged,
+      hiddenAt: hiddenAt ?? this.hiddenAt,
+      flaggedAt: flaggedAt ?? this.flaggedAt,
+      flightContext: flightContext ?? this.flightContext,
+    );
+  }
+
+  /// Convert to JSON for storage
+  Map<String, dynamic> toJson() {
+    return {
+      'notamId': notamId,
+      'isHidden': isHidden,
+      'isFlagged': isFlagged,
+      'hiddenAt': hiddenAt?.toIso8601String(),
+      'flaggedAt': flaggedAt?.toIso8601String(),
+      'flightContext': flightContext,
+    };
+  }
+
+  /// Create from JSON for storage
+  factory NotamStatus.fromJson(Map<String, dynamic> json) {
+    return NotamStatus(
+      notamId: json['notamId'] as String,
+      isHidden: json['isHidden'] as bool? ?? false,
+      isFlagged: json['isFlagged'] as bool? ?? false,
+      hiddenAt: json['hiddenAt'] != null ? DateTime.parse(json['hiddenAt'] as String) : null,
+      flaggedAt: json['flaggedAt'] != null ? DateTime.parse(json['flaggedAt'] as String) : null,
+      flightContext: json['flightContext'] as String?,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is NotamStatus &&
+        other.notamId == notamId &&
+        other.isHidden == isHidden &&
+        other.isFlagged == isFlagged &&
+        other.hiddenAt == hiddenAt &&
+        other.flaggedAt == flaggedAt &&
+        other.flightContext == flightContext;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(notamId, isHidden, isFlagged, hiddenAt, flaggedAt, flightContext);
+  }
+
+  @override
+  String toString() {
+    return 'NotamStatus(notamId: $notamId, isHidden: $isHidden, isFlagged: $isFlagged, flightContext: $flightContext)';
+  }
+} 

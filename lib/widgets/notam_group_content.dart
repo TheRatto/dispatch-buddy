@@ -1,16 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:dispatch_buddy/models/notam.dart';
+import 'package:dispatch_buddy/services/notam_status_service.dart';
+import 'swipeable_notam_card.dart';
 
 class NotamGroupContent extends StatelessWidget {
   final List<Notam> notams;
   final NotamGroup group;
   final Function(Notam)? onNotamTap;
+  final String? flightContext;
+  final VoidCallback? onStatusChanged;
+  final Function(String)? onSwipeStart;
+  final VoidCallback? onSwipeEnd;
+  final String? currentlySwipedNotamId;
 
   const NotamGroupContent({
     super.key,
     required this.notams,
     required this.group,
     this.onNotamTap,
+    this.flightContext,
+    this.onStatusChanged,
+    this.onSwipeStart,
+    this.onSwipeEnd,
+    this.currentlySwipedNotamId,
   });
 
   @override
@@ -28,22 +40,33 @@ class NotamGroupContent extends StatelessWidget {
   }
 
   Widget _buildNotamItem(BuildContext context, Notam notam) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.shade200,
-            width: 0.5,
+    final shouldClose = currentlySwipedNotamId != null && currentlySwipedNotamId != notam.id;
+    debugPrint('DEBUG: _buildNotamItem - NOTAM ${notam.id}, currentlySwipedNotamId: $currentlySwipedNotamId, shouldClose: $shouldClose');
+    return SwipeableNotamCard(
+      notam: notam,
+      flightContext: flightContext,
+      onNotamTap: () => onNotamTap?.call(notam),
+      onStatusChanged: onStatusChanged,
+      onSwipeStart: () => onSwipeStart?.call(notam.id),
+      onSwipeEnd: onSwipeEnd,
+      shouldClose: shouldClose,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.grey.shade200,
+              width: 0.5,
+            ),
           ),
         ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _buildNotamIcon(notam),
-        title: _buildNotamTitle(notam),
-        subtitle: _buildNotamSubtitle(notam),
-        trailing: _buildNotamTrailing(notam),
-        onTap: () => onNotamTap?.call(notam),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: _buildNotamIcon(notam),
+          title: _buildNotamTitle(notam),
+          subtitle: _buildNotamSubtitle(notam),
+          trailing: _buildNotamTrailing(notam),
+          onTap: () => onNotamTap?.call(notam),
+        ),
       ),
     );
   }
@@ -102,13 +125,36 @@ class NotamGroupContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          notam.id,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                notam.id,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            // Flag indicator
+            FutureBuilder<NotamStatus?>(
+              future: NotamStatusService().getStatus(notam.id),
+              builder: (context, snapshot) {
+                final isFlagged = snapshot.data?.isFlagged ?? false;
+                if (!isFlagged) return const SizedBox.shrink();
+                
+                return Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  child: Icon(
+                    Icons.flag,
+                    color: Colors.blue,
+                    size: 14,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 2),
         Text(

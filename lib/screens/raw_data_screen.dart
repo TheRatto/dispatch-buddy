@@ -236,6 +236,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
                           airports: airports,
                           selectedAirport: flightProvider.selectedAirport ?? airports.first,
                           onAirportSelected: (String airport) {
+                            _clearCache(); // Clear NOTAM cache when airport changes
                             flightProvider.setSelectedAirport(airport);
                           },
                           onAddAirport: _showAddAirportDialog,
@@ -1729,6 +1730,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
     final cachedResult = _cacheManager.get<List<Notam>>(cacheKey);
     if (cachedResult != null) {
       debugPrint('DEBUG: Using cached filtered NOTAMs (${cachedResult.length} NOTAMs)');
+      debugPrint('DEBUG: Filtered NOTAM IDs (cached): ${cachedResult.map((n) => n.id).join(", ")}');
       return cachedResult;
     }
     
@@ -1739,9 +1741,13 @@ class _RawDataScreenState extends State<RawDataScreen> {
     final airportFilteredNotams = flightProvider.selectedAirport != null 
         ? notams.where((notam) => _normalizeAirportCode(notam.icao) == flightProvider.selectedAirport).toList()
         : notams;
+    debugPrint('DEBUG: After airport filter: ${airportFilteredNotams.length} NOTAMs');
+    debugPrint('DEBUG: Airport filtered NOTAM IDs: ${airportFilteredNotams.map((n) => n.id).join(", ")}');
     
     // Filter by time
     final timeFilteredNotams = _filterNotamsByTime(airportFilteredNotams);
+    debugPrint('DEBUG: After time filter: ${timeFilteredNotams.length} NOTAMs');
+    debugPrint('DEBUG: Time filtered NOTAM IDs: ${timeFilteredNotams.map((n) => n.id).join(", ")}');
     
     // Cache the result
     _cacheManager.set(cacheKey, timeFilteredNotams);

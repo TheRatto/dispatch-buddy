@@ -9,9 +9,9 @@ This document outlines the implementation plan for adding NOTAM grouping functio
 - **Phase 3**: ✅ **COMPLETED** (UI Components)
 - **Phase 4**: ✅ **SUBSTANTIALLY COMPLETED** (Integration)
 - **Phase 5**: ⏳ **PENDING** (Advanced Features)
-- **Phase 6**: ⏳ **PENDING** (Hide/Flag Functionality)
+- **Phase 6**: ✅ **SUBSTANTIALLY COMPLETED** (Hide/Flag Functionality)
 
-**Next**: Begin Phase 6 - Hide/Flag functionality for enhanced NOTAM workflow
+**Next**: Begin Phase 5 - Advanced Features (user customization, ghost NOTAMs, etc.)
 
 ## 🎯 Feature Goals
 - Group NOTAMs by affected system/operational significance
@@ -369,26 +369,26 @@ PZ - ADIZ procedure
 - Performance remains optimal
 - All features are well-documented
 
-### Phase 6: Hide/Flag Functionality (Week 6)
+### Phase 6: Hide/Flag Functionality (Week 6) ✅ **SUBSTANTIALLY COMPLETED**
 **Goal**: Implement NOTAM hide/flag system for improved workflow
 
 #### Tasks:
-- [ ] **6.1** Implement swipe-to-action UI (iOS Mail style)
-- [ ] **6.2** Add hide/flag actions with haptic feedback
-- [ ] **6.3** Create visual indicators for flagged NOTAMs
-- [ ] **6.4** Implement hidden NOTAM management system
-- [ ] **6.5** Add state persistence (per-flight + permanent options)
-- [ ] **6.6** Create hidden NOTAMs display with unhide functionality
-- [ ] **6.7** Add undo functionality for hide/flag actions
-- [ ] **6.8** Implement group-based hidden NOTAM indicators
+- [x] **6.1** Implement swipe-to-action UI (iOS Mail style)
+- [x] **6.2** Add hide/flag actions with haptic feedback
+- [x] **6.3** Create visual indicators for flagged NOTAMs
+- [x] **6.4** Implement hidden NOTAM management system
+- [x] **6.5** Add state persistence (per-flight + permanent options)
+- [x] **6.6** Create hidden NOTAMs display with unhide functionality
+- [ ] **6.7** Add undo functionality for hide/flag actions (deferred)
+- [x] **6.8** Implement group-based hidden NOTAM indicators
 
 #### Acceptance Criteria:
-- Swipe gestures work smoothly and intuitively
-- Hide/flag status persists across app sessions
-- Visual indicators clearly show NOTAM status
-- Hidden NOTAMs can be easily accessed and restored
-- Performance remains optimal with large NOTAM datasets
-- User experience matches iOS Mail patterns
+- [x] Swipe gestures work smoothly and intuitively
+- [x] Hide/flag status persists across app sessions
+- [x] Visual indicators clearly show NOTAM status
+- [x] Hidden NOTAMs can be easily accessed and restored
+- [x] Performance remains optimal with large NOTAM datasets
+- [x] User experience matches iOS Mail patterns
 
 #### Technical Implementation:
 **Data Models:**
@@ -406,7 +406,7 @@ class NotamStatus {
 **Storage Strategy:**
 - **Per-flight**: Hidden/flagged status tied to specific flight
 - **Permanent**: Global hide/flag across all flights
-- **Local Storage**: SharedPreferences or Hive for persistence
+- **Local Storage**: SharedPreferences for persistence
 
 **UI Components:**
 - Swipeable NOTAM cards with reveal actions
@@ -421,6 +421,8 @@ class NotamStatus {
 - Flagged NOTAMs show flag icon and appear first in groups
 - Hidden NOTAMs count shown on group headers
 - Tap hidden count to reveal hidden NOTAMs modal
+
+**Status**: ✅ **SUBSTANTIALLY COMPLETED** - Core hide/flag functionality implemented with swipe-to-action UI, persistence, visual indicators, and management system. Undo functionality deferred to future enhancement.
 
 ## 🔧 Technical Implementation Details
 
