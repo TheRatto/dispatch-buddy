@@ -17,6 +17,7 @@ import '../widgets/metar_tab.dart';
 import '../widgets/taf_tab.dart';
 import '../constants/weather_colors.dart';
 import '../widgets/notam_grouped_list.dart';
+import 'alternate_data_screen.dart';
 
 class RawDataScreen extends StatefulWidget {
   const RawDataScreen({super.key});
@@ -25,7 +26,10 @@ class RawDataScreen extends StatefulWidget {
   _RawDataScreenState createState() => _RawDataScreenState();
 }
 
-class _RawDataScreenState extends State<RawDataScreen> {
+class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateMixin {
+  // Tab controller for managing tabs
+  late TabController _tabController;
+  
   // Airport selection is now managed by FlightProvider
   // Store slider positions per airport
   final Map<String, double> _sliderPositions = {};
@@ -77,6 +81,8 @@ class _RawDataScreenState extends State<RawDataScreen> {
     return '${timeline.length}_${timeline.isNotEmpty ? timeline.first.hashCode : 0}_${timeline.isNotEmpty ? timeline.last.hashCode : 0}';
   }
   
+
+  
   // Generate hash for NOTAM data to detect changes
   String _generateNotamHash(List<Notam> notams) {
     if (notams.isEmpty) return 'empty';
@@ -122,10 +128,12 @@ class _RawDataScreenState extends State<RawDataScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _tafs2ScrollController.dispose();
     super.dispose();
   }
@@ -167,9 +175,7 @@ class _RawDataScreenState extends State<RawDataScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Column(
             mainAxisSize: MainAxisSize.min,
@@ -184,45 +190,45 @@ class _RawDataScreenState extends State<RawDataScreen> {
           ),
           centerTitle: true,
           actions: [
-            IconButton(
+            Builder(
+              builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
               onPressed: () {
-                // TODO: Implement settings menu
+                  debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                  Scaffold.of(context).openEndDrawer();
               },
+              ),
             ),
           ],
-          bottom: const TabBar(
-            labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            indicatorColor: Color(0xFFF97316), // Accent Orange
+          bottom: TabBar(
+            controller: _tabController,
+            labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            indicatorColor: const Color(0xFFF97316), // Accent Orange
             indicatorWeight: 3.0,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: [
+            tabs: const [
               Tab(text: 'NOTAMs'),
               Tab(text: 'METARs'),
               Tab(text: 'TAFs'),
-              Tab(text: 'TAFs2'),
-              Tab(text: 'NOTAMs2'),
             ],
           ),
         ),
+        endDrawer: _buildEndDrawer(context),
         body: Consumer<FlightProvider>(
           builder: (context, flightProvider, child) {
             final flight = flightProvider.currentFlight;
             if (flight == null) {
               return const Center(child: Text('No flight data available'));
             }
-            
             // Get airports from TAFs (most comprehensive source)
             final airports = flightProvider.tafsByIcao.keys.toList();
-            
             // Initialize selected airport if not set
             if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
               if (airports.isNotEmpty) {
                 flightProvider.setSelectedAirport(airports.first);
               }
             }
-            
             return Column(
               children: [
                 // Fixed airport selector at top
@@ -247,627 +253,26 @@ class _RawDataScreenState extends State<RawDataScreen> {
                   ),
                   const SizedBox(height: 4),
                 ],
-                
                 // Tab content below
                 Expanded(
                   child: TabBarView(
-                    children: [
-                      _buildNotamsTab(context, flight.notams, flightProvider),
-                      RefreshIndicator(
-                        onRefresh: () async {
-                          _clearCache();
-                          await flightProvider.refreshFlightData();
-                        },
-                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
-                      ),
-                      RefreshIndicator(
-                        onRefresh: () async {
-                          _clearCache();
-                          await flightProvider.refreshFlightData();
-                        },
-                        child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
-                      ),
-                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
-                      // New NOTAMs2 tab: grouped NOTAMs for selected airport
+                    controller: _tabController,
+              children: [
+                      // NOTAMs tab: grouped NOTAMs for selected airport
                       _buildNotams2Tab(context, flight.notams, flightProvider),
+                RefreshIndicator(
+                  onRefresh: () async {
+                          _clearCache();
+                    await flightProvider.refreshFlightData();
+                  },
+                  child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                ),
+                      // TAFs tab: timeline-based TAF display
+                _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
                     ],
                   ),
                 ),
               ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotamsTab(BuildContext context, List<Notam> notams, FlightProvider flightProvider) {
-    // Get unique airports from NOTAMs and normalize them to match other tabs
-    final airports = notams.map((notam) => _normalizeAirportCode(notam.icao)).toSet().toList();
-    
-    // Initialize selected airport if not set
-    if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
-      if (airports.isNotEmpty) {
-        flightProvider.setSelectedAirport(airports.first);
-      }
-    }
-    
-    // Get filtered NOTAMs using caching to prevent unnecessary processing
-    final filteredNotamsByTime = _getFilteredNotams(notams, flightProvider);
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        debugPrint('DEBUG: 🔄 NOTAMs tab refresh triggered!');
-        // Clear all caches for fresh data
-        _clearCache();
-        await flightProvider.refreshFlightData();
-        debugPrint('DEBUG: 🔄 NOTAMs tab refresh completed!');
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            
-            // Time filter
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.access_time, size: 16, color: Color(0xFF1E3A8A)),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Show NOTAMs for next:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF1E3A8A),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  PopupMenuButton<String>(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _selectedTimeFilter,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                    onSelected: (value) {
-                      setState(() {
-                        _selectedTimeFilter = value;
-                        // Clear NOTAM cache when filter changes
-                        _cacheManager.clearPrefix('notam_');
-                      });
-                    },
-                    itemBuilder: (BuildContext context) => _timeFilterOptions.map((option) {
-                      return PopupMenuItem<String>(
-                        value: option,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check,
-                              size: 16,
-                              color: _selectedTimeFilter == option 
-                                  ? const Color(0xFF1E3A8A) 
-                                  : Colors.transparent,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(option),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: filteredNotamsByTime.isEmpty 
-                          ? Colors.grey[200] 
-                          : const Color(0xFF10B981),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          filteredNotamsByTime.isEmpty 
-                              ? Icons.check_circle 
-                              : Icons.warning,
-                          size: 14,
-                          color: filteredNotamsByTime.isEmpty 
-                              ? Colors.grey[600] 
-                              : Colors.white,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${filteredNotamsByTime.length}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: filteredNotamsByTime.isEmpty 
-                                ? Colors.grey[600] 
-                                : Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
-          // NOTAMs list
-          Expanded(
-            child: filteredNotamsByTime.isEmpty
-                ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-                        const Icon(Icons.check_circle, size: 64, color: Color(0xFF10B981)),
-                        const SizedBox(height: 16),
-            Text(
-                          _selectedTimeFilter == 'All NOTAMs' 
-                              ? 'No NOTAMs available'
-                              : 'No NOTAMs for the next $_selectedTimeFilter',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-                        const SizedBox(height: 8),
-            Text(
-                          _selectedTimeFilter == 'All NOTAMs'
-                              ? 'No NOTAMs for ${flightProvider.selectedAirport}'
-                              : 'No active or upcoming NOTAMs in the next $_selectedTimeFilter for ${flightProvider.selectedAirport}',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredNotamsByTime.length,
-      itemBuilder: (context, index) {
-          final notam = filteredNotamsByTime[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-            title: Text(
-              '${notam.id} - ${notam.affectedSystem}${notam.qCode != null ? ' (${notam.qCode})' : ''}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                '${notam.icao} | ${_formatDateTime(notam.validFrom)} - ${_formatDateTime(notam.validTo)}',
-                ),
-                if (notam.qCode != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '${Notam.getQCodeSubjectDescription(notam.qCode)} - ${Notam.getQCodeStatusDescription(notam.qCode)}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            leading: Icon(
-              notam.isCritical ? Icons.error : Icons.warning,
-              color: notam.isCritical ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Raw NOTAM Data:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildRawInfoRow('NOTAM ID', notam.id),
-                          _buildRawInfoRow('ICAO', notam.icao),
-                          _buildRawInfoRow('Type', notam.type.toString().split('.').last),
-                          if (notam.qCode != null) ...[
-                            _buildRawInfoRow('Q Code', notam.qCode!),
-                            _buildRawInfoRow('Q Code Subject', Notam.getQCodeSubjectDescription(notam.qCode)),
-                            _buildRawInfoRow('Q Code Status', Notam.getQCodeStatusDescription(notam.qCode)),
-                          ],
-                          _buildRawInfoRow('Affected System', notam.affectedSystem),
-                          _buildRawInfoRow('Critical', notam.isCritical ? 'Yes' : 'No'),
-                          _buildRawInfoRow('Valid From', notam.validFrom.toIso8601String()),
-                          _buildRawInfoRow('Valid To', notam.validTo.toIso8601String()),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Raw Text:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          SelectableText(
-                            notam.displayRawText,
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 11,
-                              height: 1.3,
-                              color: Colors.grey[900],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Decoded:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(notam.displayDecodedText),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMetarsTab(BuildContext context, Map<String, List<Weather>> metarsByIcao, FlightProvider flightProvider) {
-    // Get unique airports from METARs
-    final airports = metarsByIcao.keys.toList();
-    
-    // Initialize selected airport if not set
-    if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
-      if (airports.isNotEmpty) {
-        flightProvider.setSelectedAirport(airports.first);
-      }
-    }
-    
-    // Filter METARs by selected airport
-    final filteredMetars = flightProvider.selectedAirport != null 
-        ? metarsByIcao[flightProvider.selectedAirport!] ?? []
-        : [];
-    
-    if (metarsByIcao.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            const Text(
-              'No METARs Available',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No current weather observations',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        await flightProvider.refreshFlightData();
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            // Airport selector
-            if (airports.isNotEmpty) ...[
-              SizedBox(
-                height: 40,
-                child: RepaintBoundary(
-                  child: TafAirportSelector(
-                    airports: airports,
-                    selectedAirport: flightProvider.selectedAirport ?? airports.first,
-                    onAirportSelected: (String airport) {
-                      flightProvider.setSelectedAirport(airport);
-                    },
-                    onAddAirport: _showAddAirportDialog,
-                    onAirportLongPress: _showEditAirportDialog,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-            ],
-            
-            // METARs list
-            Expanded(
-              child: filteredMetars.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No METARs Available',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'No METARs for ${flightProvider.selectedAirport}',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filteredMetars.length,
-      itemBuilder: (context, index) {
-          final metar = filteredMetars[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-              title: Row(
-                  children: [
-                    const Icon(Icons.cloud, color: Color(0xFF3B82F6), size: 24),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        metar.icao,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              subtitle: Text(
-                _formatDateTime(metar.timestamp),
-                style: TextStyle(color: Colors.grey[600]),
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Raw METAR:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(
-                        metar.rawText,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTafsTab(BuildContext context, Map<String, List<Weather>> tafsByIcao, FlightProvider flightProvider) {
-    if (tafsByIcao.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.access_time, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            const Text(
-              'No TAFs Available',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No terminal area forecasts available',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final icaos = tafsByIcao.keys.toList();
-    return RefreshIndicator(
-      onRefresh: () async {
-        await flightProvider.refreshFlightData();
-      },
-      child: ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: icaos.length,
-      itemBuilder: (context, index) {
-        final icao = icaos[index];
-        final taf = tafsByIcao[icao]!.first;
-        final decodedTaf = taf.decodedWeather;
-        
-        if (decodedTaf == null || decodedTaf.forecastPeriods == null || decodedTaf.forecastPeriods!.isEmpty) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              title: Text(icao, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Could not decode TAF.'),
-            ),
-          );
-        }
-
-        final initialPeriod = decodedTaf.forecastPeriods!.firstWhere((p) => p.type == 'INITIAL');
-        
-        // Create TimePeriod objects for the old tab display
-        final timePeriods = decodedTaf.forecastPeriods!.map((period) => TimePeriod(
-          startTime: period.startTime ?? DateTime.now(),
-          endTime: period.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-          baselinePeriod: period,
-          concurrentPeriods: [],
-          rawTafSection: period.rawSection ?? '',
-        )).toList();
-        
-        final timePeriodStrings = _getTafTimePeriods(timePeriods);
-        final initialTimePeriod = timePeriodStrings.isNotEmpty ? timePeriodStrings.first : '';
-
-        // Create TimePeriod for initial period
-        final initialTimePeriodObj = TimePeriod(
-          startTime: initialPeriod.startTime ?? DateTime.now(),
-          endTime: initialPeriod.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-          baselinePeriod: initialPeriod,
-          concurrentPeriods: [],
-          rawTafSection: initialPeriod.rawSection ?? '',
-        );
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.access_time, color: Color(0xFF3B82F6), size: 24),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        icao,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  initialTimePeriod,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildTafCompactDetails(
-                  initialTimePeriodObj.baselinePeriod, 
-                  initialTimePeriodObj.baselinePeriod.weather, 
-                  initialTimePeriodObj.concurrentPeriods,
-                  flightProvider
-                ),
-              ],
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Show all forecast periods
-                    ...decodedTaf.forecastPeriods!.map((period) {
-                      // Create a simple TimePeriod for display purposes
-                      final timePeriod = TimePeriod(
-                        startTime: period.startTime ?? DateTime.now(),
-                        endTime: period.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-                        baselinePeriod: period,
-                        concurrentPeriods: [],
-                        rawTafSection: period.rawSection ?? '',
-                      );
-                      return _buildTafPeriodCard(context, timePeriod, timePeriodStrings, timePeriods);
-                    }),
-                    
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    
-                    // Raw TAF at bottom
-                    Text(
-                      'Raw TAF:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(
-                        taf.rawText,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         );
       },
       ),
@@ -1098,281 +503,9 @@ class _RawDataScreenState extends State<RawDataScreen> {
     );
   }
 
-  Widget _buildTafCompactDetails(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods, FlightProvider flightProvider) {
-    return Column(
-      children: [
-        // Baseline weather with integrated TEMPO/INTER
-        SizedBox(
-          height: 80,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItemWithConcurrent('Wind', completeWeather['Wind'], concurrentPeriods, 'Wind', flightProvider),
-              const SizedBox(width: 16),
-              _buildGridItemWithConcurrent('Visibility', completeWeather['Visibility'], concurrentPeriods, 'Visibility', flightProvider),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 80,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItemWithConcurrent('Weather', completeWeather['Weather'], concurrentPeriods, 'Weather', flightProvider, isPhenomenaOrRemark: true),
-              const SizedBox(width: 16),
-              _buildGridItemWithConcurrent('Cloud', completeWeather['Cloud'], concurrentPeriods, 'Cloud', flightProvider),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildGridItemWithConcurrent(String label, String? value, List<DecodedForecastPeriod> concurrentPeriods, String weatherType, FlightProvider flightProvider, {bool isPhenomenaOrRemark = false}) {
-    String displayValue = value ?? '-';
-    if (isPhenomenaOrRemark) {
-      if (value == null || value.isEmpty || value == 'No significant weather') {
-        displayValue = '-';
-      }
-    } else {
-      if (value == null || value.isEmpty || value.contains('unavailable') || value.contains('No cloud information')) {
-        displayValue = '-'; // Show - instead of N/A to match weather heading
-      }
-    }
-    
-    // Performance optimization: Only log once per build cycle
-    final currentBuild = '${flightProvider.selectedAirport}_${_sliderPositions[flightProvider.selectedAirport!] ?? 0.0}_$label';
-    if (_lastLoggedBuild != currentBuild) {
-      _lastLoggedBuild = currentBuild;
-    }
-    
-    // Find concurrent periods that have changes for this weather type
-    final relevantConcurrentPeriods = concurrentPeriods.where((period) => 
-      period.changedElements.contains(weatherType)
-    ).toList();
-    
-    // Memoize concurrent period widgets to prevent unnecessary rebuilds
-    final concurrentWidgets = relevantConcurrentPeriods.map((period) {
-      final color = WeatherColors.getColorForProbCombination(period.type);
-      final label = period.type; // Use the full period type instead of just 'TEMPO' or 'INTER'
-      final concurrentValue = period.weather[weatherType];
-      
-      if (_lastLoggedBuild == currentBuild) {
-        print('DEBUG: Processing concurrent period ${period.type} for $weatherType: "$concurrentValue"');
-        print('DEBUG: Color key label for ${period.type}: "$label"');
-      }
-      
-      if (concurrentValue == null || concurrentValue.isEmpty || 
-          (isPhenomenaOrRemark && (concurrentValue == 'No significant weather'))) {
-        if (_lastLoggedBuild == currentBuild) {
-          print('DEBUG: Skipping concurrent period ${period.type} - value is empty or "No significant weather"');
-        }
-        return const SizedBox.shrink();
-      }
-      
-      if (_lastLoggedBuild == currentBuild) {
-        print('DEBUG: Displaying concurrent period ${period.type} for $weatherType: "$concurrentValue"');
-      }
-      
-      return Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          concurrentValue,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: color,
-        ),
-      ),
-    );
-    }).toList();
-    
-    return Expanded(
-      child: RepaintBoundary(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-              style: const TextStyle(
-              fontSize: 10,
-                color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-            const SizedBox(height: 2),
-          Text(
-            displayValue,
-              style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-            // Add TEMPO/INTER lines if they have changes for this weather type
-            ...concurrentWidgets,
-        ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildRawCardFromActivePeriods(Weather taf, Map<String, dynamic>? activePeriods) {
-    return RawTafCard(
-      taf: taf,
-      activePeriods: activePeriods,
-    );
-  }
 
-  Widget _buildWeatherInfo(Map<String, String> weather) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (weather['Wind'] != null) ...[
-          Text('Wind: ${weather['Wind']}'),
-          const SizedBox(height: 2),
-        ],
-        if (weather['Visibility'] != null) ...[
-          Text('Visibility: ${weather['Visibility']}'),
-          const SizedBox(height: 2),
-        ],
-        if (weather['Cloud'] != null) ...[
-          Text('Cloud: ${weather['Cloud']}'),
-          const SizedBox(height: 2),
-        ],
-        if (weather['Weather'] != null) ...[
-          Text('Weather: ${weather['Weather']}'),
-          const SizedBox(height: 2),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildTimeSlider(List<TimePeriod> periods, double sliderValue, ValueChanged<double> onChanged) {
-    // This method is no longer used - replaced by TafTimeSlider component instead
-    throw UnimplementedError('Use TafTimeSlider component instead');
-  }
-
-  List<String> _getTafTimePeriods(List<TimePeriod> periods) {
-    final timePeriods = <String>[];
-    
-    for (final period in periods) {
-      final day = period.startTime.day.toString().padLeft(2, '0');
-      final hour = period.startTime.hour.toString().padLeft(2, '0');
-      timePeriods.add('$day/$hour');
-    }
-    
-    return timePeriods;
-  }
-
-  String _extractTafStartTime(List<TimePeriod> periods) {
-    if (periods.isNotEmpty) {
-      final firstPeriod = periods.first;
-      final day = firstPeriod.startTime.day.toString().padLeft(2, '0');
-      final hour = firstPeriod.startTime.hour.toString().padLeft(2, '0');
-      return '$day/$hour';
-    }
-    return 'N/A';
-  }
-
-  Widget _buildTafPeriodCard(BuildContext context, TimePeriod period, List<String> timePeriods, List<TimePeriod> allPeriods) {
-    final isInitial = period.baselinePeriod.type == 'INITIAL';
-    final isTempo = period.baselinePeriod.type == 'TEMPO';
-    final isInter = period.baselinePeriod.type == 'INTER';
-    final isBecmg = period.baselinePeriod.type == 'BECMG';
-    final isFm = period.baselinePeriod.type == 'FM';
-    
-    final weather = period.baselinePeriod.weather;
-    
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  period.baselinePeriod.type,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: WeatherColors.getColorForPeriodType(period.baselinePeriod.type),
-                  ),
-                ),
-                Text(
-                  period.baselinePeriod.time ?? 'N/A',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGridItem('Wind', weather['Wind'], isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Wind')),
-                const SizedBox(width: 16),
-                _buildGridItem('Visibility', weather['Visibility'], isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Visibility')),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGridItem('Weather', weather['Weather'], isPhenomenaOrRemark: true),
-                const SizedBox(width: 16),
-                _buildGridItem('Cloud', weather['Cloud'], isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Cloud')),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeSliderFromTimeline(List<DateTime> timeline, double sliderValue, ValueChanged<double> onChanged) {
-    return TafTimeSlider(
-      timeline: timeline,
-      sliderValue: sliderValue,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildGridItem(String label, String? value, {bool isPhenomenaOrRemark = false}) {
-    String displayValue = value ?? '-';
-    if (isPhenomenaOrRemark) {
-      if (value == null || value.isEmpty || value == 'No significant weather') {
-        displayValue = '-';
-      }
-    } else {
-      if (value == null || value.isEmpty || value.contains('unavailable') || value.contains('No cloud information')) {
-        displayValue = '-'; // Show - instead of N/A to match weather heading
-      }
-    }
-    
-    return Expanded(
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 2),
-            Text(
-            displayValue,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-            ),
-          ],
-        ),
-    );
-  }
 
   void _showAddAirportDialog(BuildContext context) {
     final TextEditingController controller = TextEditingController();
@@ -2023,6 +1156,99 @@ class _RawDataScreenState extends State<RawDataScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEndDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Menu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Dispatch Buddy',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.not_interested),
+            title: Text('NOTAMs'),
+            subtitle: Text('Grouped with swipe actions'),
+            onTap: () {
+              debugPrint('DEBUG: NOTAMs menu item tapped');
+              Navigator.of(context).pop(); // Close drawer
+              // Navigate to NOTAMs tab
+              final tabController = DefaultTabController.of(context);
+              if (tabController != null && tabController.length > 0) {
+                debugPrint('DEBUG: Animating to tab 0 (NOTAMs)');
+                tabController.animateTo(0);
+              } else {
+                debugPrint('DEBUG: TabController is null or has no tabs');
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.cloud),
+            title: Text('METARs'),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              // Navigate to METARs tab
+              final tabController = DefaultTabController.of(context);
+              if (tabController != null && tabController.length > 1) {
+                tabController.animateTo(1);
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.access_time),
+            title: Text('TAFs'),
+            subtitle: Text('Timeline-based display'),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              // Navigate to TAFs tab
+              final tabController = DefaultTabController.of(context);
+              if (tabController != null && tabController.length > 2) {
+                tabController.animateTo(2);
+              }
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.alternate_email),
+            title: Text('Alternate Data'),
+            subtitle: Text('Legacy NOTAMs & TAFs'),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AlternateDataScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

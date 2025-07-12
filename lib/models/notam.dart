@@ -80,13 +80,13 @@ class Notam {
     // Navigation Aids (I, N)
     if (['IC', 'ID', 'IG', 'II', 'IL', 'IM', 'IN', 'IO', 'IS', 'IT', 'IU', 'IW', 'IX', 'IY',
          'NA', 'NB', 'NC', 'ND', 'NF', 'NL', 'NM', 'NN', 'NO', 'NT', 'NV'].contains(subject)) {
-      return NotamType.navaid;
+        return NotamType.navaid;
     }
-    
-    // Lighting Facilities (L)
+      
+      // Lighting Facilities (L)
     if (['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
          'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
-      return NotamType.lighting;
+        return NotamType.lighting;
     }
     
     // Airspace (A)
@@ -109,7 +109,7 @@ class Notam {
     }
     
     // Default to other for unmapped codes
-    return NotamType.other;
+        return NotamType.other;
   }
 
   // Get sanitized human-readable description of Q code subject

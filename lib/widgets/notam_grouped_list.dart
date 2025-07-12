@@ -25,7 +25,7 @@ class NotamGroupedList extends StatefulWidget {
   State<NotamGroupedList> createState() => _NotamGroupedListState();
 }
 
-class _NotamGroupedListState extends State<NotamGroupedList> {
+class _NotamGroupedListState extends State<NotamGroupedList> with TickerProviderStateMixin {
   final Map<NotamGroup, bool> _expandedGroups = {};
   final NotamGroupingService _groupingService = NotamGroupingService();
   final NotamStatusService _statusService = NotamStatusService();
@@ -39,6 +39,8 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
   // Track which NOTAM is currently being swiped
   String? _currentlySwipedNotamId;
 
+
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +51,8 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
     _loadHiddenCounts();
     _loadFilteredNotams();
   }
+
+
 
   @override
   void didUpdateWidget(covariant NotamGroupedList oldWidget) {
@@ -68,56 +72,22 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
     }
   }
 
-  Future<void> _loadHiddenCounts() async {
-    final hiddenIds = await _statusService.getHiddenNotamIds(flightContext: widget.flightContext);
-    
-    // Get all NOTAMs for each group (including hidden ones)
-    final allGroupedNotams = _groupNotamsByGroup();
-    
-    for (final group in NotamGroup.values) {
-      final allGroupNotams = allGroupedNotams[group] ?? [];
-      final hiddenCount = allGroupNotams.where((n) => hiddenIds.contains(n.id)).length;
-      
-      debugPrint('DEBUG: Group ${group} hidden count: ${hiddenCount} (out of ${allGroupNotams.length} total)');
-      
-      if (mounted) {
-        setState(() {
-          _hiddenCounts[group] = hiddenCount;
-        });
-      }
-    }
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _loadFilteredNotams() async {
+    debugPrint('DEBUG: _loadFilteredNotams called');
+    
+    // Get hidden NOTAM IDs
     final hiddenIds = await _statusService.getHiddenNotamIds(flightContext: widget.flightContext);
+    
+    // Filter out hidden NOTAMs
     final filteredNotams = widget.notams.where((notam) => !hiddenIds.contains(notam.id)).toList();
     
-    debugPrint('DEBUG: Total NOTAMs: ${widget.notams.length}');
-    debugPrint('DEBUG: Hidden NOTAMs: ${hiddenIds.length}');
-    debugPrint('DEBUG: Filtered NOTAMs: ${filteredNotams.length}');
-    
-    // First, get all groups that have any NOTAMs (visible or hidden)
-    final allGroupedNotams = _groupNotamsByGroup();
-    
-    final grouped = <NotamGroup, List<Notam>>{};
-    
-    // Add groups that have visible NOTAMs
-    for (final notam in filteredNotams) {
-      final group = notam.group;
-      grouped.putIfAbsent(group, () => []).add(notam);
-    }
-    
-    // Add groups that have hidden NOTAMs but no visible NOTAMs
-    for (final entry in allGroupedNotams.entries) {
-      final group = entry.key;
-      final allGroupNotams = entry.value;
-      final hiddenCount = allGroupNotams.where((n) => hiddenIds.contains(n.id)).length;
-      
-      // If this group has hidden NOTAMs but no visible NOTAMs, add it with empty list
-      if (hiddenCount > 0 && !grouped.containsKey(group)) {
-        grouped[group] = [];
-      }
-    }
+    // Group the filtered NOTAMs using the grouping service
+    final grouped = _groupingService.groupNotams(filteredNotams);
     
     // Debug: Log group statistics
     debugPrint('DEBUG: Grouped NOTAMs:');
@@ -134,6 +104,24 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
     if (mounted) {
       setState(() {
         _filteredGroupedNotams = grouped;
+      });
+    }
+  }
+
+  Future<void> _loadHiddenCounts() async {
+    final hiddenIds = await _statusService.getHiddenNotamIds(flightContext: widget.flightContext);
+    final hiddenCounts = <NotamGroup, int>{};
+    
+    for (final group in NotamGroup.values) {
+      final groupNotams = widget.notams.where((notam) => notam.group == group).toList();
+      final hiddenCount = groupNotams.where((notam) => hiddenIds.contains(notam.id)).length;
+      hiddenCounts[group] = hiddenCount;
+    }
+    
+    if (mounted) {
+      setState(() {
+        _hiddenCounts.clear();
+        _hiddenCounts.addAll(hiddenCounts);
       });
     }
   }
@@ -209,8 +197,14 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
                 isActive: _hasActiveNotams(groupNotams),
                 onHiddenTap: () => _showHiddenNotams(group),
               ),
-            if (isExpanded && groupNotams.isNotEmpty)
-              NotamGroupContent(
+            // Animated expansion content
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 300),
+              crossFadeState: isExpanded && groupNotams.isNotEmpty 
+                  ? CrossFadeState.showSecond 
+                  : CrossFadeState.showFirst,
+              firstChild: const SizedBox.shrink(),
+              secondChild: NotamGroupContent(
                 notams: _sortNotamsInGroup(groupNotams),
                 group: group,
                 onNotamTap: widget.onNotamTap,
@@ -220,11 +214,14 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
                 onSwipeEnd: _onNotamSwipeEnd,
                 currentlySwipedNotamId: _currentlySwipedNotamId,
               ),
+            ),
           ],
         );
       },
     );
   }
+
+
 
   List<Notam> _getNotamsForGroup(NotamGroup group) {
     return widget.notams.where((notam) => notam.group == group).toList();
@@ -266,8 +263,9 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
   }
 
   void _toggleGroup(NotamGroup group) {
+    final wasExpanded = _expandedGroups[group] ?? false;
     setState(() {
-      _expandedGroups[group] = !(_expandedGroups[group] ?? false);
+      _expandedGroups[group] = !wasExpanded;
     });
   }
 
@@ -433,9 +431,7 @@ class _NotamGroupedListState extends State<NotamGroupedList> {
   }
 
   void toggleGroup(NotamGroup group) {
-    setState(() {
-      _expandedGroups[group] = !(_expandedGroups[group] ?? false);
-    });
+    _toggleGroup(group);
   }
 
   bool isGroupExpanded(NotamGroup group) {
