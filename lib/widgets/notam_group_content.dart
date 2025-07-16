@@ -300,21 +300,17 @@ class NotamGroupContent extends StatelessWidget {
 
   String _getGroupShortName() {
     switch (group) {
-      case NotamGroup.movementAreas:
-        return 'MA';
-      case NotamGroup.navigationAids:
-        return 'NAV';
-      case NotamGroup.departureApproachProcedures:
-        return 'DAP';
-      case NotamGroup.airportAtcAvailability:
-        return 'ATC';
-      case NotamGroup.lighting:
-        return 'LGT';
-      case NotamGroup.hazardsObstacles:
+      case NotamGroup.runways:
+        return 'RWY';
+      case NotamGroup.taxiways:
+        return 'TWY';
+      case NotamGroup.instrumentProcedures:
+        return 'PROC';
+      case NotamGroup.airportServices:
+        return 'SERV';
+      case NotamGroup.hazards:
         return 'HAZ';
-      case NotamGroup.airspace:
-        return 'AIR';
-      case NotamGroup.proceduralAdmin:
+      case NotamGroup.admin:
         return 'ADM';
       case NotamGroup.other:
         return 'OTH';
@@ -323,21 +319,17 @@ class NotamGroupContent extends StatelessWidget {
 
   Color _getGroupColor() {
     switch (group) {
-      case NotamGroup.movementAreas:
+      case NotamGroup.runways:
         return Colors.blue;
-      case NotamGroup.navigationAids:
-        return Colors.purple;
-      case NotamGroup.departureApproachProcedures:
+      case NotamGroup.taxiways:
         return Colors.green;
-      case NotamGroup.airportAtcAvailability:
+      case NotamGroup.instrumentProcedures:
+        return Colors.purple;
+      case NotamGroup.airportServices:
         return Colors.orange;
-      case NotamGroup.lighting:
-        return Colors.yellow.shade700;
-      case NotamGroup.hazardsObstacles:
+      case NotamGroup.hazards:
         return Colors.red;
-      case NotamGroup.airspace:
-        return Colors.indigo;
-      case NotamGroup.proceduralAdmin:
+      case NotamGroup.admin:
         return Colors.teal;
       case NotamGroup.other:
         return Colors.grey;

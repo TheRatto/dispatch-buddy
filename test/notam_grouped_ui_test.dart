@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/widgets/notam_grouped_list.dart';
 import 'package:dispatch_buddy/widgets/notam_group_header.dart';
 import 'package:dispatch_buddy/widgets/notam_group_content.dart';
+import 'package:dispatch_buddy/widgets/notam_grouped_list.dart';
 
 void main() {
   group('NOTAM Grouped UI Tests', () {
@@ -11,7 +11,7 @@ void main() {
 
     setUp(() {
       testNotams = [
-        // Movement Areas NOTAMs
+        // Runways NOTAMs
         Notam(
           id: 'A001/24',
           icao: 'YPPH',
@@ -22,7 +22,7 @@ void main() {
           decodedText: 'Runway 06/24 closed for maintenance',
           affectedSystem: 'Runway',
           isCritical: true,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         ),
         Notam(
           id: 'A002/24',
@@ -34,9 +34,9 @@ void main() {
           decodedText: 'Taxiway A partially closed',
           affectedSystem: 'Taxiway',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.taxiways,
         ),
-        // Navigation Aids NOTAMs
+        // Instrument Procedures NOTAMs
         Notam(
           id: 'A003/24',
           icao: 'YPPH',
@@ -47,9 +47,9 @@ void main() {
           decodedText: 'ILS runway 06 unserviceable',
           affectedSystem: 'ILS',
           isCritical: true,
-          group: NotamGroup.navigationAids,
+          group: NotamGroup.instrumentProcedures,
         ),
-        // Lighting NOTAMs
+        // Airport Services NOTAMs
         Notam(
           id: 'A004/24',
           icao: 'YPPH',
@@ -60,7 +60,7 @@ void main() {
           decodedText: 'Runway lighting unserviceable',
           affectedSystem: 'Lighting',
           isCritical: false,
-          group: NotamGroup.lighting,
+          group: NotamGroup.airportServices,
         ),
         // Hazards NOTAMs
         Notam(
@@ -73,7 +73,7 @@ void main() {
           decodedText: 'Bird hazard reported',
           affectedSystem: 'Hazards',
           isCritical: true,
-          group: NotamGroup.hazardsObstacles,
+          group: NotamGroup.hazards,
         ),
       ];
     });
@@ -83,8 +83,8 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: NotamGroupHeader(
-              group: NotamGroup.movementAreas,
-              notamCount: 2,
+              group: NotamGroup.runways,
+              notamCount: 1,
               isExpanded: false,
               onToggle: () {},
             ),
@@ -93,10 +93,10 @@ void main() {
       );
 
       // Verify group title is displayed
-      expect(find.text('Movement Areas'), findsOneWidget);
+      expect(find.text('Runways'), findsOneWidget);
       
       // Verify NOTAM count is displayed
-      expect(find.text('2 NOTAMs'), findsOneWidget);
+      expect(find.text('1 NOTAM'), findsOneWidget);
       
       // Verify priority badge is displayed
       expect(find.text('1'), findsOneWidget);
@@ -106,14 +106,14 @@ void main() {
     });
 
     testWidgets('NotamGroupContent displays NOTAM items correctly', (WidgetTester tester) async {
-      final groupNotams = testNotams.where((n) => n.group == NotamGroup.movementAreas).toList();
+      final groupNotams = testNotams.where((n) => n.group == NotamGroup.runways).toList();
       
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: NotamGroupContent(
               notams: groupNotams,
-              group: NotamGroup.movementAreas,
+              group: NotamGroup.runways,
               onNotamTap: (notam) {},
             ),
           ),
@@ -122,14 +122,12 @@ void main() {
 
       // Verify NOTAM IDs are displayed
       expect(find.text('A001/24'), findsOneWidget);
-      expect(find.text('A002/24'), findsOneWidget);
       
       // Verify ICAO codes are displayed
-      expect(find.text('YPPH'), findsNWidgets(2));
+      expect(find.text('YPPH'), findsOneWidget);
       
       // Verify decoded text is displayed
       expect(find.text('Runway 06/24 closed for maintenance'), findsOneWidget);
-      expect(find.text('Taxiway A partially closed'), findsOneWidget);
     });
 
     testWidgets('NotamGroupedList groups and sorts NOTAMs correctly', (WidgetTester tester) async {
@@ -145,14 +143,14 @@ void main() {
       );
 
       // Verify group headers are displayed in priority order
-      expect(find.text('Movement Areas'), findsOneWidget);
-      expect(find.text('Navigation Aids'), findsOneWidget);
-      expect(find.text('Lighting'), findsOneWidget);
-      expect(find.text('Hazards & Obstacles'), findsOneWidget);
+      expect(find.text('Runways'), findsOneWidget);
+      expect(find.text('Taxiways'), findsOneWidget);
+      expect(find.text('Instrument Procedures'), findsOneWidget);
+      expect(find.text('Airport Services'), findsOneWidget);
+      expect(find.text('Hazards'), findsOneWidget);
       
       // Verify group counts are correct
-      expect(find.text('2 NOTAMs'), findsOneWidget); // Movement Areas
-      expect(find.text('1 NOTAM'), findsNWidgets(3)); // Other groups
+      expect(find.text('1 NOTAM'), findsNWidgets(5)); // All groups have 1 NOTAM
     });
 
     testWidgets('NotamGroupedList expand/collapse functionality works', (WidgetTester tester) async {
@@ -170,16 +168,15 @@ void main() {
       // Initially, groups should be collapsed (no NOTAM content visible)
       expect(find.text('A001/24'), findsNothing);
       
-      // Tap on Movement Areas header to expand
-      await tester.tap(find.text('Movement Areas'));
+      // Tap on Runways header to expand
+      await tester.tap(find.text('Runways'));
       await tester.pump();
       
       // Now NOTAM content should be visible
       expect(find.text('A001/24'), findsOneWidget);
-      expect(find.text('A002/24'), findsOneWidget);
       
       // Tap again to collapse
-      await tester.tap(find.text('Movement Areas'));
+      await tester.tap(find.text('Runways'));
       await tester.pump();
       
       // Content should be hidden again
@@ -198,19 +195,16 @@ void main() {
         ),
       );
 
-      // Expand Movement Areas group
-      await tester.tap(find.text('Movement Areas'));
+      // Expand Runways group
+      await tester.tap(find.text('Runways'));
       await tester.pump();
       
       // Critical NOTAMs should appear first
-      // A001/24 is critical, A002/24 is not critical
-      final movementNotams = testNotams.where((n) => n.group == NotamGroup.movementAreas).toList();
-      final criticalNotam = movementNotams.firstWhere((n) => n.isCritical);
-      final nonCriticalNotam = movementNotams.firstWhere((n) => !n.isCritical);
+      final runwaysNotams = testNotams.where((n) => n.group == NotamGroup.runways).toList();
+      final criticalNotam = runwaysNotams.firstWhere((n) => n.isCritical);
       
-      // Critical NOTAM should appear first in the list
+      // Critical NOTAM should appear in the list
       expect(find.text(criticalNotam.id), findsOneWidget);
-      expect(find.text(nonCriticalNotam.id), findsOneWidget);
     });
 
     testWidgets('NotamGroupedList shows active NOTAMs with different styling', (WidgetTester tester) async {
@@ -225,25 +219,28 @@ void main() {
         decodedText: 'Active runway NOTAM',
         affectedSystem: 'Runway',
         isCritical: true,
-        group: NotamGroup.movementAreas,
+        group: NotamGroup.runways,
       );
-      
-      final activeTestNotams = [...testNotams, activeNotam];
-      
+
+      final testNotamsWithActive = [...testNotams, activeNotam];
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: NotamGroupedList(
-              notams: activeTestNotams,
+              notams: testNotamsWithActive,
               onNotamTap: (notam) {},
             ),
           ),
         ),
       );
 
-      // The Movement Areas group should show as active (has active NOTAMs)
-      // This would be verified by checking the isActive parameter passed to NotamGroupHeader
-      // The visual indication would be different background color
+      // Expand Runways group
+      await tester.tap(find.text('Runways'));
+      await tester.pump();
+      
+      // The Runways group should show as active (has active NOTAMs)
+      expect(find.text('A006/24'), findsOneWidget);
     });
   });
 } 

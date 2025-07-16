@@ -369,22 +369,18 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
 
   String _getGroupTitle(NotamGroup group) {
     switch (group) {
-      case NotamGroup.movementAreas:
-        return 'Movement Areas';
-      case NotamGroup.navigationAids:
-        return 'Navigation Aids';
-      case NotamGroup.departureApproachProcedures:
-        return 'Departure/Approach Procedures';
-      case NotamGroup.airportAtcAvailability:
-        return 'Airport & ATC Availability';
-      case NotamGroup.lighting:
-        return 'Lighting';
-      case NotamGroup.hazardsObstacles:
-        return 'Hazards & Obstacles';
-      case NotamGroup.airspace:
-        return 'Airspace';
-      case NotamGroup.proceduralAdmin:
-        return 'Procedural & Admin';
+      case NotamGroup.runways:
+        return 'Runways';
+      case NotamGroup.taxiways:
+        return 'Taxiways';
+      case NotamGroup.instrumentProcedures:
+        return 'Instrument Procedures';
+      case NotamGroup.airportServices:
+        return 'Airport Services';
+      case NotamGroup.hazards:
+        return 'Hazards';
+      case NotamGroup.admin:
+        return 'Admin';
       case NotamGroup.other:
         return 'Other';
     }
@@ -392,24 +388,20 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
 
   int _getGroupPriority(NotamGroup group) {
     switch (group) {
-      case NotamGroup.movementAreas:
+      case NotamGroup.runways:
         return 1;
-      case NotamGroup.navigationAids:
+      case NotamGroup.taxiways:
         return 2;
-      case NotamGroup.departureApproachProcedures:
+      case NotamGroup.instrumentProcedures:
         return 3;
-      case NotamGroup.airportAtcAvailability:
+      case NotamGroup.airportServices:
         return 4;
-      case NotamGroup.lighting:
+      case NotamGroup.hazards:
         return 5;
-      case NotamGroup.hazardsObstacles:
+      case NotamGroup.admin:
         return 6;
-      case NotamGroup.airspace:
-        return 7;
-      case NotamGroup.proceduralAdmin:
-        return 8;
       case NotamGroup.other:
-        return 9;
+        return 7;
     }
   }
 

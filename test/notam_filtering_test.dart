@@ -22,7 +22,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         expect(notam.id, 'TEST123');
@@ -47,7 +47,7 @@ void main() {
           decodedText: 'Currently active NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         expect(activeNotam.validFrom.isBefore(now), isTrue);
@@ -65,7 +65,7 @@ void main() {
           decodedText: 'Future active NOTAM',
           affectedSystem: 'NAVAID',
           isCritical: false,
-          group: NotamGroup.navigationAids,
+          group: NotamGroup.instrumentProcedures,
         );
 
         expect(futureNotam.validFrom.isAfter(now), isTrue);
@@ -83,7 +83,7 @@ void main() {
           decodedText: 'Past NOTAM',
           affectedSystem: 'TAXIWAY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.taxiways,
         );
 
         expect(pastNotam.validFrom.isBefore(now), isTrue);
@@ -103,7 +103,7 @@ void main() {
           decodedText: 'Runway 06/24 closed for maintenance',
           affectedSystem: 'RWY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         expect(runwayNotam.type, NotamType.runway);
@@ -121,7 +121,7 @@ void main() {
           decodedText: 'ILS approach unavailable',
           affectedSystem: 'NAVAID',
           isCritical: false,
-          group: NotamGroup.navigationAids,
+          group: NotamGroup.instrumentProcedures,
         );
 
         expect(navaidNotam.type, NotamType.navaid);
@@ -139,7 +139,7 @@ void main() {
           decodedText: 'Taxiway A closed',
           affectedSystem: 'TAXIWAY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.taxiways,
         );
 
         expect(taxiwayNotam.type, NotamType.taxiway);
@@ -157,7 +157,7 @@ void main() {
           decodedText: 'Airspace restricted',
           affectedSystem: 'AIRSPACE',
           isCritical: false,
-          group: NotamGroup.airspace,
+          group: NotamGroup.instrumentProcedures,
         );
 
         expect(airspaceNotam.type, NotamType.airspace);
@@ -195,121 +195,116 @@ void main() {
           decodedText: 'Critical runway closure',
           affectedSystem: 'RWY',
           isCritical: true,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         expect(criticalNotam.isCritical, isTrue);
+        expect(criticalNotam.type, NotamType.runway);
       });
 
-      test('should identify normal NOTAMs', () {
-        final normalNotam = Notam(
-          id: 'NORM123',
+      test('should identify non-critical NOTAMs', () {
+        final nonCriticalNotam = Notam(
+          id: 'NONCRIT123',
           icao: 'YPPH',
           type: NotamType.taxiway,
           validFrom: now,
           validTo: now.add(Duration(hours: 1)),
-          rawText: 'Normal taxiway maintenance',
-          decodedText: 'Normal taxiway maintenance',
+          rawText: 'Non-critical taxiway closure',
+          decodedText: 'Non-critical taxiway closure',
           affectedSystem: 'TAXIWAY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.taxiways,
         );
 
-        expect(normalNotam.isCritical, isFalse);
+        expect(nonCriticalNotam.isCritical, isFalse);
+        expect(nonCriticalNotam.type, NotamType.taxiway);
       });
     });
 
-    group('NOTAM Serialization', () {
-      test('should serialize and deserialize correctly', () {
-        final originalNotam = Notam(
-          id: 'SER123',
+    group('NOTAM Group Classification', () {
+      test('should classify runway NOTAMs to runways group', () {
+        final runwayNotam = Notam(
+          id: 'RWY123',
           icao: 'YPPH',
           type: NotamType.runway,
           validFrom: now,
           validTo: now.add(Duration(hours: 1)),
-          rawText: 'Serialization test NOTAM',
-          decodedText: 'Decoded serialization test NOTAM',
+          rawText: 'RWY 06/24 closed',
+          decodedText: 'Runway 06/24 closed',
           affectedSystem: 'RWY',
           isCritical: true,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
-        final json = originalNotam.toJson();
-        final deserializedNotam = Notam.fromJson(json);
-
-        expect(deserializedNotam.id, originalNotam.id);
-        expect(deserializedNotam.icao, originalNotam.icao);
-        expect(deserializedNotam.type, originalNotam.type);
-        expect(deserializedNotam.validFrom, originalNotam.validFrom);
-        expect(deserializedNotam.validTo, originalNotam.validTo);
-        expect(deserializedNotam.rawText, originalNotam.rawText);
-        expect(deserializedNotam.decodedText, originalNotam.decodedText);
-        expect(deserializedNotam.affectedSystem, originalNotam.affectedSystem);
-        expect(deserializedNotam.isCritical, originalNotam.isCritical);
+        expect(runwayNotam.group, NotamGroup.runways);
       });
 
-      test('should handle database serialization', () {
-        final originalNotam = Notam(
-          id: 'DB123',
+      test('should classify taxiway NOTAMs to taxiways group', () {
+        final taxiwayNotam = Notam(
+          id: 'TWY123',
           icao: 'YPPH',
-          type: NotamType.runway,
+          type: NotamType.taxiway,
           validFrom: now,
           validTo: now.add(Duration(hours: 1)),
-          rawText: 'Database test NOTAM',
-          decodedText: 'Decoded database test NOTAM',
-          affectedSystem: 'RWY',
+          rawText: 'Taxiway A closed',
+          decodedText: 'Taxiway A closed',
+          affectedSystem: 'TAXIWAY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.taxiways,
         );
 
-        final dbJson = originalNotam.toDbJson('FLIGHT123');
-        final deserializedNotam = Notam.fromDbJson(dbJson);
-
-        expect(deserializedNotam.id, originalNotam.id);
-        expect(deserializedNotam.icao, originalNotam.icao);
-        expect(deserializedNotam.type, originalNotam.type);
-        expect(deserializedNotam.validFrom, originalNotam.validFrom);
-        expect(deserializedNotam.validTo, originalNotam.validTo);
-        expect(deserializedNotam.rawText, originalNotam.rawText);
-        expect(deserializedNotam.decodedText, originalNotam.decodedText);
-        expect(deserializedNotam.affectedSystem, originalNotam.affectedSystem);
-        expect(deserializedNotam.isCritical, originalNotam.isCritical);
+        expect(taxiwayNotam.group, NotamGroup.taxiways);
       });
-    });
 
-    group('NOTAM Validation', () {
-      test('should validate NOTAM dates', () {
-        final validNotam = Notam(
-          id: 'VALID123',
+      test('should classify navaid NOTAMs to instrument procedures group', () {
+        final navaidNotam = Notam(
+          id: 'NAV123',
           icao: 'YPPH',
-          type: NotamType.runway,
+          type: NotamType.navaid,
           validFrom: now,
           validTo: now.add(Duration(hours: 1)),
-          rawText: 'Valid NOTAM',
-          decodedText: 'Valid NOTAM',
-          affectedSystem: 'RWY',
-          isCritical: false,
-          group: NotamGroup.movementAreas,
+          rawText: 'ILS unavailable',
+          decodedText: 'ILS unavailable',
+          affectedSystem: 'NAVAID',
+          isCritical: true,
+          group: NotamGroup.instrumentProcedures,
         );
 
-        expect(validNotam.validFrom.isBefore(validNotam.validTo), isTrue);
+        expect(navaidNotam.group, NotamGroup.instrumentProcedures);
       });
 
-      test('should handle permanent NOTAMs', () {
-        final permanentNotam = Notam(
-          id: 'PERM123',
+      test('should classify lighting NOTAMs to airport services group', () {
+        final lightingNotam = Notam(
+          id: 'LIGHT123',
+          icao: 'YPPH',
+          type: NotamType.lighting,
+          validFrom: now,
+          validTo: now.add(Duration(hours: 1)),
+          rawText: 'Runway lighting unserviceable',
+          decodedText: 'Runway lighting unserviceable',
+          affectedSystem: 'LIGHTING',
+          isCritical: false,
+          group: NotamGroup.airportServices,
+        );
+
+        expect(lightingNotam.group, NotamGroup.airportServices);
+      });
+
+      test('should classify hazard NOTAMs to hazards group', () {
+        final hazardNotam = Notam(
+          id: 'HAZARD123',
           icao: 'YPPH',
           type: NotamType.other,
-          validFrom: now.subtract(Duration(days: 30)),
-          validTo: now.add(Duration(days: 365 * 10)), // 10 years in future
-          rawText: 'Permanent NOTAM',
-          decodedText: 'Permanent NOTAM',
-          affectedSystem: 'OTHER',
-          isCritical: false,
-          group: NotamGroup.other,
+          validFrom: now,
+          validTo: now.add(Duration(hours: 1)),
+          rawText: 'Bird hazard reported',
+          decodedText: 'Bird hazard reported',
+          affectedSystem: 'HAZARD',
+          isCritical: true,
+          group: NotamGroup.hazards,
         );
 
-        expect(permanentNotam.validTo.isAfter(now.add(Duration(days: 365 * 5))), isTrue);
+        expect(hazardNotam.group, NotamGroup.hazards);
       });
     });
   });

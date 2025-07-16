@@ -31,7 +31,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
     final now = DateTime.now().toUtc();
     
     return [
-      // Movement Areas NOTAMs
+      // Runways NOTAMs
       Notam(
         id: 'A001/24',
         icao: 'YPPH',
@@ -42,7 +42,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'Runway 06/24 closed for maintenance',
         affectedSystem: 'Runway',
         isCritical: true,
-        group: NotamGroup.movementAreas,
+        group: NotamGroup.runways,
       ),
       Notam(
         id: 'A002/24',
@@ -54,7 +54,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'Taxiway A partially closed',
         affectedSystem: 'Taxiway',
         isCritical: false,
-        group: NotamGroup.movementAreas,
+        group: NotamGroup.taxiways,
       ),
       // Navigation Aids NOTAMs
       Notam(
@@ -67,7 +67,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'ILS runway 06 unserviceable',
         affectedSystem: 'ILS',
         isCritical: true,
-        group: NotamGroup.navigationAids,
+        group: NotamGroup.instrumentProcedures,
       ),
       Notam(
         id: 'A004/24',
@@ -79,7 +79,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'VOR unserviceable',
         affectedSystem: 'VOR',
         isCritical: false,
-        group: NotamGroup.navigationAids,
+        group: NotamGroup.instrumentProcedures,
       ),
       // Lighting NOTAMs
       Notam(
@@ -92,7 +92,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'Runway lighting unserviceable',
         affectedSystem: 'Lighting',
         isCritical: false,
-        group: NotamGroup.lighting,
+        group: NotamGroup.airportServices,
       ),
       // Hazards NOTAMs
       Notam(
@@ -105,7 +105,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'Bird hazard reported in vicinity',
         affectedSystem: 'Hazards',
         isCritical: true,
-        group: NotamGroup.hazardsObstacles,
+        group: NotamGroup.hazards,
       ),
       // Airport/ATC NOTAMs
       Notam(
@@ -118,7 +118,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'Airport fuel services limited',
         affectedSystem: 'Fuel',
         isCritical: false,
-        group: NotamGroup.airportAtcAvailability,
+        group: NotamGroup.airportServices,
       ),
       // Procedural/Admin NOTAMs
       Notam(
@@ -131,7 +131,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'New arrival procedure implemented',
         affectedSystem: 'Procedures',
         isCritical: false,
-        group: NotamGroup.departureApproachProcedures,
+        group: NotamGroup.admin,
       ),
       // Airspace NOTAMs
       Notam(
@@ -144,7 +144,7 @@ class _NotamGroupedDemoScreenState extends State<NotamGroupedDemoScreen> {
         decodedText: 'Temporary restricted area active',
         affectedSystem: 'Airspace',
         isCritical: true,
-        group: NotamGroup.airspace,
+        group: NotamGroup.instrumentProcedures,
       ),
       // Other NOTAMs
       Notam(

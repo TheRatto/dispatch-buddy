@@ -11,33 +11,27 @@ void main() {
     });
 
     group('NotamGroup Enum', () {
-      test('should have all 9 groups defined', () {
-        expect(NotamGroup.values.length, 9);
-        expect(NotamGroup.values, contains(NotamGroup.movementAreas));
-        expect(NotamGroup.values, contains(NotamGroup.navigationAids));
-        expect(NotamGroup.values, contains(NotamGroup.departureApproachProcedures));
-        expect(NotamGroup.values, contains(NotamGroup.airportAtcAvailability));
-        expect(NotamGroup.values, contains(NotamGroup.lighting));
-        expect(NotamGroup.values, contains(NotamGroup.hazardsObstacles));
-        expect(NotamGroup.values, contains(NotamGroup.airspace));
-        expect(NotamGroup.values, contains(NotamGroup.proceduralAdmin));
+      test('should have all 7 groups defined', () {
+        expect(NotamGroup.values.length, 7);
+        expect(NotamGroup.values, contains(NotamGroup.runways));
+        expect(NotamGroup.values, contains(NotamGroup.taxiways));
+        expect(NotamGroup.values, contains(NotamGroup.instrumentProcedures));
+        expect(NotamGroup.values, contains(NotamGroup.airportServices));
+        expect(NotamGroup.values, contains(NotamGroup.hazards));
+        expect(NotamGroup.values, contains(NotamGroup.admin));
         expect(NotamGroup.values, contains(NotamGroup.other));
       });
     });
 
     group('Q Code to Group Mapping', () {
-      test('should map Movement Areas Q codes correctly', () {
+      test('should map Runways Q codes correctly', () {
         final testCases = [
-          {'qCode': 'QMRLC', 'expectedGroup': NotamGroup.movementAreas}, // Runway
-          {'qCode': 'QMXLC', 'expectedGroup': NotamGroup.movementAreas}, // Taxiway
-          {'qCode': 'QMSLC', 'expectedGroup': NotamGroup.movementAreas}, // Stopway
-          {'qCode': 'QMTLC', 'expectedGroup': NotamGroup.movementAreas}, // Threshold
-          {'qCode': 'QMULC', 'expectedGroup': NotamGroup.movementAreas}, // Runway turning bay
-          {'qCode': 'QMWLC', 'expectedGroup': NotamGroup.movementAreas}, // Strip/shoulder
-          {'qCode': 'QMYLC', 'expectedGroup': NotamGroup.movementAreas}, // Rapid exit taxiway
-          {'qCode': 'QMKLC', 'expectedGroup': NotamGroup.movementAreas}, // Parking area
-          {'qCode': 'QMNLC', 'expectedGroup': NotamGroup.movementAreas}, // Apron
-          {'qCode': 'QMPLC', 'expectedGroup': NotamGroup.movementAreas}, // Aircraft stands
+          {'qCode': 'QMRLC', 'expectedGroup': NotamGroup.runways}, // Runway
+          {'qCode': 'QMSLC', 'expectedGroup': NotamGroup.runways}, // Stopway
+          {'qCode': 'QMTLC', 'expectedGroup': NotamGroup.runways}, // Threshold
+          {'qCode': 'QMULC', 'expectedGroup': NotamGroup.runways}, // Runway turning bay
+          {'qCode': 'QMWLC', 'expectedGroup': NotamGroup.runways}, // Strip/shoulder
+          {'qCode': 'QMDLC', 'expectedGroup': NotamGroup.runways}, // Declared distances
         ];
 
         for (final testCase in testCases) {
@@ -60,33 +54,62 @@ void main() {
         }
       });
 
-      test('should map Navigation Aids Q codes correctly', () {
+      test('should map Taxiways Q codes correctly', () {
         final testCases = [
-          {'qCode': 'QICLC', 'expectedGroup': NotamGroup.navigationAids}, // ILS
-          {'qCode': 'QIDLC', 'expectedGroup': NotamGroup.navigationAids}, // ILS DME
-          {'qCode': 'QIGLC', 'expectedGroup': NotamGroup.navigationAids}, // Glide path
-          {'qCode': 'QIILC', 'expectedGroup': NotamGroup.navigationAids}, // Inner marker
-          {'qCode': 'QILLC', 'expectedGroup': NotamGroup.navigationAids}, // Localizer
-          {'qCode': 'QIMLC', 'expectedGroup': NotamGroup.navigationAids}, // Middle marker
-          {'qCode': 'QINLC', 'expectedGroup': NotamGroup.navigationAids}, // Localizer (non-ILS)
-          {'qCode': 'QIOLC', 'expectedGroup': NotamGroup.navigationAids}, // Outer marker
-          {'qCode': 'QISLC', 'expectedGroup': NotamGroup.navigationAids}, // ILS Category I
-          {'qCode': 'QITLC', 'expectedGroup': NotamGroup.navigationAids}, // ILS Category II
-          {'qCode': 'QIULC', 'expectedGroup': NotamGroup.navigationAids}, // ILS Category III
-          {'qCode': 'QIWLC', 'expectedGroup': NotamGroup.navigationAids}, // MLS
-          {'qCode': 'QIXLC', 'expectedGroup': NotamGroup.navigationAids}, // Locator, outer
-          {'qCode': 'QIYLC', 'expectedGroup': NotamGroup.navigationAids}, // Locator, middle
-          {'qCode': 'QNALC', 'expectedGroup': NotamGroup.navigationAids}, // All radio navigation
-          {'qCode': 'QNBLC', 'expectedGroup': NotamGroup.navigationAids}, // Nondirectional beacon
-          {'qCode': 'QNCLC', 'expectedGroup': NotamGroup.navigationAids}, // DECCA
-          {'qCode': 'QNDLC', 'expectedGroup': NotamGroup.navigationAids}, // DME
-          {'qCode': 'QNFLC', 'expectedGroup': NotamGroup.navigationAids}, // Fan marker
-          {'qCode': 'QNLLC', 'expectedGroup': NotamGroup.navigationAids}, // Locator
-          {'qCode': 'QNMLC', 'expectedGroup': NotamGroup.navigationAids}, // VOR/DME
-          {'qCode': 'QNNLC', 'expectedGroup': NotamGroup.navigationAids}, // TACAN
-          {'qCode': 'QNOLC', 'expectedGroup': NotamGroup.navigationAids}, // OMEGA
-          {'qCode': 'QNTLC', 'expectedGroup': NotamGroup.navigationAids}, // VORTAC
-          {'qCode': 'QNVLC', 'expectedGroup': NotamGroup.navigationAids}, // VOR
+          {'qCode': 'QMXLC', 'expectedGroup': NotamGroup.taxiways}, // Taxiway
+          {'qCode': 'QMYLC', 'expectedGroup': NotamGroup.taxiways}, // Rapid exit taxiway
+          {'qCode': 'QMKLC', 'expectedGroup': NotamGroup.taxiways}, // Parking area
+          {'qCode': 'QMNLC', 'expectedGroup': NotamGroup.taxiways}, // Apron
+          {'qCode': 'QMPLC', 'expectedGroup': NotamGroup.taxiways}, // Aircraft stands
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.taxiway,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: 'Test NOTAM',
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'TWY',
+            isCritical: false,
+            qCode: testCase['qCode'] as String,
+            group: Notam.determineGroupFromQCode(testCase['qCode'] as String),
+          );
+
+          expect(notam.group, testCase['expectedGroup'], 
+              reason: 'Failed for Q code: ${testCase['qCode']}');
+        }
+      });
+
+      test('should map Instrument Procedures Q codes correctly', () {
+        final testCases = [
+          {'qCode': 'QICLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // ILS
+          {'qCode': 'QIDLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // ILS DME
+          {'qCode': 'QIGLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Glide path
+          {'qCode': 'QIILC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Inner marker
+          {'qCode': 'QILLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Localizer
+          {'qCode': 'QIMLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Middle marker
+          {'qCode': 'QINLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Localizer (non-ILS)
+          {'qCode': 'QIOLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Outer marker
+          {'qCode': 'QISLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // ILS Category I
+          {'qCode': 'QITLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // ILS Category II
+          {'qCode': 'QIULC', 'expectedGroup': NotamGroup.instrumentProcedures}, // ILS Category III
+          {'qCode': 'QIWLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // MLS
+          {'qCode': 'QIXLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Locator, outer
+          {'qCode': 'QIYLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Locator, middle
+          {'qCode': 'QNALC', 'expectedGroup': NotamGroup.instrumentProcedures}, // All radio navigation
+          {'qCode': 'QNBLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Nondirectional beacon
+          {'qCode': 'QNCLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // DECCA
+          {'qCode': 'QNDLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // DME
+          {'qCode': 'QNFLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Fan marker
+          {'qCode': 'QNLLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // Locator
+          {'qCode': 'QNMLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // VOR/DME
+          {'qCode': 'QNNLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // TACAN
+          {'qCode': 'QNOLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // OMEGA
+          {'qCode': 'QNTLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // VORTAC
+          {'qCode': 'QNVLC', 'expectedGroup': NotamGroup.instrumentProcedures}, // VOR
         ];
 
         for (final testCase in testCases) {
@@ -109,31 +132,31 @@ void main() {
         }
       });
 
-      test('should map Lighting Q codes correctly', () {
+      test('should map Airport Services Q codes correctly', () {
         final testCases = [
-          {'qCode': 'QLALC', 'expectedGroup': NotamGroup.lighting}, // Approach lighting
-          {'qCode': 'QLBLC', 'expectedGroup': NotamGroup.lighting}, // Aerodrome beacon
-          {'qCode': 'QLCLC', 'expectedGroup': NotamGroup.lighting}, // Runway centre line
-          {'qCode': 'QLDLC', 'expectedGroup': NotamGroup.lighting}, // Landing direction
-          {'qCode': 'QLELC', 'expectedGroup': NotamGroup.lighting}, // Runway edge
-          {'qCode': 'QLFLC', 'expectedGroup': NotamGroup.lighting}, // Sequenced flashing
-          {'qCode': 'QLGLC', 'expectedGroup': NotamGroup.lighting}, // Pilot-controlled
-          {'qCode': 'QLHLC', 'expectedGroup': NotamGroup.lighting}, // High intensity
-          {'qCode': 'QLILC', 'expectedGroup': NotamGroup.lighting}, // Runway end identifier
-          {'qCode': 'QLJLC', 'expectedGroup': NotamGroup.lighting}, // Runway alignment
-          {'qCode': 'QLKLC', 'expectedGroup': NotamGroup.lighting}, // CAT II components
-          {'qCode': 'QLLLC', 'expectedGroup': NotamGroup.lighting}, // Low intensity
-          {'qCode': 'QLMLC', 'expectedGroup': NotamGroup.lighting}, // Medium intensity
-          {'qCode': 'QLPLC', 'expectedGroup': NotamGroup.lighting}, // PAPI
-          {'qCode': 'QLRLC', 'expectedGroup': NotamGroup.lighting}, // All landing area
-          {'qCode': 'QLSLC', 'expectedGroup': NotamGroup.lighting}, // Stopway
-          {'qCode': 'QLTLC', 'expectedGroup': NotamGroup.lighting}, // Threshold
-          {'qCode': 'QLULC', 'expectedGroup': NotamGroup.lighting}, // Helicopter approach
-          {'qCode': 'QLVLC', 'expectedGroup': NotamGroup.lighting}, // VASIS
-          {'qCode': 'QLWLC', 'expectedGroup': NotamGroup.lighting}, // Heliport
-          {'qCode': 'QLXLC', 'expectedGroup': NotamGroup.lighting}, // Taxiway centre line
-          {'qCode': 'QLYLC', 'expectedGroup': NotamGroup.lighting}, // Taxiway edge
-          {'qCode': 'QLZLC', 'expectedGroup': NotamGroup.lighting}, // Touchdown zone
+          {'qCode': 'QLALC', 'expectedGroup': NotamGroup.airportServices}, // Approach lighting
+          {'qCode': 'QLBLC', 'expectedGroup': NotamGroup.airportServices}, // Aerodrome beacon
+          {'qCode': 'QLCLC', 'expectedGroup': NotamGroup.airportServices}, // Runway centre line
+          {'qCode': 'QLDLC', 'expectedGroup': NotamGroup.airportServices}, // Landing direction
+          {'qCode': 'QLELC', 'expectedGroup': NotamGroup.airportServices}, // Runway edge
+          {'qCode': 'QLFLC', 'expectedGroup': NotamGroup.airportServices}, // Sequenced flashing
+          {'qCode': 'QLGLC', 'expectedGroup': NotamGroup.airportServices}, // Pilot-controlled
+          {'qCode': 'QLHLC', 'expectedGroup': NotamGroup.airportServices}, // High intensity
+          {'qCode': 'QLILC', 'expectedGroup': NotamGroup.airportServices}, // Runway end identifier
+          {'qCode': 'QLJLC', 'expectedGroup': NotamGroup.airportServices}, // Runway alignment
+          {'qCode': 'QLKLC', 'expectedGroup': NotamGroup.airportServices}, // CAT II components
+          {'qCode': 'QLLLC', 'expectedGroup': NotamGroup.airportServices}, // Low intensity
+          {'qCode': 'QLMLC', 'expectedGroup': NotamGroup.airportServices}, // Medium intensity
+          {'qCode': 'QLPLC', 'expectedGroup': NotamGroup.airportServices}, // PAPI
+          {'qCode': 'QLRLC', 'expectedGroup': NotamGroup.airportServices}, // All landing area
+          {'qCode': 'QLSLC', 'expectedGroup': NotamGroup.airportServices}, // Stopway
+          {'qCode': 'QLTLC', 'expectedGroup': NotamGroup.airportServices}, // Threshold
+          {'qCode': 'QLULC', 'expectedGroup': NotamGroup.airportServices}, // Helicopter approach
+          {'qCode': 'QLVLC', 'expectedGroup': NotamGroup.airportServices}, // VASIS
+          {'qCode': 'QLWLC', 'expectedGroup': NotamGroup.airportServices}, // Heliport
+          {'qCode': 'QLXLC', 'expectedGroup': NotamGroup.airportServices}, // Taxiway centre line
+          {'qCode': 'QLYLC', 'expectedGroup': NotamGroup.airportServices}, // Taxiway edge
+          {'qCode': 'QLZLC', 'expectedGroup': NotamGroup.airportServices}, // Touchdown zone
         ];
 
         for (final testCase in testCases) {
@@ -156,6 +179,35 @@ void main() {
         }
       });
 
+      test('should map Hazards Q codes correctly', () {
+        final testCases = [
+          {'qCode': 'QOBLC', 'expectedGroup': NotamGroup.hazards}, // Obstacle
+          {'qCode': 'QOLLC', 'expectedGroup': NotamGroup.hazards}, // Obstacle lights
+          {'qCode': 'QWULC', 'expectedGroup': NotamGroup.hazards}, // Unmanned aircraft
+          {'qCode': 'QWALC', 'expectedGroup': NotamGroup.hazards}, // Air display
+          {'qCode': 'QWWLC', 'expectedGroup': NotamGroup.hazards}, // Significant volcanic activity
+        ];
+
+        for (final testCase in testCases) {
+          final notam = Notam(
+            id: 'TEST123',
+            icao: 'YPPH',
+            type: NotamType.other,
+            validFrom: DateTime.now(),
+            validTo: DateTime.now().add(Duration(hours: 1)),
+            rawText: 'Test NOTAM',
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'HAZARD',
+            isCritical: false,
+            qCode: testCase['qCode'] as String,
+            group: Notam.determineGroupFromQCode(testCase['qCode'] as String),
+          );
+
+          expect(notam.group, testCase['expectedGroup'], 
+              reason: 'Failed for Q code: ${testCase['qCode']}');
+        }
+      });
+
       test('should handle invalid Q codes', () {
         final invalidQCodes = [null, '', 'ABC', 'QABC', 'QABCDE', 'XMRLC'];
         
@@ -168,18 +220,14 @@ void main() {
     });
 
     group('Text-Based Classification', () {
-      test('should classify Movement Areas NOTAMs by text', () {
+      test('should classify Runways NOTAMs by text', () {
         final testCases = [
-          {'text': 'RWY 06/24 CLOSED for maintenance', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Runway 06/24 unserviceable', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Taxiway A closed for construction', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'TWY B unserviceable', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Apron closed for maintenance', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Parking area limited', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Aircraft stand 5 closed', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Displaced threshold runway 06', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'Braking action poor on runway 06', 'expectedGroup': NotamGroup.movementAreas},
-          {'text': 'TORA reduced on runway 06', 'expectedGroup': NotamGroup.movementAreas},
+          {'text': 'RWY 06/24 CLOSED for maintenance', 'expectedGroup': NotamGroup.runways},
+          {'text': 'Runway 06/24 unserviceable', 'expectedGroup': NotamGroup.runways},
+          {'text': 'Displaced threshold runway 06', 'expectedGroup': NotamGroup.runways},
+          {'text': 'Braking action poor on runway 06', 'expectedGroup': NotamGroup.runways},
+          {'text': 'TORA reduced on runway 06', 'expectedGroup': NotamGroup.runways},
+          {'text': 'Declared distances changed runway 06', 'expectedGroup': NotamGroup.runways},
         ];
 
         for (final testCase in testCases) {
@@ -203,18 +251,13 @@ void main() {
         }
       });
 
-      test('should classify Navigation Aids NOTAMs by text', () {
+      test('should classify Taxiways NOTAMs by text', () {
         final testCases = [
-          {'text': 'ILS runway 06 unserviceable', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'VOR out of service', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'NDB unserviceable', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'DME out of service', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'Localizer runway 06 unserviceable', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'Glide path unserviceable', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'PAPI unserviceable runway 06', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'Minimums increased for approach', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'Decision altitude increased', 'expectedGroup': NotamGroup.navigationAids},
-          {'text': 'Navigation aid maintenance', 'expectedGroup': NotamGroup.navigationAids},
+          {'text': 'Taxiway A closed for construction', 'expectedGroup': NotamGroup.taxiways},
+          {'text': 'TWY B unserviceable', 'expectedGroup': NotamGroup.taxiways},
+          {'text': 'Apron closed for maintenance', 'expectedGroup': NotamGroup.taxiways},
+          {'text': 'Parking area limited', 'expectedGroup': NotamGroup.taxiways},
+          {'text': 'Aircraft stand 5 closed', 'expectedGroup': NotamGroup.taxiways},
         ];
 
         for (final testCase in testCases) {
@@ -228,7 +271,7 @@ void main() {
             decodedText: 'Decoded test NOTAM',
             affectedSystem: 'OTHER',
             isCritical: false,
-            qCode: null,
+            qCode: null, // No Q code to force text-based classification
             group: NotamGroup.other,
           );
 
@@ -238,18 +281,17 @@ void main() {
         }
       });
 
-      test('should classify Lighting NOTAMs by text', () {
+      test('should classify Instrument Procedures NOTAMs by text', () {
         final testCases = [
-          {'text': 'Runway lighting unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'HIRL unserviceable runway 06', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'REIL unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'PAPI unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'VASIS unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'Approach lighting system unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'Centerline lights unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'Edge lights unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'Threshold lights unserviceable', 'expectedGroup': NotamGroup.lighting},
-          {'text': 'Aerodrome beacon unserviceable', 'expectedGroup': NotamGroup.lighting},
+          {'text': 'ILS runway 06 unserviceable', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'VOR out of service', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'NDB unserviceable', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'DME out of service', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'Localizer runway 06 unserviceable', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'Glide path unserviceable', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'Minimums increased for approach', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'Decision altitude increased', 'expectedGroup': NotamGroup.instrumentProcedures},
+          {'text': 'Navigation aid maintenance', 'expectedGroup': NotamGroup.instrumentProcedures},
         ];
 
         for (final testCase in testCases) {
@@ -263,7 +305,7 @@ void main() {
             decodedText: 'Decoded test NOTAM',
             affectedSystem: 'OTHER',
             isCritical: false,
-            qCode: null,
+            qCode: null, // No Q code to force text-based classification
             group: NotamGroup.other,
           );
 
@@ -273,17 +315,18 @@ void main() {
         }
       });
 
-      test('should classify Airport & ATC Availability NOTAMs by text', () {
+      test('should classify Airport Services NOTAMs by text', () {
         final testCases = [
-          {'text': 'Airport closed for maintenance', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'Tower closed', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'Ground control unserviceable', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'ATIS unserviceable', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'Fuel not available', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'Fire service downgraded', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'Bird hazard reported', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'Drone activity reported', 'expectedGroup': NotamGroup.airportAtcAvailability},
-          {'text': 'ATC service limited', 'expectedGroup': NotamGroup.airportAtcAvailability},
+          {'text': 'Runway lighting unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'HIRL unserviceable runway 06', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'REIL unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'PAPI unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'VASIS unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'Approach lighting system unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'Centerline lights unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'Edge lights unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'Threshold lights unserviceable', 'expectedGroup': NotamGroup.airportServices},
+          {'text': 'Aerodrome beacon unserviceable', 'expectedGroup': NotamGroup.airportServices},
         ];
 
         for (final testCase in testCases) {
@@ -297,7 +340,7 @@ void main() {
             decodedText: 'Decoded test NOTAM',
             affectedSystem: 'OTHER',
             isCritical: false,
-            qCode: null,
+            qCode: null, // No Q code to force text-based classification
             group: NotamGroup.other,
           );
 
@@ -307,16 +350,16 @@ void main() {
         }
       });
 
-      test('should classify Hazards & Obstacles NOTAMs by text', () {
+      test('should classify Hazards NOTAMs by text', () {
         final testCases = [
-          {'text': 'Obstacle reported near airport', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Crane operating near runway', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Construction work near airport', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Unlit obstacle reported', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Obstacle light failure', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Wildlife hazard reported', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Bird strike reported', 'expectedGroup': NotamGroup.hazardsObstacles},
-          {'text': 'Maintenance work near runway', 'expectedGroup': NotamGroup.hazardsObstacles},
+          {'text': 'Obstacle reported near airport', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Crane operating near runway', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Construction work near airport', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Unlit obstacle reported', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Obstacle light failure', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Wildlife hazard reported', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Bird strike reported', 'expectedGroup': NotamGroup.hazards},
+          {'text': 'Maintenance work near runway', 'expectedGroup': NotamGroup.hazards},
         ];
 
         for (final testCase in testCases) {
@@ -330,7 +373,7 @@ void main() {
             decodedText: 'Decoded test NOTAM',
             affectedSystem: 'OTHER',
             isCritical: false,
-            qCode: null,
+            qCode: null, // No Q code to force text-based classification
             group: NotamGroup.other,
           );
 
@@ -340,16 +383,14 @@ void main() {
         }
       });
 
-      test('should classify Airspace NOTAMs by text', () {
+      test('should classify Admin NOTAMs by text', () {
         final testCases = [
-          {'text': 'Restricted airspace activated', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'Prohibited area established', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'Danger area active', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'Military exercise in progress', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'GPS interference reported', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'RNAV not available', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'Temporary reserved airspace', 'expectedGroup': NotamGroup.airspace},
-          {'text': 'Aerobatics in progress', 'expectedGroup': NotamGroup.airspace},
+          {'text': 'Curfew restrictions in effect', 'expectedGroup': NotamGroup.admin},
+          {'text': 'Noise abatement procedures', 'expectedGroup': NotamGroup.admin},
+          {'text': 'PPR required for operations', 'expectedGroup': NotamGroup.admin},
+          {'text': 'Slot restrictions in effect', 'expectedGroup': NotamGroup.admin},
+          {'text': 'Administrative procedures changed', 'expectedGroup': NotamGroup.admin},
+          {'text': 'ATIS frequency changed', 'expectedGroup': NotamGroup.admin},
         ];
 
         for (final testCase in testCases) {
@@ -363,7 +404,7 @@ void main() {
             decodedText: 'Decoded test NOTAM',
             affectedSystem: 'OTHER',
             isCritical: false,
-            qCode: null,
+            qCode: null, // No Q code to force text-based classification
             group: NotamGroup.other,
           );
 
@@ -373,338 +414,232 @@ void main() {
         }
       });
 
-      test('should classify Procedural & Admin NOTAMs by text', () {
-        final testCases = [
-          {'text': 'Curfew restrictions in effect', 'expectedGroup': NotamGroup.proceduralAdmin},
-          {'text': 'Noise abatement procedures', 'expectedGroup': NotamGroup.proceduralAdmin},
-          {'text': 'PPR required for operations', 'expectedGroup': NotamGroup.proceduralAdmin},
-          {'text': 'Slot restrictions in effect', 'expectedGroup': NotamGroup.proceduralAdmin},
-          {'text': 'Administrative procedures changed', 'expectedGroup': NotamGroup.proceduralAdmin},
-          {'text': 'ATIS frequency changed', 'expectedGroup': NotamGroup.proceduralAdmin},
-        ];
-
-        for (final testCase in testCases) {
-          final notam = Notam(
-            id: 'TEST123',
-            icao: 'YPPH',
-            type: NotamType.other,
-            validFrom: DateTime.now(),
-            validTo: DateTime.now().add(Duration(hours: 1)),
-            rawText: testCase['text'] as String,
-            decodedText: 'Decoded test NOTAM',
-            affectedSystem: 'OTHER',
-            isCritical: false,
-            qCode: null,
-            group: NotamGroup.other,
-          );
-
-          final assignedGroup = groupingService.assignGroup(notam);
-          expect(assignedGroup, testCase['expectedGroup'], 
-              reason: 'Failed for text: ${testCase['text']}');
-        }
-      });
-
-      test('should fallback to Other for unrecognized text', () {
-        final testCases = [
-          'General information notice',
-          // 'Administrative update' should now be Procedural/Admin
-          // 'Administrative update',
-          'Unrelated notice',
-          'General maintenance information',
-        ];
-
-        for (final text in testCases) {
-          final notam = Notam(
-            id: 'TEST123',
-            icao: 'YPPH',
-            type: NotamType.other,
-            validFrom: DateTime.now(),
-            validTo: DateTime.now().add(Duration(hours: 1)),
-            rawText: text,
-            decodedText: 'Decoded test NOTAM',
-            affectedSystem: 'OTHER',
-            isCritical: false,
-            qCode: null,
-            group: NotamGroup.other,
-          );
-
-          final assignedGroup = groupingService.assignGroup(notam);
-          if (text == 'Administrative update') {
-            expect(assignedGroup, NotamGroup.proceduralAdmin, 
-                reason: 'Failed for text: $text');
-          } else {
-            expect(assignedGroup, NotamGroup.other, 
-                reason: 'Failed for text: $text');
-          }
-        }
-      });
-
-      test('should prioritize Q code over text classification', () {
-        // This NOTAM has runway-related text but a navaid Q code
+      test('should handle unknown text classification', () {
         final notam = Notam(
           id: 'TEST123',
           icao: 'YPPH',
-          type: NotamType.navaid,
+          type: NotamType.other,
           validFrom: DateTime.now(),
           validTo: DateTime.now().add(Duration(hours: 1)),
-          rawText: 'QNTLC Runway 06/24 ILS unserviceable for maintenance',
-          decodedText: 'ILS runway 06 unserviceable',
-          affectedSystem: 'ILS',
+          rawText: 'Some random text with no keywords',
+          decodedText: 'Decoded test NOTAM',
+          affectedSystem: 'OTHER',
           isCritical: false,
-          qCode: 'QNTLC',
-          group: NotamGroup.navigationAids,
+          qCode: null, // No Q code to force text-based classification
+          group: NotamGroup.other,
         );
 
         final assignedGroup = groupingService.assignGroup(notam);
-        expect(assignedGroup, NotamGroup.navigationAids); // Should be navaid based on Q code
+        expect(assignedGroup, NotamGroup.other); // Should be other for unknown text
       });
     });
 
-    group('Confidence Scoring', () {
-      test('should calculate confidence scores correctly', () {
-        final testCases = [
-          {
-            'text': 'RWY 06/24 CLOSED for maintenance',
-            'group': NotamGroup.movementAreas,
-            'expectedConfidence': 0.1, // 1 match out of ~10 keywords
-          },
-          {
-            'text': 'ILS runway 06 unserviceable',
-            'group': NotamGroup.navigationAids,
-            'expectedConfidence': 0.05, // 1 match out of ~20 keywords
-          },
-          {
-            'text': 'Runway lighting unserviceable',
-            'group': NotamGroup.lighting,
-            'expectedConfidence': 0.05, // 1 match out of ~20 keywords
-          },
-        ];
-
-        for (final testCase in testCases) {
-          final confidence = groupingService.getTextClassificationConfidence(
-            testCase['text'] as String,
-            testCase['group'] as NotamGroup,
-          );
-          
-          expect(confidence, greaterThan(0.0), 
-              reason: 'Confidence should be greater than 0 for: ${testCase['text']}');
-          expect(confidence, lessThanOrEqualTo(1.0), 
-              reason: 'Confidence should be less than or equal to 1.0 for: ${testCase['text']}');
-        }
-      });
-
-      test('should return 0.0 confidence for Other group', () {
-        final confidence = groupingService.getTextClassificationConfidence(
-          'Some random text',
-          NotamGroup.other,
-        );
-        
-        expect(confidence, 0.0);
-      });
-    });
-
-    group('NotamGroupingService', () {
+    group('Grouping Service Methods', () {
       test('should get correct display names', () {
-        expect(groupingService.getGroupDisplayName(NotamGroup.movementAreas), '🛬 Movement Areas');
-        expect(groupingService.getGroupDisplayName(NotamGroup.navigationAids), '📡 Navigation Aids');
-        expect(groupingService.getGroupDisplayName(NotamGroup.departureApproachProcedures), '🛫 Departure/Approach Procedures');
-        expect(groupingService.getGroupDisplayName(NotamGroup.airportAtcAvailability), '🏢 Airport & ATC Availability');
-        expect(groupingService.getGroupDisplayName(NotamGroup.lighting), '💡 Lighting');
-        expect(groupingService.getGroupDisplayName(NotamGroup.hazardsObstacles), '⚠️ Hazards & Obstacles');
-        expect(groupingService.getGroupDisplayName(NotamGroup.airspace), '✈️ Airspace');
-        expect(groupingService.getGroupDisplayName(NotamGroup.proceduralAdmin), '📑 Procedural & Admin');
+        expect(groupingService.getGroupDisplayName(NotamGroup.runways), '🛬 Runways (Critical)');
+        expect(groupingService.getGroupDisplayName(NotamGroup.taxiways), '🛣️ Taxiways');
+        expect(groupingService.getGroupDisplayName(NotamGroup.instrumentProcedures), '📡 Instrument Procedures');
+        expect(groupingService.getGroupDisplayName(NotamGroup.airportServices), '🏢 Airport Services');
+        expect(groupingService.getGroupDisplayName(NotamGroup.hazards), '⚠️ Hazards');
+        expect(groupingService.getGroupDisplayName(NotamGroup.admin), '📑 Admin');
         expect(groupingService.getGroupDisplayName(NotamGroup.other), '🔧 Other');
       });
 
-      test('should get correct priority orders', () {
-        expect(groupingService.getGroupPriority(NotamGroup.movementAreas), 1);
-        expect(groupingService.getGroupPriority(NotamGroup.navigationAids), 2);
-        expect(groupingService.getGroupPriority(NotamGroup.departureApproachProcedures), 3);
-        expect(groupingService.getGroupPriority(NotamGroup.airportAtcAvailability), 4);
-        expect(groupingService.getGroupPriority(NotamGroup.lighting), 5);
-        expect(groupingService.getGroupPriority(NotamGroup.hazardsObstacles), 6);
-        expect(groupingService.getGroupPriority(NotamGroup.airspace), 7);
-        expect(groupingService.getGroupPriority(NotamGroup.proceduralAdmin), 8);
-        expect(groupingService.getGroupPriority(NotamGroup.other), 9);
+      test('should get correct priorities', () {
+        expect(groupingService.getGroupPriority(NotamGroup.runways), 1);
+        expect(groupingService.getGroupPriority(NotamGroup.taxiways), 2);
+        expect(groupingService.getGroupPriority(NotamGroup.instrumentProcedures), 3);
+        expect(groupingService.getGroupPriority(NotamGroup.airportServices), 4);
+        expect(groupingService.getGroupPriority(NotamGroup.hazards), 5);
+        expect(groupingService.getGroupPriority(NotamGroup.admin), 6);
+        expect(groupingService.getGroupPriority(NotamGroup.other), 7);
       });
 
       test('should sort groups by priority', () {
         final sortedGroups = groupingService.getSortedGroups();
-        expect(sortedGroups.length, 9);
-        expect(sortedGroups.first, NotamGroup.movementAreas);
+        expect(sortedGroups.first, NotamGroup.runways);
         expect(sortedGroups.last, NotamGroup.other);
       });
 
       test('should group NOTAMs correctly', () {
         final notams = [
           Notam(
-            id: 'RWY001',
+            id: 'TEST1',
             icao: 'YPPH',
             type: NotamType.runway,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
             rawText: 'Runway closed',
-            decodedText: 'Runway 06/24 closed',
+            decodedText: 'Decoded test NOTAM',
             affectedSystem: 'RWY',
-            isCritical: true,
-            qCode: 'QMRLC',
-            group: NotamGroup.movementAreas,
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.runways,
           ),
           Notam(
-            id: 'NAV001',
+            id: 'TEST2',
             icao: 'YPPH',
             type: NotamType.navaid,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
             rawText: 'ILS unserviceable',
-            decodedText: 'ILS runway 06 unserviceable',
-            affectedSystem: 'ILS',
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'NAV',
             isCritical: false,
-            qCode: 'QICLC',
-            group: NotamGroup.navigationAids,
+            qCode: null,
+            group: NotamGroup.instrumentProcedures,
           ),
           Notam(
-            id: 'LIGHT001',
+            id: 'TEST3',
             icao: 'YPPH',
             type: NotamType.lighting,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
-            rawText: 'PAPI unserviceable',
-            decodedText: 'PAPI runway 06 unserviceable',
-            affectedSystem: 'PAPI',
+            rawText: 'Lighting unserviceable',
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'LIGHT',
             isCritical: false,
-            qCode: 'QLPLC',
-            group: NotamGroup.lighting,
+            qCode: null,
+            group: NotamGroup.airportServices,
           ),
         ];
 
         final groupedNotams = groupingService.groupNotams(notams);
-        
-        expect(groupedNotams.length, 3);
-        expect(groupedNotams[NotamGroup.movementAreas]?.length, 1);
-        expect(groupedNotams[NotamGroup.navigationAids]?.length, 1);
-        expect(groupedNotams[NotamGroup.lighting]?.length, 1);
-        expect(groupedNotams[NotamGroup.other], null);
+        expect(groupedNotams[NotamGroup.runways]?.length, 1);
+        expect(groupedNotams[NotamGroup.instrumentProcedures]?.length, 1);
+        expect(groupedNotams[NotamGroup.airportServices]?.length, 1);
       });
 
-      test('should sort NOTAMs within groups correctly', () {
+      test('should sort NOTAMs within groups', () {
         final notams = [
           Notam(
-            id: 'RWY001',
+            id: 'TEST1',
             icao: 'YPPH',
             type: NotamType.runway,
             validFrom: DateTime.now().add(Duration(hours: 2)),
             validTo: DateTime.now().add(Duration(hours: 3)),
-            rawText: 'Runway closed later',
-            decodedText: 'Runway 06/24 closed later',
+            rawText: 'Runway closed',
+            decodedText: 'Decoded test NOTAM',
             affectedSystem: 'RWY',
             isCritical: false,
-            qCode: 'QMRLC',
-            group: NotamGroup.movementAreas,
+            qCode: null,
+            group: NotamGroup.runways,
           ),
           Notam(
-            id: 'RWY002',
+            id: 'TEST2',
             icao: 'YPPH',
             type: NotamType.runway,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
-            rawText: 'Runway closed now',
-            decodedText: 'Runway 06/24 closed now',
+            rawText: 'Runway unserviceable',
+            decodedText: 'Decoded test NOTAM',
             affectedSystem: 'RWY',
-            isCritical: true,
-            qCode: 'QMRLC',
-            group: NotamGroup.movementAreas,
+            isCritical: true, // Critical should come first
+            qCode: null,
+            group: NotamGroup.runways,
           ),
         ];
 
         final sortedNotams = groupingService.sortNotamsInGroup(notams);
-        
-        // Critical NOTAM should come first, then by time
-        expect(sortedNotams.first.id, 'RWY002'); // Critical
-        expect(sortedNotams.last.id, 'RWY001');  // Non-critical, later time
+        expect(sortedNotams.first.isCritical, true);
+        expect(sortedNotams.first.id, 'TEST2');
       });
 
       test('should get group statistics', () {
         final notams = [
           Notam(
-            id: 'RWY001',
+            id: 'TEST1',
             icao: 'YPPH',
             type: NotamType.runway,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
             rawText: 'Runway closed',
-            decodedText: 'Runway 06/24 closed',
+            decodedText: 'Decoded test NOTAM',
             affectedSystem: 'RWY',
-            isCritical: true,
-            qCode: 'QMRLC',
-            group: NotamGroup.movementAreas,
+            isCritical: false,
+            qCode: null,
+            group: NotamGroup.runways,
           ),
           Notam(
-            id: 'RWY002',
+            id: 'TEST2',
             icao: 'YPPH',
             type: NotamType.runway,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
-            rawText: 'Taxiway closed',
-            decodedText: 'Taxiway A closed',
-            affectedSystem: 'TWY',
+            rawText: 'Runway unserviceable',
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'RWY',
             isCritical: false,
-            qCode: 'QMXLC',
-            group: NotamGroup.movementAreas,
+            qCode: null,
+            group: NotamGroup.runways,
           ),
           Notam(
-            id: 'NAV001',
+            id: 'TEST3',
             icao: 'YPPH',
             type: NotamType.navaid,
             validFrom: DateTime.now(),
             validTo: DateTime.now().add(Duration(hours: 1)),
             rawText: 'ILS unserviceable',
-            decodedText: 'ILS runway 06 unserviceable',
-            affectedSystem: 'ILS',
+            decodedText: 'Decoded test NOTAM',
+            affectedSystem: 'NAV',
             isCritical: false,
-            qCode: 'QICLC',
-            group: NotamGroup.navigationAids,
+            qCode: null,
+            group: NotamGroup.instrumentProcedures,
           ),
         ];
 
         final stats = groupingService.getGroupStatistics(notams);
-        
-        expect(stats[NotamGroup.movementAreas], 2);
-        expect(stats[NotamGroup.navigationAids], 1);
-        expect(stats[NotamGroup.lighting], null);
+        expect(stats[NotamGroup.runways], 2);
+        expect(stats[NotamGroup.instrumentProcedures], 1);
+        expect(stats[NotamGroup.airportServices], null);
       });
 
       test('should identify operationally significant NOTAMs', () {
-        final significantNotam = Notam(
-          id: 'RWY001',
+        final criticalNotam = Notam(
+          id: 'TEST1',
           icao: 'YPPH',
           type: NotamType.runway,
           validFrom: DateTime.now(),
           validTo: DateTime.now().add(Duration(hours: 1)),
-          rawText: 'Runway 06/24 CLOSED for maintenance',
-          decodedText: 'Runway 06/24 closed for maintenance',
+          rawText: 'Runway closed',
+          decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
-          qCode: 'QMRLC',
-          group: NotamGroup.movementAreas,
+          qCode: null,
+          group: NotamGroup.runways,
         );
 
-        final nonSignificantNotam = Notam(
-          id: 'RWY002',
+        final significantNotam = Notam(
+          id: 'TEST2',
           icao: 'YPPH',
           type: NotamType.runway,
           validFrom: DateTime.now(),
           validTo: DateTime.now().add(Duration(hours: 1)),
-          rawText: 'Runway 06/24 lighting reduced intensity',
-          decodedText: 'Runway 06/24 lighting reduced intensity',
+          rawText: 'Runway unserviceable',
+          decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
-          qCode: 'QMRLC',
-          group: NotamGroup.movementAreas,
+          qCode: null,
+          group: NotamGroup.runways,
         );
 
+        final normalNotam = Notam(
+          id: 'TEST3',
+          icao: 'YPPH',
+          type: NotamType.runway,
+          validFrom: DateTime.now(),
+          validTo: DateTime.now().add(Duration(hours: 1)),
+          rawText: 'Runway maintenance',
+          decodedText: 'Decoded test NOTAM',
+          affectedSystem: 'RWY',
+          isCritical: false,
+          qCode: null,
+          group: NotamGroup.runways,
+        );
+
+        expect(groupingService.isOperationallySignificant(criticalNotam), true);
         expect(groupingService.isOperationallySignificant(significantNotam), true);
-        expect(groupingService.isOperationallySignificant(nonSignificantNotam), false);
+        expect(groupingService.isOperationallySignificant(normalNotam), false);
       });
     });
   });

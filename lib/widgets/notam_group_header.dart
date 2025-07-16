@@ -49,35 +49,27 @@ class NotamGroupHeader extends StatelessWidget {
     Color iconColor;
 
     switch (group) {
-      case NotamGroup.movementAreas:
+      case NotamGroup.runways:
         iconData = Icons.airplanemode_active;
         iconColor = Colors.blue;
         break;
-      case NotamGroup.navigationAids:
+      case NotamGroup.taxiways:
+        iconData = Icons.directions_car;
+        iconColor = Colors.green;
+        break;
+      case NotamGroup.instrumentProcedures:
         iconData = Icons.radar;
         iconColor = Colors.purple;
         break;
-      case NotamGroup.departureApproachProcedures:
-        iconData = Icons.flight_takeoff;
-        iconColor = Colors.green;
-        break;
-      case NotamGroup.airportAtcAvailability:
+      case NotamGroup.airportServices:
         iconData = Icons.flight;
         iconColor = Colors.orange;
         break;
-      case NotamGroup.lighting:
-        iconData = Icons.lightbulb;
-        iconColor = Colors.yellow.shade700;
-        break;
-      case NotamGroup.hazardsObstacles:
+      case NotamGroup.hazards:
         iconData = Icons.warning;
         iconColor = Colors.red;
         break;
-      case NotamGroup.airspace:
-        iconData = Icons.space_bar;
-        iconColor = Colors.indigo;
-        break;
-      case NotamGroup.proceduralAdmin:
+      case NotamGroup.admin:
         iconData = Icons.admin_panel_settings;
         iconColor = Colors.teal;
         break;
@@ -203,22 +195,18 @@ class NotamGroupHeader extends StatelessWidget {
 
   String _getGroupTitle() {
     switch (group) {
-      case NotamGroup.movementAreas:
-        return 'Movement Areas';
-      case NotamGroup.navigationAids:
-        return 'Navigation Aids';
-      case NotamGroup.departureApproachProcedures:
-        return 'Departure/Approach Procedures';
-      case NotamGroup.airportAtcAvailability:
-        return 'Airport & ATC Availability';
-      case NotamGroup.lighting:
-        return 'Lighting';
-      case NotamGroup.hazardsObstacles:
-        return 'Hazards & Obstacles';
-      case NotamGroup.airspace:
-        return 'Airspace';
-      case NotamGroup.proceduralAdmin:
-        return 'Procedural & Admin';
+      case NotamGroup.runways:
+        return 'Runways';
+      case NotamGroup.taxiways:
+        return 'Taxiways';
+      case NotamGroup.instrumentProcedures:
+        return 'Instrument Procedures';
+      case NotamGroup.airportServices:
+        return 'Airport Services';
+      case NotamGroup.hazards:
+        return 'Hazards';
+      case NotamGroup.admin:
+        return 'Admin';
       case NotamGroup.other:
         return 'Other';
     }
@@ -226,24 +214,20 @@ class NotamGroupHeader extends StatelessWidget {
 
   int _getGroupPriority() {
     switch (group) {
-      case NotamGroup.movementAreas:
+      case NotamGroup.runways:
         return 1;
-      case NotamGroup.navigationAids:
+      case NotamGroup.taxiways:
         return 2;
-      case NotamGroup.departureApproachProcedures:
+      case NotamGroup.instrumentProcedures:
         return 3;
-      case NotamGroup.airportAtcAvailability:
+      case NotamGroup.airportServices:
         return 4;
-      case NotamGroup.lighting:
+      case NotamGroup.hazards:
         return 5;
-      case NotamGroup.hazardsObstacles:
+      case NotamGroup.admin:
         return 6;
-      case NotamGroup.airspace:
-        return 7;
-      case NotamGroup.proceduralAdmin:
-        return 8;
       case NotamGroup.other:
-        return 9;
+        return 7;
     }
   }
 } 

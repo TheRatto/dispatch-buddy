@@ -2,15 +2,13 @@ enum NotamType { runway, navaid, taxiway, lighting, procedure, other, airspace }
 
 // New NOTAM grouping enum based on operational significance
 enum NotamGroup {
-  movementAreas,    // Group 1: Runways, Taxiways, Aprons, Parking
-  navigationAids,   // Group 2: ILS, VOR, NDB, DME, etc.
-  departureApproachProcedures, // Group 3: SIDs, STARs, Approaches
-  airportAtcAvailability, // Group 4: Airport closure, ATC services
-  lighting,         // Group 5: Runway/taxiway lighting
-  hazardsObstacles, // Group 6: Obstacles, construction, hazards
-  airspace,         // Group 7: Airspace restrictions, GPS outages
-  proceduralAdmin,  // Group 8: Administrative procedures
-  other            // Group 9: Fallback for unmapped codes
+  runways,          // Group 1: Runways (Critical) - closures, lighting, ACR/PCR
+  taxiways,         // Group 2: Taxiways - closures, lighting, ACR/PCR
+  instrumentProcedures, // Group 3: Navaids, SIDs, STARs, approaches, airspace
+  airportServices,  // Group 4: ATC, fire, parking, PPR, curfew, fuel
+  hazards,          // Group 5: Obstacles, birds, misc lighting
+  admin,            // Group 6: OIP/AIP updates, administrative
+  other            // Group 7: Unmapped items
 }
 
 class Notam {
@@ -454,47 +452,39 @@ class Notam {
     
     final subject = qCode.substring(1, 3);
     
-    // Movement Areas (Group 1)
-    if (['MR', 'MX', 'MS', 'MT', 'MU', 'MW', 'MY', 'MK', 'MN', 'MP'].contains(subject)) {
-      return NotamGroup.movementAreas;
+    // Runways (Group 1) - Critical runway operations
+    if (['MR', 'MS', 'MT', 'MU', 'MW', 'MD'].contains(subject)) {
+      return NotamGroup.runways;
     }
     
-    // Navigation Aids (Group 2)
+    // Taxiways (Group 2) - Ground movement areas
+    if (['MX', 'MY', 'MK', 'MN', 'MP'].contains(subject)) {
+      return NotamGroup.taxiways;
+    }
+    
+    // Instrument Procedures (Group 3) - Navigation and procedures
     if (['IC', 'ID', 'IG', 'II', 'IL', 'IM', 'IN', 'IO', 'IS', 'IT', 'IU', 'IW', 'IX', 'IY',
-         'NA', 'NB', 'NC', 'ND', 'NF', 'NL', 'NM', 'NN', 'NO', 'NT', 'NV'].contains(subject)) {
-      return NotamGroup.navigationAids;
-    }
-    
-    // Departure/Approach Procedures (Group 3)
-    if (['PA', 'PB', 'PC', 'PD', 'PE', 'PH', 'PI', 'PK', 'PU'].contains(subject)) {
-      return NotamGroup.departureApproachProcedures;
-    }
-    
-    // Airport and ATC Availability (Group 4)
-    if (['FA', 'FF', 'FU', 'FM'].contains(subject)) {
-      return NotamGroup.airportAtcAvailability;
-    }
-    
-    // Lighting (Group 5)
-    if (['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
-         'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
-      return NotamGroup.lighting;
-    }
-    
-    // Hazards and Obstacles (Group 6)
-    if (['OB', 'OL'].contains(subject)) {
-      return NotamGroup.hazardsObstacles;
-    }
-    
-    // Airspace (Group 7)
-    if (['AA', 'AC', 'AD', 'AE', 'AF', 'AH', 'AL', 'AN', 'AO', 'AP', 'AR', 'AT', 'AU', 'AV', 'AX', 'AZ',
+         'NA', 'NB', 'NC', 'ND', 'NF', 'NL', 'NM', 'NN', 'NO', 'NT', 'NV',
+         'PA', 'PB', 'PC', 'PD', 'PE', 'PH', 'PI', 'PK', 'PU',
+         'AA', 'AC', 'AD', 'AE', 'AF', 'AH', 'AL', 'AN', 'AO', 'AP', 'AR', 'AT', 'AU', 'AV', 'AX', 'AZ',
          'RA', 'RD', 'RM', 'RO', 'RP', 'RR', 'RT', 'GA', 'GW'].contains(subject)) {
-      return NotamGroup.airspace;
+      return NotamGroup.instrumentProcedures;
     }
     
-    // Procedural and Admin (Group 8)
+    // Airport Services (Group 4) - ATC, facilities, fuel, etc.
+    if (['FA', 'FF', 'FU', 'FM', 'LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
+         'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
+      return NotamGroup.airportServices;
+    }
+    
+    // Hazards (Group 5) - Obstacles, safety issues, warnings
+    if (['OB', 'OL', 'WA', 'WB', 'WC', 'WD', 'WE', 'WF', 'WG', 'WH', 'WJ', 'WL', 'WM', 'WP', 'WR', 'WS', 'WT', 'WU', 'WV', 'WW', 'WY', 'WZ'].contains(subject)) {
+      return NotamGroup.hazards;
+    }
+    
+    // Admin (Group 6) - Administrative procedures
     if (['PF', 'PL', 'PN', 'PO', 'PR', 'PT', 'PX', 'PZ'].contains(subject)) {
-      return NotamGroup.proceduralAdmin;
+      return NotamGroup.admin;
     }
     
     // Default to other for unmapped codes
