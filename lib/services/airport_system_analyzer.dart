@@ -42,6 +42,30 @@ class AirportSystemAnalyzer {
     return _calculateSystemStatus(lightingNotams);
   }
 
+  /// Analyze hazard system status based on NOTAMs
+  SystemStatus analyzeHazardStatus(List<Notam> notams, String icao) {
+    // Get hazard NOTAMs directly
+    final hazardNotams = _getHazardNotams(notams, icao);
+    
+    return _calculateSystemStatus(hazardNotams);
+  }
+
+  /// Analyze admin system status based on NOTAMs
+  SystemStatus analyzeAdminStatus(List<Notam> notams, String icao) {
+    // Get admin NOTAMs directly
+    final adminNotams = _getAdminNotams(notams, icao);
+    
+    return _calculateSystemStatus(adminNotams);
+  }
+
+  /// Analyze other system status based on NOTAMs
+  SystemStatus analyzeOtherStatus(List<Notam> notams, String icao) {
+    // Get other NOTAMs directly
+    final otherNotams = _getOtherNotams(notams, icao);
+    
+    return _calculateSystemStatus(otherNotams);
+  }
+
   /// Get runway NOTAMs using existing grouping service
   List<Notam> _getRunwayNotams(List<Notam> notams, String icao) {
     // Filter NOTAMs for the specific airport
@@ -84,6 +108,39 @@ class AirportSystemAnalyzer {
     final groupedNotams = _groupingService.groupNotams(airportNotams);
     
     return groupedNotams[NotamGroup.airportServices] ?? [];
+  }
+
+  /// Get hazard NOTAMs using existing grouping service
+  List<Notam> _getHazardNotams(List<Notam> notams, String icao) {
+    // Filter NOTAMs for the specific airport
+    final airportNotams = notams.where((notam) => notam.icao == icao).toList();
+    
+    // Use existing grouping service to get hazard NOTAMs
+    final groupedNotams = _groupingService.groupNotams(airportNotams);
+    
+    return groupedNotams[NotamGroup.hazards] ?? [];
+  }
+
+  /// Get admin NOTAMs using existing grouping service
+  List<Notam> _getAdminNotams(List<Notam> notams, String icao) {
+    // Filter NOTAMs for the specific airport
+    final airportNotams = notams.where((notam) => notam.icao == icao).toList();
+    
+    // Use existing grouping service to get admin NOTAMs
+    final groupedNotams = _groupingService.groupNotams(airportNotams);
+    
+    return groupedNotams[NotamGroup.admin] ?? [];
+  }
+
+  /// Get other NOTAMs using existing grouping service
+  List<Notam> _getOtherNotams(List<Notam> notams, String icao) {
+    // Filter NOTAMs for the specific airport
+    final airportNotams = notams.where((notam) => notam.icao == icao).toList();
+    
+    // Use existing grouping service to get other NOTAMs
+    final groupedNotams = _groupingService.groupNotams(airportNotams);
+    
+    return groupedNotams[NotamGroup.other] ?? [];
   }
 
 
@@ -156,6 +213,9 @@ class AirportSystemAnalyzer {
       'navaids': _getInstrumentProcedureNotams(notams, icao),
       'taxiways': _getTaxiwayNotams(notams, icao),
       'lighting': _filterLightingNotams(_getAirportServiceNotams(notams, icao)),
+      'hazards': _getHazardNotams(notams, icao),
+      'admin': _getAdminNotams(notams, icao),
+      'other': _getOtherNotams(notams, icao),
     };
   }
 } 

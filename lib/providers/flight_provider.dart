@@ -5,9 +5,11 @@ import '../models/notam.dart';
 import '../models/weather.dart';
 import '../services/database_service.dart';
 import '../services/api_service.dart';
+import '../services/airport_system_analyzer.dart';
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
+  final AirportSystemAnalyzer _systemAnalyzer = AirportSystemAnalyzer();
   Flight? _currentFlight;
   List<Flight> _savedFlights = [];
   bool _isLoading = false;
@@ -40,6 +42,41 @@ class FlightProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Calculate real-time system status for an airport based on its NOTAMs
+  Map<String, SystemStatus> _calculateAirportSystemStatus(String icao, List<Notam> notams) {
+    final airportNotams = notams.where((n) => n.icao == icao).toList();
+    
+    return {
+      'runways': _systemAnalyzer.analyzeRunwayStatus(airportNotams, icao),
+      'taxiways': _systemAnalyzer.analyzeTaxiwayStatus(airportNotams, icao),
+      'navaids': _systemAnalyzer.analyzeNavaidStatus(airportNotams, icao),
+      'lighting': _systemAnalyzer.analyzeLightingStatus(airportNotams, icao),
+      'hazards': _systemAnalyzer.analyzeHazardStatus(airportNotams, icao),
+      'admin': _systemAnalyzer.analyzeAdminStatus(airportNotams, icao),
+      'other': _systemAnalyzer.analyzeOtherStatus(airportNotams, icao),
+    };
+  }
+
+  /// Update system status for all airports based on current NOTAMs
+  void _updateAllAirportSystemStatus() {
+    if (_currentFlight == null) return;
+    
+    for (int i = 0; i < _currentFlight!.airports.length; i++) {
+      final airport = _currentFlight!.airports[i];
+      final updatedAirport = Airport(
+        icao: airport.icao,
+        name: airport.name,
+        city: airport.city,
+        latitude: airport.latitude,
+        longitude: airport.longitude,
+        systems: _calculateAirportSystemStatus(airport.icao, _currentFlight!.notams),
+        runways: airport.runways,
+        navaids: airport.navaids,
+      );
+      _currentFlight!.airports[i] = updatedAirport;
+    }
+  }
+
   // Load all saved flights from the database
   Future<void> loadSavedFlights() async {
     _savedFlights = await _dbService.getSavedFlights();
@@ -50,6 +87,7 @@ class FlightProvider with ChangeNotifier {
   void setCurrentFlight(Flight flight) {
     _currentFlight = flight;
     _groupWeatherData();
+    _updateAllAirportSystemStatus(); // Ensure system status is calculated
     notifyListeners();
   }
 
@@ -57,6 +95,7 @@ class FlightProvider with ChangeNotifier {
   void loadFlight(Flight flight) {
     _currentFlight = flight;
     _groupWeatherData();
+    _updateAllAirportSystemStatus(); // Ensure system status is calculated
     notifyListeners();
   }
 
@@ -81,6 +120,9 @@ class FlightProvider with ChangeNotifier {
       if (notams != null) {
         print('DEBUG: 🔍 FlightProvider - Setting ${notams.length} fresh NOTAMs (no cache)');
         _currentFlight!.notams = notams;
+        
+        // Recalculate system status for all airports based on new NOTAMs
+        _updateAllAirportSystemStatus();
       }
       if (weather != null) {
         print('DEBUG: 🔍 FlightProvider - Setting ${weather.length} fresh weather items (no cache)');
@@ -172,6 +214,9 @@ class FlightProvider with ChangeNotifier {
         notams: allNotams,
         weather: allWeather,
       );
+      
+      // Ensure system status is recalculated after data refresh
+      _updateAllAirportSystemStatus();
     } catch (e) {
       print('Error refreshing flight data: $e');
       // Don't throw - let the UI handle the error gracefully
@@ -196,14 +241,14 @@ class FlightProvider with ChangeNotifier {
     try {
       final apiService = ApiService();
       
-      // Create a new airport object
+      // Create a new airport object with placeholder systems (will be updated after NOTAM fetch)
       final newAirport = Airport(
         icao: icao.toUpperCase(),
         name: 'Unknown Airport', // We could fetch this from an airport database later
         city: 'Unknown City', // Placeholder value
         latitude: 0.0, // Placeholder values
         longitude: 0.0,
-        systems: {}, // Empty systems map
+        systems: {}, // Will be updated with real status after NOTAM fetch
         runways: [], // Empty runways list
         navaids: [], // Empty navaids list
       );
@@ -225,6 +270,22 @@ class FlightProvider with ChangeNotifier {
       // Add new data to existing data
       _currentFlight!.notams.addAll(newNotams);
       _currentFlight!.weather.addAll([...newMetars, ...newTafs]);
+
+      // Update airport system status with real NOTAM analysis
+      final airportIndex = _currentFlight!.airports.indexWhere((airport) => airport.icao == icao.toUpperCase());
+      if (airportIndex != -1) {
+        final updatedAirport = Airport(
+          icao: _currentFlight!.airports[airportIndex].icao,
+          name: _currentFlight!.airports[airportIndex].name,
+          city: _currentFlight!.airports[airportIndex].city,
+          latitude: _currentFlight!.airports[airportIndex].latitude,
+          longitude: _currentFlight!.airports[airportIndex].longitude,
+          systems: _calculateAirportSystemStatus(icao.toUpperCase(), _currentFlight!.notams),
+          runways: _currentFlight!.airports[airportIndex].runways,
+          navaids: _currentFlight!.airports[airportIndex].navaids,
+        );
+        _currentFlight!.airports[airportIndex] = updatedAirport;
+      }
 
       // Regroup weather data to include the new airport
       _groupWeatherData();
@@ -293,6 +354,19 @@ class FlightProvider with ChangeNotifier {
       // Add new data
       _currentFlight!.notams.addAll(newNotams);
       _currentFlight!.weather.addAll([...newMetars, ...newTafs]);
+
+      // Update system status for the updated airport
+      final updatedAirport = Airport(
+        icao: _currentFlight!.airports[airportIndex].icao,
+        name: _currentFlight!.airports[airportIndex].name,
+        city: _currentFlight!.airports[airportIndex].city,
+        latitude: _currentFlight!.airports[airportIndex].latitude,
+        longitude: _currentFlight!.airports[airportIndex].longitude,
+        systems: _calculateAirportSystemStatus(newIcao.toUpperCase(), _currentFlight!.notams),
+        runways: _currentFlight!.airports[airportIndex].runways,
+        navaids: _currentFlight!.airports[airportIndex].navaids,
+      );
+      _currentFlight!.airports[airportIndex] = updatedAirport;
 
       // Regroup weather data
       _groupWeatherData();

@@ -323,7 +323,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         final json = originalNotam.toJson();
@@ -351,7 +351,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: true,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         final dbJson = originalNotam.toDbJson('FLIGHT123');
@@ -381,7 +381,7 @@ void main() {
           decodedText: 'Decoded test NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         expect(validNotam.validFrom.isBefore(validNotam.validTo), isTrue);
@@ -399,7 +399,7 @@ void main() {
           decodedText: 'Currently active NOTAM',
           affectedSystem: 'RWY',
           isCritical: false,
-          group: NotamGroup.movementAreas,
+          group: NotamGroup.runways,
         );
 
         expect(activeNotam.validFrom.isBefore(now), isTrue);

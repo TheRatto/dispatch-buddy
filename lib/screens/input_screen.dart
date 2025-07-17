@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../widgets/flight_plan_form_card.dart';
 import '../widgets/quick_start_card.dart';
 import '../widgets/date_time_picker_dialog.dart';
+import '../services/airport_database.dart';
 
 class InputScreen extends StatefulWidget {
   const InputScreen({super.key});
@@ -236,21 +237,28 @@ class _InputScreenState extends State<InputScreen> {
         flightLevel: _flightLevelController.text,
         alternates: [], // Can be parsed from route later
         createdAt: DateTime.now(),
-        airports: icaos.map((icao) => Airport(
-          icao: icao,
-          name: '$icao Airport',
-          city: 'Unknown',
-          latitude: 0,
-          longitude: 0,
-          systems: {
-            'runways': SystemStatus.green,
-            'navaids': SystemStatus.green,
-            'taxiways': SystemStatus.green,
-            'lighting': SystemStatus.green,
-          },
-          runways: [],
-          navaids: [],
-        )).toList(),
+        airports: await Future.wait(icaos.map((icao) async {
+          final airport = await AirportDatabase.getAirportWithFallback(icao);
+          if (airport != null) {
+            return airport;
+          }
+          // Fallback to placeholder if not in database or API
+          return Airport(
+            icao: icao,
+            name: '$icao Airport',
+            city: 'Unknown',
+            latitude: 0,
+            longitude: 0,
+            systems: {
+              'runways': SystemStatus.green,
+              'navaids': SystemStatus.green,
+              'taxiways': SystemStatus.green,
+              'lighting': SystemStatus.green,
+            },
+            runways: [],
+            navaids: [],
+          );
+        })),
         notams: allNotams,
         weather: allWeather,
       );
