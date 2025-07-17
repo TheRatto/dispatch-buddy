@@ -7,6 +7,7 @@ import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
 import '../widgets/zulu_time_widget.dart';
 import 'system_detail_screen.dart';
+import 'runway_system_page.dart';
 
 class AirportDetailScreen extends StatefulWidget {
   const AirportDetailScreen({super.key});
@@ -305,17 +306,30 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> {
     final notamCount = systemNotams[systemKey]?.length ?? 0;
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SystemDetailScreen(
-              airportIcao: airport.icao,
-              systemName: name,
-              systemKey: systemKey,
-              systemIcon: icon,
+        if (name == 'Runways') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RunwaySystemPage(
+                airportName: airport.name,
+                icao: airport.icao,
+                notams: filteredNotams,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SystemDetailScreen(
+                airportIcao: airport.icao,
+                systemName: name,
+                systemKey: systemKey,
+                systemIcon: icon,
+              ),
+            ),
+          );
+        }
       },
       borderRadius: BorderRadius.circular(8),
       child: Padding(
