@@ -1,90 +1,292 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../providers/flight_provider.dart';
-import '../models/flight.dart';
+import '../models/notam.dart';
 import '../models/weather.dart';
 import '../models/decoded_weather_models.dart';
 import '../services/decoder_service.dart';
 import '../services/taf_state_manager.dart';
-import '../widgets/raw_taf_card.dart';
+import '../services/cache_manager.dart';
+import '../widgets/zulu_time_widget.dart';
 import '../widgets/decoded_weather_card.dart';
+import '../widgets/raw_taf_card.dart';
 import '../widgets/taf_time_slider.dart';
 import '../widgets/taf_airport_selector.dart';
-import '../widgets/zulu_time_widget.dart';
+import '../widgets/taf_empty_states.dart';
+import '../widgets/metar_tab.dart';
+import '../widgets/taf_tab.dart';
 import '../constants/weather_colors.dart';
-import '../widgets/taf_decoded_card.dart';
-import '../widgets/taf_raw_display.dart';
-import '../widgets/taf_timeline_slider.dart';
+import '../widgets/notam_grouped_list.dart';
+import 'alternate_data_screen.dart';
 
 class RawDataScreen extends StatefulWidget {
+  const RawDataScreen({super.key});
+
   @override
   _RawDataScreenState createState() => _RawDataScreenState();
 }
 
-class _RawDataScreenState extends State<RawDataScreen> {
-  String? _selectedAirport; // Track selected airport for TAFs2
+class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateMixin {
+  // Tab controller for managing tabs
+  late TabController _tabController;
+  
+  // Airport selection is now managed by FlightProvider
   // Store slider positions per airport
   final Map<String, double> _sliderPositions = {};
+  final double _sliderValue = 0.0;
+  final List<TimePeriod> _timePeriods = [];
+  List<DateTime> _timeline = [];
+  Map<String, dynamic>? _activePeriods;
+  Weather? _currentTaf;
   
-  // TAF Display Service for caching and performance optimization
-  final TafDisplayService _tafDisplayService = TafDisplayService();
+  // Time filter for NOTAMs
+  String _selectedTimeFilter = '24 hours'; // Default to 24 hours
+  final List<String> _timeFilterOptions = [
+    '6 hours',
+    '12 hours', 
+    '24 hours',
+    '72 hours',
+    'All NOTAMs'
+  ];
+  
+  // Scroll controller for TAFs2 tab
+  final ScrollController _tafs2ScrollController = ScrollController();
+  
+  // TAF State Manager - handles all business logic
+  final TafStateManager _tafStateManager = TafStateManager();
+  
+  // Unified cache manager for UI-level caching
+  final CacheManager _cacheManager = CacheManager();
+  
+  // Performance tracking for UI state
+  String? _lastProcessedAirport;
+  double? _lastProcessedSliderValue;
+  String? _lastLoggedBuild; // Track last logged build to reduce debug output
+  
+  // Data change tracking for better cache management
+  String? _lastTafHash; // Hash of the last processed TAF data
+  String? _lastTimelineHash; // Hash of the last processed timeline
+  
+  
+  
+
+  
+  // Generate hash for TAF data to detect changes
+  String _generateTafHash(Weather taf) {
+    return '${taf.rawText.hashCode}_${taf.decodedWeather?.forecastPeriods?.length ?? 0}';
+  }
+  
+  // Generate hash for timeline to detect changes
+  String _generateTimelineHash(List<DateTime> timeline) {
+    return '${timeline.length}_${timeline.isNotEmpty ? timeline.first.hashCode : 0}_${timeline.isNotEmpty ? timeline.last.hashCode : 0}';
+  }
+  
+
+  
+  // Generate hash for NOTAM data to detect changes
+  String _generateNotamHash(List<Notam> notams) {
+    if (notams.isEmpty) return 'empty';
+    return '${notams.length}_${notams.first.hashCode}_${notams.last.hashCode}';
+  }
+  
+  // Clear cache when switching airports or when data changes
+  void _clearCache() {
+    _tafStateManager.clearCache();
+    _cacheManager.clearPrefix('notam_');
+    _lastProcessedAirport = null;
+    _lastProcessedSliderValue = null;
+    _lastLoggedBuild = null;
+    _lastTafHash = null;
+    _lastTimelineHash = null;
+  }
+  
+  // Smart cache clearing based on data changes
+  void _clearCacheIfDataChanged(Weather taf, List<DateTime> timeline) {
+    _tafStateManager.clearCacheIfDataChanged(taf, timeline);
+    
+    // Update local tracking
+    _lastTafHash = _generateTafHash(taf);
+    _lastTimelineHash = _generateTimelineHash(timeline);
+  }
+  
+  // Limit cache size to prevent memory issues
+  void _limitCacheSize() {
+    // Cache size limiting is now handled by TafStateManager
+  }
+  
+  // Performance monitoring
+  void _logPerformanceStats(FlightProvider flightProvider) {
+    final tafMetrics = _tafStateManager.getPerformanceMetrics();
+    final cacheStats = _cacheManager.getStats();
+    
+    debugPrint('DEBUG: Performance Stats - Unified Cache: ${cacheStats['size']} entries, ${cacheStats['hitRate']}% hit rate');
+    debugPrint('DEBUG: Performance Stats - TAF Cache: ${tafMetrics['cacheSize']} entries, ${tafMetrics['cacheHitRate']}');
+    debugPrint('DEBUG: Performance Stats - Last Airport: ${flightProvider.selectedAirport}');
+    debugPrint('DEBUG: Performance Stats - Last Slider Value: ${_sliderPositions[flightProvider.selectedAirport!]}');
+  }
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
   void dispose() {
-    // Clear cache when disposing
-    _tafDisplayService.clearCache();
+    _tabController.dispose();
+    _tafs2ScrollController.dispose();
     super.dispose();
   }
 
-  void _onSliderChanged(double value, Weather taf) {
+  void _initializeData(Weather taf) {
+    if (taf.decodedWeather != null && taf.decodedWeather!.forecastPeriods != null) {
+      final decoder = DecoderService();
+      
+      // Use the new timeline-based approach
+      _timeline = taf.decodedWeather!.timeline;
+      
+      if (_timeline.isNotEmpty) {
+        // Find active periods at the first time point
+        _activePeriods = decoder.findActivePeriodsAtTime(_timeline.first, taf.decodedWeather!.forecastPeriods!);
+      }
+    }
+  }
+
+  void _onSliderChanged(double value, Weather taf, FlightProvider flightProvider) {
     setState(() {
-      _sliderPositions[_selectedAirport!] = value;
+      // Update the slider value for the current airport
+      _sliderPositions[flightProvider.selectedAirport!] = value;
+      
+      // Get timeline from the selected TAF
+      final timeline = taf.decodedWeather?.timeline ?? [];
+      final forecastPeriods = taf.decodedWeather?.forecastPeriods ?? [];
+      
+      if (timeline.isNotEmpty && forecastPeriods.isNotEmpty) {
+        // Convert slider value to timeline index
+        final index = (value * (timeline.length - 1)).round();
+        final selectedTime = timeline[index];
+        
+        // Find active periods at this time
+        final decoder = DecoderService();
+        _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, forecastPeriods);
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
-          title: Text('Raw Data'),
-          actions: const [
-            ZuluTimeWidget(),
-            SizedBox(width: 8),
-          ],
-          bottom: TabBar(
-            labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            indicatorColor: Color(0xFFF97316), // Accent Orange
-            indicatorWeight: 3.0,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
-              Tab(text: 'NOTAMs'),
-              Tab(text: 'METARs'),
-              Tab(text: 'TAFs'),
-              Tab(text: 'TAFs2'),
+          backgroundColor: const Color(0xFF1E3A8A),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+              SizedBox(height: 2),
+              Text(
+                'Raw Data',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
             ],
           ),
+          centerTitle: true,
+          actions: [
+            Builder(
+              builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () {
+                  debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                  Scaffold.of(context).openEndDrawer();
+              },
+              ),
+            ),
+          ],
         ),
+        endDrawer: _buildEndDrawer(context),
         body: Consumer<FlightProvider>(
           builder: (context, flightProvider, child) {
             final flight = flightProvider.currentFlight;
             if (flight == null) {
-              return Center(child: Text('No flight data available'));
+              return const Center(child: Text('No flight data available'));
             }
-            return TabBarView(
+            // Get airports from TAFs (most comprehensive source)
+            final airports = flightProvider.tafsByIcao.keys.toList();
+            // Initialize selected airport if not set
+            if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
+              if (airports.isNotEmpty) {
+                flightProvider.setSelectedAirport(airports.first);
+              }
+            }
+            return Column(
               children: [
-                _buildNotamsTab(context, flight.notams),
-                _buildMetarsTab(context, flightProvider.metarsByIcao),
-                _buildTafsTab(context, flightProvider.tafsByIcao),
-                _buildTafs2Tab(context, flightProvider.tafsByIcao),
+                // Tab bar at top (matching Airport Detail Screen)
+                Container(
+                  color: Colors.white,
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: false,
+                    labelColor: const Color(0xFF1E3A8A),
+                    unselectedLabelColor: Colors.grey,
+                    indicatorColor: const Color(0xFF1E3A8A),
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.warning_amber_outlined),
+                        text: 'NOTAMs',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.cloud),
+                        text: 'METARs',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.access_time),
+                        text: 'TAFs',
+                      ),
+                    ],
+                  ),
+                ),
+                // Fixed airport selector below tabs
+                if (airports.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 40,
+                    child: RepaintBoundary(
+                      child: Center(
+                        child: TafAirportSelector(
+                          airports: airports,
+                          selectedAirport: flightProvider.selectedAirport ?? airports.first,
+                          onAirportSelected: (String airport) {
+                            _clearCache(); // Clear NOTAM cache when airport changes
+                            flightProvider.setSelectedAirport(airport);
+                          },
+                          onAddAirport: _showAddAirportDialog,
+                          onAirportLongPress: _showEditAirportDialog,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                // Tab content below
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // NOTAMs tab: grouped NOTAMs for selected airport
+                      _buildNotams2Tab(context, flight.notams, flightProvider),
+                      RefreshIndicator(
+                        onRefresh: () async {
+                          _clearCache();
+                          await flightProvider.refreshFlightData();
+                        },
+                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                      ),
+                      // TAFs tab: timeline-based TAF display
+                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                    ],
+                  ),
+                ),
               ],
             );
           },
@@ -93,425 +295,22 @@ class _RawDataScreenState extends State<RawDataScreen> {
     );
   }
 
-  Widget _buildNotamsTab(BuildContext context, List<Notam> notams) {
-    if (notams.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle, size: 64, color: Color(0xFF10B981)),
-            SizedBox(height: 16),
-            Text(
-              'No NOTAMs',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'All systems operational',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: notams.length,
-      itemBuilder: (context, index) {
-        final notam = notams[index];
-        return Card(
-          margin: EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-            title: Text(
-              '${notam.id} - ${notam.affectedSystem}',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              '${notam.icao} | ${notam.validFrom.day}/${notam.validFrom.month} ${notam.validFrom.hour.toString().padLeft(2, '0')}:${notam.validFrom.minute.toString().padLeft(2, '0')} - ${notam.validTo.hour.toString().padLeft(2, '0')}:${notam.validTo.minute.toString().padLeft(2, '0')}',
-            ),
-            leading: Icon(
-              notam.isCritical ? Icons.error : Icons.warning,
-              color: notam.isCritical ? Color(0xFFEF4444) : Color(0xFFF59E0B),
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Raw NOTAM:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        notam.rawText,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Decoded:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(notam.decodedText),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMetarsTab(BuildContext context, Map<String, List<Weather>> metarsByIcao) {
-    if (metarsByIcao.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
-              'No METARs Available',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'No current weather observations',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final icaos = metarsByIcao.keys.toList();
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: icaos.length,
-      itemBuilder: (context, index) {
-        final icao = icaos[index];
-        final metar = metarsByIcao[icao]!.first;
-        final decoded = metar.decodedWeather;
-        
-        return Card(
-          margin: EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.cloud, color: Color(0xFF3B82F6), size: 24),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        icao,
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                _buildMetarCompactDetails(metar),
-              ],
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Raw METAR:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(
-                        metar.rawText,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMetarCompactDetails(Weather metar) {
-    if (metar.decodedWeather == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text('No decoded data available.'),
-      );
-    }
-
-    final decoded = metar.decodedWeather!;
-    final isCavok = metar.rawText.contains('CAVOK');
+  Widget _buildTafs2Tab(BuildContext context, Map<String, List<Weather>> tafsByIcao, FlightProvider flightProvider) {
+    print('DEBUG: TAFs2 tab - METHOD CALLED!');
     
-    String? temp, dewPoint;
-    if (decoded.temperatureDescription.isNotEmpty && !decoded.temperatureDescription.contains('unavailable')) {
-        var parts = decoded.temperatureDescription.split(',');
-        temp = parts[0].replaceAll('Temperature ', '');
-        if (parts.length > 1) {
-            dewPoint = parts[1].replaceAll(' Dew point ', '');
-        }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Wind', decoded.windDescription.replaceFirst('Wind ', '')),
-              SizedBox(width: 16),
-              _buildGridItem('Visibility', isCavok ? 'CAVOK' : decoded.visibilityDescription.replaceFirst('Visibility ', '')),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Weather', decoded.conditionsDescription, isPhenomenaOrRemark: true),
-              SizedBox(width: 16),
-              _buildGridItem('Cloud', decoded.cloudDescription),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Temp / Dew Point', '$temp / $dewPoint'),
-              SizedBox(width: 16),
-              _buildGridItem('QNH', decoded.pressureDescription.replaceFirst('QNH ', '')),
-            ],
-          ),
-          if (decoded.rvrDescription.isNotEmpty)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGridItem('RVR', decoded.rvrDescription.replaceFirst('Runway Visual Range: ', '')),
-                SizedBox(width: 16),
-                Expanded(child: SizedBox()), // Placeholder for alignment
-              ],
-            ),
-           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItem('Remarks', decoded.remarks, isPhenomenaOrRemark: true),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTafsTab(BuildContext context, Map<String, List<Weather>> tafsByIcao) {
     if (tafsByIcao.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.access_time, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
-              'No TAFs Available',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'No terminal area forecasts available',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final icaos = tafsByIcao.keys.toList();
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: icaos.length,
-      itemBuilder: (context, index) {
-        final icao = icaos[index];
-        final taf = tafsByIcao[icao]!.first;
-        final decodedTaf = taf.decodedWeather;
-        
-        if (decodedTaf == null || decodedTaf.forecastPeriods == null || decodedTaf.forecastPeriods!.isEmpty) {
-          return Card(
-            margin: EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              title: Text(icao, style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Could not decode TAF.'),
-            ),
-          );
-        }
-
-        final initialPeriod = decodedTaf.forecastPeriods!.firstWhere((p) => p.type == 'INITIAL');
-        
-        // Create TimePeriod objects for the old tab display
-        final timePeriods = decodedTaf.forecastPeriods!.map((period) => TimePeriod(
-          startTime: period.startTime ?? DateTime.now(),
-          endTime: period.endTime ?? DateTime.now().add(Duration(hours: 1)),
-          baselinePeriod: period,
-          concurrentPeriods: [],
-          rawTafSection: period.rawSection ?? '',
-        )).toList();
-        
-        final timePeriodStrings = _getTafTimePeriods(timePeriods);
-        final initialTimePeriod = timePeriodStrings.isNotEmpty ? timePeriodStrings.first : '';
-
-        // Create TimePeriod for initial period
-        final initialTimePeriodObj = TimePeriod(
-          startTime: initialPeriod.startTime ?? DateTime.now(),
-          endTime: initialPeriod.endTime ?? DateTime.now().add(Duration(hours: 1)),
-          baselinePeriod: initialPeriod,
-          concurrentPeriods: [],
-          rawTafSection: initialPeriod.rawSection ?? '',
-        );
-
-        return Card(
-          margin: EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.access_time, color: Color(0xFF3B82F6), size: 24),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        icao,
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  initialTimePeriod,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 8),
-                _buildTafCompactDetails(
-                  initialTimePeriodObj.baselinePeriod, 
-                  initialTimePeriodObj.baselinePeriod.weather, 
-                  initialTimePeriodObj.concurrentPeriods
-                ),
-              ],
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Show all forecast periods
-                    ...decodedTaf.forecastPeriods!.map((period) {
-                      // Create a simple TimePeriod for display purposes
-                      final timePeriod = TimePeriod(
-                        startTime: period.startTime ?? DateTime.now(),
-                        endTime: period.endTime ?? DateTime.now().add(Duration(hours: 1)),
-                        baselinePeriod: period,
-                        concurrentPeriods: [],
-                        rawTafSection: period.rawSection ?? '',
-                      );
-                      return _buildTafPeriodCard(context, timePeriod, timePeriodStrings, timePeriods);
-                    }).toList(),
-                    
-                    SizedBox(height: 16),
-                    Divider(),
-                    SizedBox(height: 8),
-                    
-                    // Raw TAF at bottom
-                    Text(
-                      'Raw TAF:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(
-                        taf.rawText,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTafs2Tab(BuildContext context, Map<String, List<Weather>> tafsByIcao) {
-    if (tafsByIcao.isEmpty) {
+      print('DEBUG: TAFs2 tab - No TAFs available, showing empty state');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.timeline, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'No TAFs Available',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'No terminal area forecasts available',
               style: TextStyle(color: Colors.grey[600]),
@@ -522,594 +321,853 @@ class _RawDataScreenState extends State<RawDataScreen> {
     }
 
     // Initialize selected airport if not set
-    if (_selectedAirport == null || !tafsByIcao.containsKey(_selectedAirport)) {
-      _selectedAirport = tafsByIcao.keys.first;
+    if (flightProvider.selectedAirport == null || !tafsByIcao.containsKey(flightProvider.selectedAirport)) {
+      flightProvider.setSelectedAirport(tafsByIcao.keys.first);
+      print('DEBUG: TAFs2 tab - Selected airport: ${flightProvider.selectedAirport}');
     }
 
-    final selectedTaf = tafsByIcao[_selectedAirport!]!.first;
-    final timeline = selectedTaf.decodedWeather?.timeline ?? [];
-    final sliderValue = _sliderPositions[_selectedAirport!] ?? 0.0;
-    
-    print('DEBUG: Main build - forecastPeriods length: ${selectedTaf.decodedWeather?.forecastPeriods?.length ?? 0}');
-    print('DEBUG: Main build - forecastPeriods types: ${selectedTaf.decodedWeather?.forecastPeriods?.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList() ?? []}');
-    
-    // Smart cache management: Clear cache only if data actually changed
-    _tafDisplayService.clearCacheIfDataChanged(selectedTaf, timeline);
-    
-    // Get active periods using TafDisplayService
-    Map<String, dynamic>? activePeriods;
-    if (timeline.isNotEmpty) {
-      final timeIndex = (sliderValue * (timeline.length - 1)).round().clamp(0, timeline.length - 1);
-      final currentTime = timeline[timeIndex];
-      activePeriods = _tafDisplayService.getActivePeriods(
-        selectedTaf, currentTime, _selectedAirport!, sliderValue
-      );
-    }
-    
-    // Log performance stats periodically
-    if (activePeriods != null) {
-      _tafDisplayService.logPerformanceStats();
-    }
+    final selectedTaf = tafsByIcao[flightProvider.selectedAirport!]!.first;
+    final decodedTaf = selectedTaf.decodedWeather;
+    print('DEBUG: TAFs2 tab - Selected TAF: ${selectedTaf.icao}');
+    print('DEBUG: TAFs2 tab - Decoded TAF: ${decodedTaf != null}');
 
-    return Padding(
+    // Get slider position for this airport
+    final forecastPeriods = decodedTaf?.forecastPeriods ?? [];
+    double sliderValue = _sliderPositions[flightProvider.selectedAirport!] ?? 0.0;
+    
+    print('DEBUG: Main build - forecastPeriods length: ${forecastPeriods.length}');
+    print('DEBUG: Main build - forecastPeriods types: ${forecastPeriods.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList()}');
+
+    if (forecastPeriods.isNotEmpty) {
+      // Calculate active periods for the current slider position
+      final decoder = DecoderService();
+      final timeline = selectedTaf.decodedWeather?.timeline ?? [];
+      
+      if (timeline.isNotEmpty) {
+        final index = (sliderValue * (timeline.length - 1)).round();
+        final selectedTime = timeline[index];
+        _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, forecastPeriods);
+        print('DEBUG: TAFs2 tab - Active periods: $_activePeriods');
+      }
+    }
+    
+    print('DEBUG: TAFs2 tab - Building RefreshIndicator with SingleChildScrollView');
+    return RefreshIndicator(
+      onRefresh: () async {
+        print('DEBUG: TAFs2 tab - Refresh triggered');
+        
+        // Clear all caches for fresh data
+        _clearCache();
+        
+        // Get current scroll position to lock it
+        final currentOffset = _tafs2ScrollController.offset;
+        print('DEBUG: TAFs2 tab - Current scroll offset: $currentOffset');
+        
+        // Keep content locked in pulled-down position for a minimum duration
+        await Future.delayed(const Duration(milliseconds: 1500));
+        
+        // Manually maintain scroll position during refresh
+        if (_tafs2ScrollController.hasClients) {
+          _tafs2ScrollController.jumpTo(currentOffset);
+        }
+        
+        // Then perform the actual refresh
+        await flightProvider.refreshFlightData();
+        
+        // Add a small delay after refresh completes for smooth transition
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        controller: _tafs2ScrollController,
+        child: Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Stack(
+          child: Column(
         children: [
-          // Main content column - fills available space above slider
-          Column(
-            children: [
-              // Airport Bubbles
+              
+              // Decoded weather card
               SizedBox(
-                height: 40,
+                height: 290,
                 child: RepaintBoundary(
-                  child: _buildAirportBubbles(tafsByIcao.keys.toList()),
+                  child: _activePeriods != null && _activePeriods!['baseline'] != null
+                      ? DecodedWeatherCard(
+                          key: ValueKey('decoded_${flightProvider.selectedAirport}'),
+                          baseline: _activePeriods!['baseline'] as DecodedForecastPeriod,
+                          completeWeather: _getCompleteWeatherForPeriod(
+                            _activePeriods!['baseline'] as DecodedForecastPeriod,
+                            selectedTaf.decodedWeather?.timeline ?? [],
+                            forecastPeriods,
+                            flightProvider,
+                          ),
+                          concurrentPeriods: _activePeriods!['concurrent'] as List<DecodedForecastPeriod>,
+                          airport: flightProvider.selectedAirport,
+                          sliderValue: sliderValue,
+                          allPeriods: forecastPeriods,
+                          taf: selectedTaf,
+                          timeline: selectedTaf.decodedWeather?.timeline,
+                        )
+                      : const Center(child: Text('No decoded data available')),
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               
-              // Decoded Card using new widget
+              // Raw TAF card
               SizedBox(
-                height: 250,
+                height: 240,
                 child: RepaintBoundary(
-                  child: TafDecodedCard(
+                  child: RawTafCard(
+                    key: ValueKey('raw_${flightProvider.selectedAirport}'),
                     taf: selectedTaf,
-                    activePeriods: activePeriods,
-                    tafDisplayService: _tafDisplayService,
-                    airport: _selectedAirport!,
-                    sliderValue: sliderValue,
-                    timeline: timeline,
+                    activePeriods: _activePeriods,
                   ),
                 ),
               ),
-              SizedBox(height: 4),
               
-              // Raw Card using new widget
+              // Time Slider - now part of scrollable content
+              const SizedBox(height: 4),
               SizedBox(
-                height: 250,
+            height: 89,
                 child: RepaintBoundary(
-                  child: TafRawDisplay(
-                    taf: selectedTaf,
-                    activePeriods: activePeriods,
-                    decoderService: DecoderService(),
-                  ),
+                  child: selectedTaf.decodedWeather?.timeline.isNotEmpty == true
+                      ? TafTimeSlider(
+                          timeline: selectedTaf.decodedWeather!.timeline,
+                          sliderValue: sliderValue,
+                          onChanged: (value) => _onSliderChanged(value, selectedTaf, flightProvider),
+                        )
+                      : const SizedBox(
+                          height: 89,
+                          child: Center(child: Text('No timeline available')),
+                        ),
                 ),
               ),
+              
+              // Bottom padding for pull-to-refresh
+              const SizedBox(height: 20),
             ],
           ),
-          
-          // Time Slider using new widget - anchored to bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 90,
-            child: RepaintBoundary(
-              child: timeline.isNotEmpty
-                ? TafTimelineSlider(
-                    taf: selectedTaf,
-                    sliderValue: sliderValue,
-                    onChanged: (value) {
-                      // Performance optimization: Only trigger rebuild if value changed significantly
-                      final currentValue = _sliderPositions[_selectedAirport!] ?? 0.0;
-                      if ((value - currentValue).abs() > 0.001) { // Threshold to avoid micro-changes
-                        setState(() {
-                          _sliderPositions[_selectedAirport!] = value;
-                        });
-                      }
-                    },
-                    timeline: timeline,
-                  )
-                : _buildEmptyTimeSlider(),
-            ),
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}Z';
   }
 
   DecodedForecastPeriod? _getActiveBaselinePeriod(List<DecodedForecastPeriod> periods, DateTime time) {
-    // Find the baseline period that is active at the given time
-    DecodedForecastPeriod? activePeriod;
-    
-    for (final period in periods) {
-      if (!period.isConcurrent) {
-        bool isActive = false;
-        
-        if (period.startTime != null && period.endTime != null) {
-          // Period with both start and end times (BECMG periods)
-          isActive = (time.isAfter(period.startTime!) || time.isAtSameMomentAs(period.startTime!)) && 
-                     time.isBefore(period.endTime!);
-        } else if (period.startTime != null) {
-          // Period with only start time (FM periods)
-          // Find the next FM period to determine the end time
-          final nextFmPeriod = periods.where((p) => 
-            p.type == 'FM' && 
-            p.startTime != null && 
-            p.startTime!.isAfter(period.startTime!)
-          ).firstOrNull;
-          
-          if (nextFmPeriod != null) {
-            // This FM period ends when the next FM period starts
-            isActive = (time.isAfter(period.startTime!) || time.isAtSameMomentAs(period.startTime!)) && 
-                       time.isBefore(nextFmPeriod.startTime!);
-          } else {
-            // No next FM period, so this FM period continues to the end
-            isActive = time.isAfter(period.startTime!) || time.isAtSameMomentAs(period.startTime!);
-          }
-        }
-        
-        if (isActive) {
-          activePeriod = period;
-          break; // Found the active period, no need to continue
-        }
-      }
-    }
-    
-    // If no active period found, find the most recent period that started before this time
-    if (activePeriod == null) {
-      DecodedForecastPeriod? mostRecentPeriod;
-      DateTime? mostRecentTime;
-      
-      for (final period in periods) {
-        if (!period.isConcurrent && period.startTime != null) {
-          if (period.startTime!.isBefore(time) || period.startTime!.isAtSameMomentAs(time)) {
-            if (mostRecentTime == null || period.startTime!.isAfter(mostRecentTime!)) {
-              mostRecentTime = period.startTime!;
-              mostRecentPeriod = period;
-            }
-          }
-        }
-      }
-      
-      activePeriod = mostRecentPeriod;
-    }
-    
-    // If still no period found, return the first period
-    return activePeriod ?? (periods.isNotEmpty ? periods.first : null);
-  }
-
-  Widget _buildAirportBubbles(List<String> airports) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: airports.map((icao) => Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: _buildAirportBubble(
-            icao,
-            _selectedAirport == icao,
-            () {
-              setState(() {
-                _selectedAirport = icao;
-              });
-            },
-          ),
-        )).toList(),
-      ),
-    );
-  }
-
-  Widget _buildAirportBubble(String icao, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          _tafDisplayService.clearCache(); // Clear cache when switching airports
-        }
-        onTap();
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? Color(0xFFF97316) : Colors.grey[700]!,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? Color(0xFFF97316) : Colors.grey[600]!,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          icao,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white70,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
+    // Use TafStateManager to get active baseline period
+    return _tafStateManager.getActiveBaselinePeriod(periods, time);
   }
 
   Widget _buildEmptyDecodedCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Decoded TAF',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'No decoded data available',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return TafEmptyStates.emptyDecodedCard();
   }
 
   Widget _buildEmptyTimeSlider() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Time Slider',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'No forecast periods available',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return TafTimeSlider(
+      timeline: const [],
+      sliderValue: 0.0,
+      onChanged: (value) {},
     );
   }
 
-  Widget _buildDecodedCardFromActivePeriods(Map<String, dynamic> activePeriods, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods]) {
+  Widget _buildAirportBubbles(List<String> airports, FlightProvider flightProvider) {
+    return TafAirportSelector(
+      airports: airports,
+      selectedAirport: flightProvider.selectedAirport,
+      onAirportSelected: (icao) {
+              flightProvider.setSelectedAirport(icao);
+            },
+      onCacheClear: _clearCache,
+    );
+  }
+
+  Widget _buildDecodedCardFromActivePeriods(Map<String, dynamic> activePeriods, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods, FlightProvider? flightProvider]) {
     final baseline = activePeriods['baseline'] as DecodedForecastPeriod?;
     final concurrent = activePeriods['concurrent'] as List<DecodedForecastPeriod>;
-    print('DEBUG: Decoded card - Received activePeriods: $activePeriods');
-    print('DEBUG: Decoded card - Baseline: ${baseline?.type}');
-    print('DEBUG: Decoded card - Concurrent: ${concurrent.map((p) => p.type).toList()}');
-    print('DEBUG: Decoded card - Concurrent length: ${concurrent.length}');
+    
     if (baseline == null) {
       return _buildEmptyDecodedCard();
     }
     // Get complete weather for the baseline period
-    final completeWeather = _getCompleteWeatherForPeriod(baseline, timeline, allPeriods);
+    final completeWeather = _getCompleteWeatherForPeriod(baseline, timeline, allPeriods, flightProvider);
     // Return the card with period information for highlighting
-    return _buildDecodedCardWithHighlightingInfo(baseline, completeWeather, concurrent);
+    return _buildDecodedCardWithHighlightingInfo(baseline, completeWeather, concurrent, allPeriods, flightProvider!);
   }
   
-  Widget _buildDecodedCardWithHighlightingInfo(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Decoded TAF',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (concurrentPeriods.isNotEmpty) _buildConcurrentKey(concurrentPeriods),
-              ],
-            ),
-            SizedBox(height: 8),
-            Expanded(
-              child: SingleChildScrollView(
-                child: _buildTafCompactDetails(baseline, completeWeather, concurrentPeriods),
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildDecodedCardWithHighlightingInfo(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods, List<DecodedForecastPeriod>? allPeriods, FlightProvider flightProvider) {
+    return DecodedWeatherCard(
+      baseline: baseline,
+      completeWeather: completeWeather,
+      concurrentPeriods: concurrentPeriods,
+      tafStateManager: _tafStateManager,
+      airport: flightProvider.selectedAirport,
+      sliderValue: _sliderPositions[flightProvider.selectedAirport!],
+      allPeriods: allPeriods,
+      taf: null, // This method is not used in the current implementation
+      timeline: null, // This method is not used in the current implementation
     );
   }
 
-  Widget _buildConcurrentKey(List<DecodedForecastPeriod> concurrentPeriods) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: concurrentPeriods.map((period) {
-        Color color = WeatherColors.getColorForProbCombination(period.type);
-        String label = period.type;
-        
-        return Padding(
-          padding: const EdgeInsets.only(left: 4.0),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Map<String, String> _getCompleteWeatherForPeriod(DecodedForecastPeriod period, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods, FlightProvider? flightProvider]) {
+    // Use TafStateManager to get complete weather with inheritance
+    return _tafStateManager.getCompleteWeatherForPeriod(
+      period,
+      flightProvider?.selectedAirport ?? '',
+      _sliderPositions[flightProvider?.selectedAirport!] ?? 0.0,
+      allPeriods ?? [],
+    );
+  }
+
+
+
+
+
+  void _showAddAirportDialog(BuildContext context) {
+    final TextEditingController controller = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the ICAO code for the airport you want to add:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'ICAO Code',
+                  hintText: 'e.g., KJFK',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 4,
+                onChanged: (value) {
+                  // Auto-capitalize and limit to 4 characters
+                  if (value.length > 4) {
+                    controller.text = value.substring(0, 4).toUpperCase();
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final icao = controller.text.trim().toUpperCase();
+                if (icao.length == 4) {
+                  Navigator.of(context).pop();
+                  
+                  // Get the FlightProvider and add the airport
+                  final flightProvider = context.read<FlightProvider>();
+                  final success = await flightProvider.addAirportToFlight(icao);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Airport $icao added successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    // Check if it's because the airport already exists
+                    final currentFlight = flightProvider.currentFlight;
+                    if (currentFlight?.airports.any((airport) => airport.icao == icao) == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Airport $icao is already in your flight plan'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to add airport $icao. Please try again.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid 4-letter ICAO code'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
         );
-      }).toList(),
+      },
     );
   }
 
-  Map<String, String> _getCompleteWeatherForPeriod(DecodedForecastPeriod period, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods]) {
-    // Performance optimization: Check cache first
-    final cacheKey = _getCacheKey(_selectedAirport ?? '', _sliderPositions[_selectedAirport!] ?? 0.0, period.type);
-    
-    if (_weatherCache.containsKey(cacheKey)) {
-      print('DEBUG: Using CACHED weather for ${period.type}: ${_weatherCache[cacheKey]}');
-      return _weatherCache[cacheKey]!;
-    }
-    
-    Map<String, String> completeWeather = Map.from(period.weather);
-    print('DEBUG: Period ${period.type} - Original weather: ${period.weather}');
-    
-    if (period.type != 'INITIAL' && allPeriods != null && allPeriods.isNotEmpty) {
-      DecodedForecastPeriod? sourcePeriod;
-      
-      if (period.type == 'BECMG') {
-        // BECMG periods inherit from the immediately preceding baseline period
-        // Find the most recent baseline period that started before this BECMG starts
-        sourcePeriod = allPeriods
-          .where((p) => !p.isConcurrent && p.startTime != null && p.startTime!.isBefore(period.startTime!))
-          .fold<DecodedForecastPeriod?>(null, (prev, p) => prev == null || p.startTime!.isAfter(prev.startTime!) ? p : prev);
-        print('DEBUG: BECMG period - inheriting from previous baseline period: ${sourcePeriod?.type}');
-      } else if (period.type == 'FM') {
-        // FM periods inherit from the previous FM period
-        sourcePeriod = allPeriods
-          .where((p) => p.type == 'FM' && p.endTime != null && p.endTime!.isBefore(period.startTime!))
-          .fold<DecodedForecastPeriod?>(null, (prev, p) => prev == null || p.endTime!.isAfter(prev.endTime!) ? p : prev);
-        print('DEBUG: FM period - inheriting from previous FM period: ${sourcePeriod?.type}');
-      } else {
-        // Concurrent periods (TEMPO/INTER) inherit from the current baseline period
-        // Find the baseline period that is active during this concurrent period
-        sourcePeriod = allPeriods
-          .where((p) => !p.isConcurrent && p.startTime != null && p.endTime != null &&
-                       p.startTime!.isBefore(period.startTime!) && p.endTime!.isAfter(period.startTime!))
-          .firstOrNull;
-        print('DEBUG: Concurrent period - inheriting from baseline period: ${sourcePeriod?.type}');
-      }
-      
-      if (sourcePeriod != null) {
-        for (final key in ['Wind', 'Visibility', 'Cloud', 'Weather']) {
-          if (completeWeather[key] == null || completeWeather[key]!.isEmpty || completeWeather[key] == '-') {
-            completeWeather[key] = sourcePeriod.weather[key] ?? '-';
-            print('DEBUG: Inherited $key: ${sourcePeriod.weather[key]}');
-          }
-        }
-      }
-    }
-    
-    print('DEBUG: Complete weather for ${period.type}: $completeWeather');
-    
-    // Cache the result
-    _weatherCache[cacheKey] = completeWeather;
-    _limitCacheSize(); // Prevent memory issues
-    
-    return completeWeather;
-  }
-
-  Widget _buildTafCompactDetails(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods) {
-    return Column(
-      children: [
-        // Baseline weather with integrated TEMPO/INTER
-        SizedBox(
-          height: 80,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  void _showEditAirportDialog(BuildContext context, String airport) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildGridItemWithConcurrent('Wind', completeWeather['Wind'], concurrentPeriods, 'Wind'),
-              SizedBox(width: 16),
-              _buildGridItemWithConcurrent('Visibility', completeWeather['Visibility'], concurrentPeriods, 'Visibility'),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 80,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGridItemWithConcurrent('Weather', completeWeather['Weather'], concurrentPeriods, 'Weather', isPhenomenaOrRemark: true),
-              SizedBox(width: 16),
-              _buildGridItemWithConcurrent('Cloud', completeWeather['Cloud'], concurrentPeriods, 'Cloud'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGridItemWithConcurrent(String label, String? value, List<DecodedForecastPeriod> concurrentPeriods, String weatherType, {bool isPhenomenaOrRemark = false}) {
-    String displayValue = value ?? '-';
-    if (isPhenomenaOrRemark) {
-      if (value == null || value.isEmpty || value == 'No significant weather') {
-        displayValue = '-';
-      }
-    } else {
-      if (value == null || value.isEmpty || value.contains('unavailable') || value.contains('No cloud information')) {
-        displayValue = '-'; // Show - instead of N/A to match weather heading
-      }
-    }
-    
-    // Performance optimization: Only log once per build cycle
-    final currentBuild = '${_selectedAirport}_${_sliderPositions[_selectedAirport!] ?? 0.0}_$label';
-    if (_lastLoggedBuild != currentBuild) {
-      print('DEBUG: Building grid item for $label (weatherType: $weatherType)');
-      print('DEBUG: Concurrent periods count: ${concurrentPeriods.length}');
-      print('DEBUG: Concurrent periods: ${concurrentPeriods.map((p) => '${p.type} (${p.changedElements})').toList()}');
-      _lastLoggedBuild = currentBuild;
-    }
-    
-    // Find concurrent periods that have changes for this weather type
-    final relevantConcurrentPeriods = concurrentPeriods.where((period) => 
-      period.changedElements.contains(weatherType)
-    ).toList();
-    
-    if (_lastLoggedBuild == currentBuild) {
-      print('DEBUG: Relevant concurrent periods for $weatherType: ${relevantConcurrentPeriods.map((p) => '${p.type} (${p.weather[weatherType]})').toList()}');
-    }
-    
-    // Memoize concurrent period widgets to prevent unnecessary rebuilds
-    final concurrentWidgets = relevantConcurrentPeriods.map((period) {
-      final color = WeatherColors.getColorForProbCombination(period.type);
-      final label = period.type; // Use the full period type instead of just 'TEMPO' or 'INTER'
-      final concurrentValue = period.weather[weatherType];
-      
-      if (_lastLoggedBuild == currentBuild) {
-        print('DEBUG: Processing concurrent period ${period.type} for $weatherType: "$concurrentValue"');
-        print('DEBUG: Color key label for ${period.type}: "$label"');
-      }
-      
-      if (concurrentValue == null || concurrentValue.isEmpty || 
-          (isPhenomenaOrRemark && (concurrentValue == 'No significant weather'))) {
-        if (_lastLoggedBuild == currentBuild) {
-          print('DEBUG: Skipping concurrent period ${period.type} - value is empty or "No significant weather"');
-        }
-        return const SizedBox.shrink();
-      }
-      
-      if (_lastLoggedBuild == currentBuild) {
-        print('DEBUG: Displaying concurrent period ${period.type} for $weatherType: "$concurrentValue"');
-      }
-      
-      return Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          concurrentValue,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: color,
-          ),
-        ),
-      );
-    }).toList();
-    
-    return Expanded(
-      child: RepaintBoundary(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              displayValue,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            // Add TEMPO/INTER lines if they have changes for this weather type
-            ...concurrentWidgets,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRawCardFromActivePeriods(Weather taf, Map<String, dynamic>? activePeriods) {
-    print('DEBUG: === RAW HIGHLIGHTING START ===');
-    print('DEBUG: Raw highlighting - activePeriods: $activePeriods');
-    
-    final originalRawText = taf.rawText;
-    final decoder = DecoderService();
-    final formattedRawText = decoder.formatTafForDisplay(originalRawText);
-    TextSpan textSpan;
-    
-    if (activePeriods != null) {
-      print('DEBUG: Raw highlighting - Object ID: ${activePeriods.hashCode}');
-      
-      // Use the same logic as decoded weather - get all active periods
-      final baseline = activePeriods['baseline'] as DecodedForecastPeriod?;
-      final concurrent = activePeriods['concurrent'] as List<DecodedForecastPeriod>;
-      
-      print('DEBUG: Raw highlighting - Baseline: ${baseline?.type}');
-      print('DEBUG: Raw highlighting - Concurrent: ${concurrent.map((p) => p.type).toList()}');
-      print('DEBUG: Raw highlighting - Concurrent length: ${concurrent.length}');
-      
-      // Simple highlighting based on period types
-      textSpan = _buildSimpleHighlightedText(formattedRawText, baseline, concurrent);
-    } else {
-      // No active periods, show unformatted text
-      textSpan = TextSpan(
-        text: formattedRawText, 
-        style: TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
-      );
-    }
-    
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Raw TAF',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  child: SelectableText.rich(
-                    textSpan,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      height: 1.2,
+              Text('What would you like to do with airport $airport?'),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showEditAirportCodeDialog(context, airport);
+                      },
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Edit'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showRemoveAirportDialog(context, airport);
+                      },
+                      icon: const Icon(Icons.delete, size: 16),
+                      label: const Text('Remove'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditAirportCodeDialog(BuildContext context, String oldAirport) {
+    final TextEditingController controller = TextEditingController(text: oldAirport);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Airport Code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter the new ICAO code for airport $oldAirport:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'ICAO Code',
+                  hintText: 'e.g., KJFK',
+                  border: OutlineInputBorder(),
                 ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 4,
+                onChanged: (value) {
+                  // Auto-capitalize and limit to 4 characters
+                  if (value.length > 4) {
+                    controller.text = value.substring(0, 4).toUpperCase();
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newIcao = controller.text.trim().toUpperCase();
+                if (newIcao.length == 4 && newIcao != oldAirport) {
+                  Navigator.of(context).pop();
+                  
+                  // Get the FlightProvider and update the airport
+                  final flightProvider = context.read<FlightProvider>();
+                  final success = await flightProvider.updateAirportCode(oldAirport, newIcao);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Airport updated from $oldAirport to $newIcao successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to update airport. Please try again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } else if (newIcao == oldAirport) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No changes made'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid 4-letter ICAO code'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRemoveAirportDialog(BuildContext context, String airport) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning,
+                color: Colors.orange,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Are you sure you want to remove airport $airport from your flight plan?',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will also remove all associated weather data.',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                
+                // Get the FlightProvider and remove the airport
+                final flightProvider = context.read<FlightProvider>();
+                final success = await flightProvider.removeAirportFromFlight(airport);
+                
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Airport $airport removed successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to remove airport. Please try again.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRawInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                color: Colors.grey[700],
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value.isEmpty ? 'N/A' : value,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[900],
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Get filtered NOTAMs with caching to prevent unnecessary processing
+  List<Notam> _getFilteredNotams(List<Notam> notams, FlightProvider flightProvider) {
+    // Generate cache key using unified cache manager
+    final cacheKey = CacheManager.generateKey('notam_filtered', {
+      'notamHash': _generateNotamHash(notams),
+      'airport': flightProvider.selectedAirport ?? '',
+      'timeFilter': _selectedTimeFilter,
+    });
+    
+    // Check cache first
+    final cachedResult = _cacheManager.get<List<Notam>>(cacheKey);
+    if (cachedResult != null) {
+      debugPrint('DEBUG: Using cached filtered NOTAMs (${cachedResult.length} NOTAMs)');
+      debugPrint('DEBUG: Filtered NOTAM IDs (cached): ${cachedResult.map((n) => n.id).join(", ")}');
+      return cachedResult;
+    }
+    
+    // Process NOTAMs and cache results
+    debugPrint('DEBUG: Processing NOTAMs (cache miss) - airport: ${flightProvider.selectedAirport}, filter: $_selectedTimeFilter');
+    
+    // Filter by airport first
+    final airportFilteredNotams = flightProvider.selectedAirport != null 
+        ? notams.where((notam) => _normalizeAirportCode(notam.icao) == flightProvider.selectedAirport).toList()
+        : notams;
+    debugPrint('DEBUG: After airport filter: ${airportFilteredNotams.length} NOTAMs');
+    debugPrint('DEBUG: Airport filtered NOTAM IDs: ${airportFilteredNotams.map((n) => n.id).join(", ")}');
+    
+    // Filter by time
+    final timeFilteredNotams = _filterNotamsByTime(airportFilteredNotams);
+    debugPrint('DEBUG: After time filter: ${timeFilteredNotams.length} NOTAMs');
+    debugPrint('DEBUG: Time filtered NOTAM IDs: ${timeFilteredNotams.map((n) => n.id).join(", ")}');
+    
+    // Cache the result
+    _cacheManager.set(cacheKey, timeFilteredNotams);
+    
+    debugPrint('DEBUG: Cached ${timeFilteredNotams.length} filtered NOTAMs');
+    return timeFilteredNotams;
+  }
+
+  // Filter NOTAMs based on selected time filter
+  List<Notam> _filterNotamsByTime(List<Notam> notams) {
+    debugPrint('DEBUG: _filterNotamsByTime called with ${notams.length} NOTAMs, filter: $_selectedTimeFilter');
+    
+    if (_selectedTimeFilter == 'All NOTAMs') {
+      debugPrint('DEBUG: Returning all ${notams.length} NOTAMs (All NOTAMs filter)');
+      return notams;
+    }
+    
+    final now = DateTime.now().toUtc(); // Use UTC time consistently
+    Duration filterDuration;
+    
+    switch (_selectedTimeFilter) {
+      case '6 hours':
+        filterDuration = const Duration(hours: 6);
+        break;
+      case '12 hours':
+        filterDuration = const Duration(hours: 12);
+        break;
+      case '24 hours':
+        filterDuration = const Duration(hours: 24);
+        break;
+      case '72 hours':
+        filterDuration = const Duration(hours: 72);
+        break;
+      default:
+        debugPrint('DEBUG: Unknown filter, returning all ${notams.length} NOTAMs');
+        return notams;
+    }
+    
+    final filterEndTime = now.add(filterDuration);
+    
+    debugPrint('DEBUG: Current UTC time: ${now.toIso8601String()}');
+    debugPrint('DEBUG: Filter end time: ${filterEndTime.toIso8601String()}');
+    debugPrint('DEBUG: Filter duration: ${filterDuration.inHours} hours');
+    
+    // Only log NOTAMs occasionally to reduce console spam
+    if (notams.length <= 5) {
+      // Log all NOTAMs if there are 5 or fewer
+      for (int i = 0; i < notams.length; i++) {
+        final notam = notams[i];
+        final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+        final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
+        final passesFilter = isCurrentlyActive || isFutureActive;
+        
+        debugPrint('DEBUG: NOTAM ${i + 1}/${notams.length}: ${notam.id} (${notam.icao})');
+        debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
+        debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
+        debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
+        debugPrint('DEBUG:   Future active: $isFutureActive');
+        debugPrint('DEBUG:   Passes filter: $passesFilter');
+      }
+    } else {
+      // Log only first 3 and last 3 NOTAMs if there are more than 5
+      for (int i = 0; i < 3; i++) {
+        final notam = notams[i];
+        final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+        final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
+        final passesFilter = isCurrentlyActive || isFutureActive;
+        
+        debugPrint('DEBUG: NOTAM ${i + 1}/${notams.length}: ${notam.id} (${notam.icao})');
+        debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
+        debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
+        debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
+        debugPrint('DEBUG:   Future active: $isFutureActive');
+        debugPrint('DEBUG:   Passes filter: $passesFilter');
+      }
+      debugPrint('DEBUG: ... (${notams.length - 6} more NOTAMs) ...');
+      for (int i = notams.length - 3; i < notams.length; i++) {
+        final notam = notams[i];
+        final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+        final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
+        final passesFilter = isCurrentlyActive || isFutureActive;
+        
+        debugPrint('DEBUG: NOTAM ${i + 1}/${notams.length}: ${notam.id} (${notam.icao})');
+        debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
+        debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
+        debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
+        debugPrint('DEBUG:   Future active: $isFutureActive');
+        debugPrint('DEBUG:   Passes filter: $passesFilter');
+      }
+    }
+    
+    final filteredNotams = notams.where((notam) {
+      // Show NOTAMs that are either:
+      // 1. Currently active (started before now, ends after now)
+      // 2. Will become active within the time window
+      return (notam.validFrom.isBefore(now) && notam.validTo.isAfter(now)) || // Currently active
+             (notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime)); // Future active
+    }).toList();
+    
+    debugPrint('DEBUG: Filtered NOTAMs result: ${filteredNotams.length} NOTAMs pass the filter');
+    return filteredNotams;
+  }
+
+  // Normalize airport codes to ensure consistency across tabs
+  String _normalizeAirportCode(String icao) {
+    // If it's a 3-letter US airport code, add 'K' prefix
+    if (icao.length == 3 && icao == icao.toUpperCase()) {
+      return 'K$icao';
+    }
+    return icao.toUpperCase();
+  }
+
+  Widget _buildNotams2Tab(BuildContext context, List<Notam> notams, FlightProvider flightProvider) {
+    // Get unique airports from NOTAMs
+    final airports = notams.map((notam) => _normalizeAirportCode(notam.icao)).toSet().toList();
+    // Use selected airport
+    final selectedAirport = flightProvider.selectedAirport ?? (airports.isNotEmpty ? airports.first : null);
+    // Get filtered NOTAMs using caching to prevent unnecessary processing
+    final filteredNotamsByTime = _getFilteredNotams(notams, flightProvider);
+    final filteredNotams = selectedAirport != null
+        ? filteredNotamsByTime.where((n) => _normalizeAirportCode(n.icao) == selectedAirport).toList().cast<Notam>()
+        : <Notam>[];
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+        debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh triggered!');
+        // Clear all caches for fresh data
+        _clearCache();
+        await flightProvider.refreshFlightData();
+        debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh completed!');
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            // Time filter
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time, size: 16, color: Color(0xFF1E3A8A)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Show NOTAMs for next:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _selectedTimeFilter,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => _timeFilterOptions.map((filter) {
+                      return PopupMenuItem<String>(
+                        value: filter,
+                        child: Text(filter),
+                      );
+                    }).toList(),
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedTimeFilter = value;
+                        // Clear NOTAM cache when filter changes
+                        _clearCache();
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: filteredNotams.isEmpty 
+                          ? Colors.grey[200] 
+                          : const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          filteredNotams.isEmpty 
+                              ? Icons.check_circle 
+                              : Icons.warning,
+                          size: 14,
+                          color: filteredNotams.isEmpty 
+                              ? Colors.grey[600] 
+                              : Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${filteredNotams.length}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: filteredNotams.isEmpty 
+                                ? Colors.grey[600] 
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Grouped NOTAM list
+            Expanded(
+              child: NotamGroupedList(
+                notams: filteredNotams,
+                onNotamTap: (notam) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('NOTAM Details: ${notam.id}'),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('ICAO: ${notam.icao}'),
+                            Text('Type: ${notam.type.name}'),
+                            Text('Group: ${notam.group.name}'),
+                            Text('Critical: ${notam.isCritical ? "Yes" : "No"}'),
+                            const SizedBox(height: 8),
+                            Text('Valid From: ${notam.validFrom.toUtc()}'),
+                            Text('Valid To: ${notam.validTo.toUtc()}'),
+                            const SizedBox(height: 8),
+                            Text('Raw Text:'),
+                            Text(notam.displayRawText, style: const TextStyle(fontSize: 12)),
+                            const SizedBox(height: 8),
+                            Text('Decoded Text:'),
+                            Text(notam.displayDecodedText, style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                showGroupHeaders: true,
+                initiallyExpanded: false,
               ),
             ),
           ],
@@ -1117,329 +1175,94 @@ class _RawDataScreenState extends State<RawDataScreen> {
       ),
     );
   }
-  
-  TextSpan _buildSimpleHighlightedText(String formattedText, DecodedForecastPeriod? baseline, List<DecodedForecastPeriod> concurrent) {
-    print('DEBUG: Building simple highlighted text');
-    print('DEBUG: Baseline: ${baseline?.type}');
-    print('DEBUG: Concurrent: ${concurrent.map((p) => p.type).toList()}');
-    
-    // Simple approach: highlight lines that contain the active period types
-    final lines = formattedText.split('\n');
-    final children = <TextSpan>[];
-    
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      final isLastLine = i == lines.length - 1;
-      
-      // Stop highlighting when RMK is encountered
-      if (line.trim().startsWith('RMK')) {
-        // Add RMK line without highlighting
-        children.add(TextSpan(
-          text: line + (isLastLine ? '' : '\n'),
-          style: TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
-        ));
-        continue;
-      }
-      
-      // Check if this line should be highlighted
-      Color? highlightColor;
-      
-      // Check baseline period
-      if (baseline != null) {
-        if (baseline.type == 'INITIAL' && i == 0) {
-          // First line is INITIAL - it contains the TAF validity range
-          highlightColor = Color(0xFFF97316); // Orange
-          print('DEBUG: Highlighting INITIAL line: "$line"');
-        } else if (baseline.type == 'FM' && line.startsWith('FM')) {
-          // Check if this is the specific FM period that's active
-          if (_matchesPeriodTime(line, baseline)) {
-            highlightColor = Color(0xFFF97316); // Orange
-            print('DEBUG: Highlighting specific FM line: "$line" (time: ${baseline.time})');
-          }
-        } else if (baseline.type == 'BECMG' && line.startsWith('BECMG')) {
-          // Check if this is the specific BECMG period that's active
-          // BECMG is transitional - it persists until the next FM period
-          if (_matchesBecmgPeriod(line, baseline)) {
-            highlightColor = Color(0xFFF97316); // Orange
-            print('DEBUG: Highlighting specific BECMG line: "$line" (time: ${baseline.time})');
-          }
-        }
-      }
-      
-      // Check concurrent periods
-      for (final period in concurrent) {
-        bool shouldHighlight = false;
-        
-        if (period.type.contains('TEMPO') && line.startsWith('TEMPO')) {
-          // Check if this is the specific TEMPO period that's active
-          if (_matchesPeriodTime(line, period)) {
-            highlightColor = Colors.orange;
-            shouldHighlight = true;
-            print('DEBUG: Highlighting specific TEMPO line: "$line" (time: ${period.time})');
-          }
-        } else if (period.type.contains('INTER') && line.startsWith('INTER')) {
-          // Check if this is the specific INTER period that's active
-          if (_matchesPeriodTime(line, period)) {
-            highlightColor = Colors.purple;
-            shouldHighlight = true;
-            print('DEBUG: Highlighting specific INTER line: "$line" (time: ${period.time})');
-          }
-        } else if (period.type.contains('PROB30') && line.startsWith('PROB30')) {
-          // Check if this is the specific PROB30 period that's active
-          if (_matchesPeriodTime(line, period)) {
-            highlightColor = Colors.orange;
-            shouldHighlight = true;
-            print('DEBUG: Highlighting specific PROB30 line: "$line" (time: ${period.time})');
-          }
-        } else if (period.type.contains('PROB40') && line.startsWith('PROB40')) {
-          // Check if this is the specific PROB40 period that's active
-          if (_matchesPeriodTime(line, period)) {
-            highlightColor = Colors.orange;
-            shouldHighlight = true;
-            print('DEBUG: Highlighting specific PROB40 line: "$line" (time: ${period.time})');
-          }
-        }
-        
-        if (shouldHighlight) break; // Use first match
-      }
-      
-      // Add the line with or without highlighting
-      children.add(TextSpan(
-        text: line + (isLastLine ? '' : '\n'),
-        style: TextStyle(
-          color: highlightColor ?? Colors.black, 
-          fontFamily: 'monospace', 
-          fontSize: 12,
-          backgroundColor: highlightColor != null ? highlightColor.withOpacity(0.2) : null,
-        )
-      ));
-    }
-    
-    return TextSpan(children: children);
-  }
-  
-  bool _matchesPeriodTime(String line, DecodedForecastPeriod period) {
-    if (period.time.isEmpty) return false;
-    
-    print('DEBUG: Checking if line "$line" matches period time "${period.time}"');
-    
-    // Convert period time format to TAF text format
-    // Period time might be "2608-2611" but TAF text has "2608/2611"
-    final periodTimeFormatted = period.time.replaceAll('-', '/');
-    
-    // Check if the line contains the formatted time
-    final matches = line.contains(periodTimeFormatted);
-    print('DEBUG: Period time formatted: "$periodTimeFormatted", matches: $matches');
-    
-    return matches;
-  }
-  
-  bool _matchesBecmgPeriod(String line, DecodedForecastPeriod period) {
-    if (period.time.isEmpty) return false;
-    
-    print('DEBUG: Checking if line "$line" matches BECMG period time "${period.time}"');
-    
-    // Convert period time format to TAF text format
-    // Period time might be "2608-2611" but TAF text has "2608/2611"
-    final periodTimeFormatted = period.time.replaceAll('-', '/');
-    
-    // Check if the line contains the formatted time
-    final matches = line.contains(periodTimeFormatted);
-    print('DEBUG: BECMG period time formatted: "$periodTimeFormatted", matches: $matches');
-    
-    return matches;
-  }
 
-  Widget _buildWeatherInfo(Map<String, String> weather) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (weather['Wind'] != null) ...[
-          Text('Wind: ${weather['Wind']}'),
-          SizedBox(height: 2),
-        ],
-        if (weather['Visibility'] != null) ...[
-          Text('Visibility: ${weather['Visibility']}'),
-          SizedBox(height: 2),
-        ],
-        if (weather['Cloud'] != null) ...[
-          Text('Cloud: ${weather['Cloud']}'),
-          SizedBox(height: 2),
-        ],
-        if (weather['Weather'] != null) ...[
-          Text('Weather: ${weather['Weather']}'),
-          SizedBox(height: 2),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildTimeSlider(List<TimePeriod> periods, double sliderValue, ValueChanged<double> onChanged) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Slider(
-              value: sliderValue,
-              min: 0.0,
-              max: 1.0,
-              divisions: periods.length > 1 ? (periods.length - 1) : 1,
-              onChanged: onChanged,
-              activeColor: Color(0xFF14B8A6),
+  Widget _buildEndDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: periods.map((period) {
-                final day = period.startTime.day.toString().padLeft(2, '0');
-                final hour = period.startTime.hour.toString().padLeft(2, '0');
-                return Text(
-                  '$day/$hour',
-                  style: TextStyle(fontSize: 10),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<String> _getTafTimePeriods(List<TimePeriod> periods) {
-    final timePeriods = <String>[];
-    
-    for (final period in periods) {
-      final day = period.startTime.day.toString().padLeft(2, '0');
-      final hour = period.startTime.hour.toString().padLeft(2, '0');
-      timePeriods.add('$day/$hour');
-    }
-    
-    return timePeriods;
-  }
-
-  String _extractTafStartTime(List<TimePeriod> periods) {
-    if (periods.isNotEmpty) {
-      final firstPeriod = periods.first;
-      final day = firstPeriod.startTime.day.toString().padLeft(2, '0');
-      final hour = firstPeriod.startTime.hour.toString().padLeft(2, '0');
-      return '$day/$hour';
-    }
-    return 'N/A';
-  }
-
-  Widget _buildTafPeriodCard(BuildContext context, TimePeriod period, List<String> timePeriods, List<TimePeriod> allPeriods) {
-    final isInitial = period.baselinePeriod.type == 'INITIAL';
-    final isTempo = period.baselinePeriod.type == 'TEMPO';
-    final isInter = period.baselinePeriod.type == 'INTER';
-    final isBecmg = period.baselinePeriod.type == 'BECMG';
-    final isFm = period.baselinePeriod.type == 'FM';
-    
-    final weather = period.baselinePeriod.weather;
-    
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  period.baselinePeriod.type,
+                  'Menu',
                   style: TextStyle(
-                    fontSize: 14,
+                    color: Colors.white,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: WeatherColors.getColorForPeriodType(period.baselinePeriod.type),
                   ),
                 ),
+                SizedBox(height: 8),
                 Text(
-                  period.baselinePeriod.time ?? 'N/A',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  'Dispatch Buddy',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGridItem('Wind', weather['Wind'], isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Wind')),
-                SizedBox(width: 16),
-                _buildGridItem('Visibility', weather['Visibility'], isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Visibility')),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGridItem('Weather', weather['Weather'], isPhenomenaOrRemark: true),
-                SizedBox(width: 16),
-                _buildGridItem('Cloud', weather['Cloud'], isPhenomenaOrRemark: !isInitial && period.baselinePeriod.changedElements.contains('Cloud')),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeSliderFromTimeline(List<DateTime> timeline, double sliderValue, ValueChanged<double> onChanged) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Slider(
-              value: sliderValue,
-              min: 0.0,
-              max: 1.0,
-              divisions: timeline.length > 1 ? (timeline.length - 1) : 1,
-              onChanged: onChanged,
-              activeColor: Color(0xFF14B8A6),
-            ),
-            // Show current time instead of all labels
-            Text(
-              'Time: ${DateFormat('MMM d, HH:mm').format(timeline[(sliderValue * (timeline.length - 1)).round()])}',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridItem(String label, String? value, {bool isPhenomenaOrRemark = false}) {
-    String displayValue = value ?? '-';
-    if (isPhenomenaOrRemark) {
-      if (value == null || value.isEmpty || value == 'No significant weather') {
-        displayValue = '-';
-      }
-    } else {
-      if (value == null || value.isEmpty || value.contains('unavailable') || value.contains('No cloud information')) {
-        displayValue = '-'; // Show - instead of N/A to match weather heading
-      }
-    }
-    
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
           ),
-          SizedBox(height: 2),
-          Text(
-            displayValue,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+          ListTile(
+            leading: Icon(Icons.not_interested),
+            title: Text('NOTAMs'),
+            subtitle: Text('Grouped with swipe actions'),
+            onTap: () {
+              debugPrint('DEBUG: NOTAMs menu item tapped');
+              Navigator.of(context).pop(); // Close drawer
+              // Navigate to NOTAMs tab
+              final tabController = DefaultTabController.of(context);
+              if (tabController != null && tabController.length > 0) {
+                debugPrint('DEBUG: Animating to tab 0 (NOTAMs)');
+                tabController.animateTo(0);
+              } else {
+                debugPrint('DEBUG: TabController is null or has no tabs');
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.cloud),
+            title: Text('METARs'),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              // Navigate to METARs tab
+              final tabController = DefaultTabController.of(context);
+              if (tabController != null && tabController.length > 1) {
+                tabController.animateTo(1);
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.access_time),
+            title: Text('TAFs'),
+            subtitle: Text('Timeline-based display'),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              // Navigate to TAFs tab
+              final tabController = DefaultTabController.of(context);
+              if (tabController != null && tabController.length > 2) {
+                tabController.animateTo(2);
+              }
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.alternate_email),
+            title: Text('Alternate Data'),
+            subtitle: Text('Legacy NOTAMs & TAFs'),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AlternateDataScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
