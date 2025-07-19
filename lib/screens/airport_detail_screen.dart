@@ -6,8 +6,15 @@ import '../models/notam.dart';
 import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
 import '../widgets/zulu_time_widget.dart';
-import 'system_detail_screen.dart';
-import 'runway_system_page.dart';
+import '../widgets/taf_airport_selector.dart';
+import '../widgets/system_pages/runway_system_widget.dart';
+import '../widgets/system_pages/taxiway_system_widget.dart';
+import '../widgets/system_pages/instrument_procedures_system_widget.dart';
+import '../widgets/system_pages/airport_services_system_widget.dart';
+import '../widgets/system_pages/hazards_system_widget.dart';
+import '../widgets/system_pages/admin_system_widget.dart';
+import '../widgets/system_pages/other_system_widget.dart';
+
 
 class AirportDetailScreen extends StatefulWidget {
   const AirportDetailScreen({super.key});
@@ -16,16 +23,49 @@ class AirportDetailScreen extends StatefulWidget {
   State<AirportDetailScreen> createState() => _AirportDetailScreenState();
 }
 
-class _AirportDetailScreenState extends State<AirportDetailScreen> {
-  // Time filter for NOTAMs
-  String _selectedTimeFilter = '24 hours'; // Default to 24 hours
-  final List<String> _timeFilterOptions = [
-    '6 hours',
-    '12 hours',
-    '24 hours',
-    '72 hours',
-    'All Future:',
+class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerProviderStateMixin {
+  // Time filter is now managed by FlightProvider globally
+  late TabController _systemTabController;
+  
+  // System pages configuration
+  static const List<Map<String, dynamic>> _systemPages = [
+    {'name': 'Overview', 'icon': Icons.dashboard},
+    {'name': 'Runways', 'icon': Icons.run_circle},
+    {'name': 'Taxiways', 'icon': Icons.route},
+    {'name': 'Instrument Procedures', 'icon': Icons.radar},
+    {'name': 'Airport Services', 'icon': Icons.business},
+    {'name': 'Hazards', 'icon': Icons.warning},
+    {'name': 'Admin', 'icon': Icons.admin_panel_settings},
+    {'name': 'Other', 'icon': Icons.more_horiz},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _systemTabController = TabController(length: _systemPages.length, vsync: this);
+    
+    // Add listener to save last viewed system page
+    _systemTabController.addListener(() {
+      if (_systemTabController.indexIsChanging) {
+        final flightProvider = context.read<FlightProvider>();
+        flightProvider.setLastViewedSystemPage(_systemTabController.index);
+      }
+    });
+    
+    // Restore last viewed system page if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final flightProvider = context.read<FlightProvider>();
+      if (flightProvider.lastViewedSystemPage != null) {
+        _systemTabController.animateTo(flightProvider.lastViewedSystemPage!);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _systemTabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,60 +102,68 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> {
             );
           }
 
+          // Get list of airport ICAO codes
+          final airports = flight.airports.map((a) => a.icao).toList();
+          
+          // Initialize selected airport if not set
+          if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
+            flightProvider.setSelectedAirport(airports.first);
+          }
+
+          // Get the selected airport object
+          final selectedAirport = flight.airports.firstWhere(
+            (a) => a.icao == flightProvider.selectedAirport,
+            orElse: () => flight.airports.first,
+          );
+
           return Column(
             children: [
-              // Page-level time filter
+              // System navigation tabs at top
               Container(
-                padding: const EdgeInsets.all(16),
+                color: Colors.white,
+                child: TabBar(
+                  controller: _systemTabController,
+                  isScrollable: true,
+                  labelColor: const Color(0xFF1E3A8A),
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: const Color(0xFF1E3A8A),
+                  tabs: _systemPages.map((page) => Tab(
+                    icon: Icon(page['icon']),
+                    text: page['name'],
+                  )).toList(),
+                ),
+              ),
+              // Airport selector below tabs
+              if (airports.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 40,
+                  child: RepaintBoundary(
+                    child: Center(
+                      child: TafAirportSelector(
+                        airports: airports,
+                        selectedAirport: flightProvider.selectedAirport ?? airports.first,
+                        onAirportSelected: (String airport) {
+                          flightProvider.setSelectedAirport(airport);
+                        },
+                        onAddAirport: _showAddAirportDialog,
+                        onAirportLongPress: _showEditAirportDialog,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+              // Static time filter between airport selector and content
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: _buildTimeFilterHeader(),
               ),
-              // Airport list
+              // System content
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: flight.airports.length,
-                  itemBuilder: (context, index) {
-                    final airport = flight.airports[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.airplanemode_active, color: Color(0xFF1E3A8A)),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${airport.name} (${airport.icao}${AirportDatabase.getIataCode(airport.icao) != null ? '/${AirportDatabase.getIataCode(airport.icao)}' : ''})',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        airport.city,
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            _buildSystemsList(context, airport, flight.notams),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                child: TabBarView(
+                  controller: _systemTabController,
+                  children: _buildSystemPages(selectedAirport, flight.notams),
                 ),
               ),
             ],
@@ -125,117 +173,216 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> {
     );
   }
 
+  List<Widget> _buildSystemPages(Airport selectedAirport, List<Notam> notams) {
+    return [
+      // Overview page
+      _buildOverviewPage(selectedAirport, notams),
+      // Runways page
+      RunwaySystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+      // Taxiways page
+      TaxiwaySystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+      // Instrument Procedures page
+      InstrumentProceduresSystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+      // Airport Services page
+      AirportServicesSystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+      // Hazards page
+      HazardsSystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+      // Admin page
+      AdminSystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+      // Other page
+      OtherSystemWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
+    ];
+  }
+
+  Widget _buildOverviewPage(Airport selectedAirport, List<Notam> notams) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Airport info
+          Row(
+            children: [
+              const Icon(Icons.airplanemode_active, color: Color(0xFF1E3A8A)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${selectedAirport.name} (${selectedAirport.icao}${AirportDatabase.getIataCode(selectedAirport.icao) != null ? '/${AirportDatabase.getIataCode(selectedAirport.icao)}' : ''})',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      selectedAirport.city,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Systems list
+          _buildSystemsList(context, selectedAirport, notams),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderPage(String systemName) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.construction, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            '$systemName System',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Coming soon...',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTimeFilterHeader() {
-    return Row(
-      children: [
-        Text(
-          'Next:',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF10008A),
-          ),
-        ),
-        const SizedBox(width: 8),
-        PopupMenuButton<String>(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A),
-              borderRadius: BorderRadius.circular(16),
+    return Consumer<FlightProvider>(
+      builder: (context, flightProvider, child) {
+        return Row(
+          children: [
+            Text(
+              'Next:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF10008A),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _selectedTimeFilter,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.white,
-                  size: 16,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      flightProvider.selectedTimeFilter,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              itemBuilder: (context) => flightProvider.timeFilterOptions.map((filter) {
+                return PopupMenuItem<String>(
+                  value: filter,
+                  child: Text(filter),
+                );
+              }).toList(),
+              onSelected: (value) {
+                flightProvider.setTimeFilter(value);
+              },
             ),
-          ),
-          itemBuilder: (context) => _timeFilterOptions.map((filter) {
-            return PopupMenuItem<String>(
-              value: filter,
-              child: Text(filter),
-            );
-          }).toList(),
-          onSelected: (value) {
-            setState(() {
-              _selectedTimeFilter = value;
-            });
-          },
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
   Widget _buildSystemsList(BuildContext context, Airport airport, List<Notam> allNotams) {
-    // Filter NOTAMs by time and airport
-    final filteredNotams = _filterNotamsByTimeAndAirport(allNotams, airport.icao);
-    
-    // Calculate system status based on filtered NOTAMs
-    final systemStatuses = _calculateSystemStatuses(filteredNotams, airport.icao);
-    
-    final systems = [
-      {'name': 'Runways', 'status': systemStatuses['runways'], 'icon': Icons.run_circle},
-      {'name': 'Taxiways', 'status': systemStatuses['taxiways'], 'icon': Icons.route},
-      {'name': 'Instrument Procedures', 'status': systemStatuses['navaids'], 'icon': Icons.radar},
-      {'name': 'Airport Services', 'status': systemStatuses['lighting'], 'icon': Icons.business},
-      {'name': 'Hazards', 'status': systemStatuses['hazards'], 'icon': Icons.warning},
-      {'name': 'Admin', 'status': systemStatuses['admin'], 'icon': Icons.admin_panel_settings},
-      {'name': 'Other', 'status': systemStatuses['other'], 'icon': Icons.more_horiz},
-    ];
+    return Consumer<FlightProvider>(
+      builder: (context, flightProvider, child) {
+        // Filter NOTAMs by time and airport using global filter
+        final filteredNotams = flightProvider.filterNotamsByTimeAndAirport(allNotams, airport.icao);
+        
+        // Calculate system status based on filtered NOTAMs
+        final systemStatuses = _calculateSystemStatuses(filteredNotams, airport.icao);
+        
+        final systems = [
+          {'name': 'Runways', 'status': systemStatuses['runways'], 'icon': Icons.run_circle},
+          {'name': 'Taxiways', 'status': systemStatuses['taxiways'], 'icon': Icons.route},
+          {'name': 'Instrument Procedures', 'status': systemStatuses['navaids'], 'icon': Icons.radar},
+          {'name': 'Airport Services', 'status': systemStatuses['lighting'], 'icon': Icons.business},
+          {'name': 'Hazards', 'status': systemStatuses['hazards'], 'icon': Icons.warning},
+          {'name': 'Admin', 'status': systemStatuses['admin'], 'icon': Icons.admin_panel_settings},
+          {'name': 'Other', 'status': systemStatuses['other'], 'icon': Icons.more_horiz},
+        ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'System Status',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...systems.map((system) => _buildSystemRow(
-          context,
-          airport,
-          system['name'] as String,
-          system['status'] as SystemStatus,
-          system['icon'] as IconData,
-          filteredNotams,
-        )),
-      ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'System Status',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...systems.map((system) => _buildSystemRow(
+              context,
+              airport,
+              system['name'] as String,
+              system['status'] as SystemStatus,
+              system['icon'] as IconData,
+              filteredNotams,
+            )),
+          ],
+        );
+      },
     );
-  }
-
-  List<Notam> _filterNotamsByTimeAndAirport(List<Notam> notams, String airportIcao) {
-    // First filter by airport
-    final airportNotams = notams.where((notam) => notam.icao == airportIcao).toList();
-    
-    if (_selectedTimeFilter == 'All Future:') {
-      return airportNotams;
-    }
-
-    final now = DateTime.now();
-    final hours = _getHoursFromFilter(_selectedTimeFilter);
-    final cutoffTime = now.add(Duration(hours: hours));
-
-    return airportNotams.where((notam) => 
-      // Include NOTAMs that are currently active or will become active within the time period
-      notam.validFrom.isBefore(cutoffTime) && notam.validTo.isAfter(now)
-    ).toList();
   }
 
   int _getHoursFromFilter(String filter) {
@@ -306,29 +453,13 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> {
     final notamCount = systemNotams[systemKey]?.length ?? 0;
     return InkWell(
       onTap: () {
-        if (name == 'Runways') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RunwaySystemPage(
-                airportName: airport.name,
-                icao: airport.icao,
-                notams: filteredNotams,
-              ),
-            ),
-          );
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SystemDetailScreen(
-                airportIcao: airport.icao,
-                systemName: name,
-                systemKey: systemKey,
-                systemIcon: icon,
-              ),
-            ),
-          );
+        // Find the index of the system in the _systemPages list
+        final systemIndex = _systemPages.indexWhere((page) => page['name'] == name);
+        if (systemIndex != -1) {
+          // Switch to the appropriate tab
+          _systemTabController.animateTo(systemIndex);
+          // Save the last viewed system page
+          context.read<FlightProvider>().setLastViewedSystemPage(systemIndex);
         }
       },
       borderRadius: BorderRadius.circular(8),
@@ -411,5 +542,39 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> {
       default:
         return 'other';
     }
+  }
+
+  void _showAddAirportDialog(BuildContext context) {
+    // TODO: Implement add airport functionality
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Airport'),
+        content: const Text('Add airport functionality coming soon.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditAirportDialog(BuildContext context, String icao) {
+    // TODO: Implement edit airport functionality
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Airport'),
+        content: Text('Edit airport $icao functionality coming soon.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 } 

@@ -16,6 +16,21 @@ class FlightProvider with ChangeNotifier {
   Map<String, List<Weather>> _metarsByIcao = {};
   Map<String, List<Weather>> _tafsByIcao = {};
   String? _selectedAirport; // Shared airport selection across all tabs
+  
+  // Navigation state tracking
+  int? _lastViewedSystemPage; // Index of last viewed system page (0 = Overview, 1 = Runways, etc.)
+  int? _lastViewedRawDataTab; // Index of last viewed Raw Data tab (0 = NOTAMs, 1 = METARs, 2 = TAFs)
+  String? _lastViewedAirport; // Last viewed airport for state persistence
+  
+  // Global time filter state
+  String _selectedTimeFilter = '24 hours'; // Default to 24 hours
+  final List<String> _timeFilterOptions = [
+    '6 hours',
+    '12 hours',
+    '24 hours',
+    '72 hours',
+    'All Future:',
+  ];
 
   FlightProvider() {
     // Load saved flights when the provider is initialized
@@ -29,6 +44,15 @@ class FlightProvider with ChangeNotifier {
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
   Map<String, List<Weather>> get tafsByIcao => _tafsByIcao;
   String? get selectedAirport => _selectedAirport;
+  
+  // Time filter getters
+  String get selectedTimeFilter => _selectedTimeFilter;
+  List<String> get timeFilterOptions => _timeFilterOptions;
+  
+  // Navigation state getters
+  int? get lastViewedSystemPage => _lastViewedSystemPage;
+  int? get lastViewedRawDataTab => _lastViewedRawDataTab;
+  String? get lastViewedAirport => _lastViewedAirport;
 
   // Set loading state
   void setLoading(bool loading) {
@@ -40,6 +64,75 @@ class FlightProvider with ChangeNotifier {
   void setSelectedAirport(String? icao) {
     _selectedAirport = icao;
     notifyListeners();
+  }
+  
+  // Set time filter (shared across all pages)
+  void setTimeFilter(String filter) {
+    _selectedTimeFilter = filter;
+    notifyListeners();
+  }
+  
+  // Navigation state setters
+  void setLastViewedSystemPage(int? index) {
+    _lastViewedSystemPage = index;
+    debugPrint('DEBUG: Navigation state - Set last viewed system page to: $index');
+    notifyListeners();
+  }
+  
+  void setLastViewedRawDataTab(int? index) {
+    _lastViewedRawDataTab = index;
+    debugPrint('DEBUG: Navigation state - Set last viewed Raw Data tab to: $index');
+    notifyListeners();
+  }
+  
+  void setLastViewedAirport(String? icao) {
+    _lastViewedAirport = icao;
+    debugPrint('DEBUG: Navigation state - Set last viewed airport to: $icao');
+    notifyListeners();
+  }
+  
+  // Clear navigation state (for new briefings)
+  void clearNavigationState() {
+    _lastViewedSystemPage = null;
+    _lastViewedRawDataTab = null;
+    _lastViewedAirport = null;
+    debugPrint('DEBUG: Navigation state - Cleared all navigation state');
+    notifyListeners();
+  }
+  
+  // Filter NOTAMs by time and airport
+  List<Notam> filterNotamsByTimeAndAirport(List<Notam> notams, String airportIcao) {
+    // First filter by airport
+    final airportNotams = notams.where((notam) => notam.icao == airportIcao).toList();
+    
+    if (_selectedTimeFilter == 'All Future:') {
+      return airportNotams;
+    }
+
+    final now = DateTime.now();
+    final hours = _getHoursFromFilter(_selectedTimeFilter);
+    final cutoffTime = now.add(Duration(hours: hours));
+
+    return airportNotams.where((notam) => 
+      // Include NOTAMs that are currently active or will become active within the time period
+      notam.validFrom.isBefore(cutoffTime) && notam.validTo.isAfter(now)
+    ).toList();
+  }
+  
+  // Helper method to get hours from filter string
+  int _getHoursFromFilter(String filter) {
+    switch (filter) {
+      case '6 hours':
+        return 6;
+      case '12 hours':
+        return 12;
+      case '24 hours':
+        return 24;
+      case '72 hours':
+        return 72;
+      default:
+        return 24;
+    }
   }
 
   /// Calculate real-time system status for an airport based on its NOTAMs
@@ -88,6 +181,7 @@ class FlightProvider with ChangeNotifier {
     _currentFlight = flight;
     _groupWeatherData();
     _updateAllAirportSystemStatus(); // Ensure system status is calculated
+    clearNavigationState(); // Clear navigation state for new briefings
     notifyListeners();
   }
 

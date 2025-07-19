@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'summary_screen.dart';
 import 'airport_detail_screen.dart';
 import 'raw_data_screen.dart';
+import '../providers/flight_provider.dart';
 
 class BriefingTabsScreen extends StatefulWidget {
   const BriefingTabsScreen({super.key});
@@ -26,6 +28,13 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
+          // Save current system page state before switching tabs
+          if (_currentIndex == 1) { // If currently on Airports tab
+            final flightProvider = context.read<FlightProvider>();
+            // The system page state will be saved by the AirportDetailScreen
+            // when it detects the tab change
+          }
+          
           setState(() {
             _currentIndex = index;
           });
