@@ -9,9 +9,7 @@ class DecoderService {
 
   // TAF Patterns
   static final _tafHeaderPattern = RegExp(r'(?:TAF\s+(?:AMD\s+)?)?([A-Z]{4})\s+(\d{6})Z\s+(\d{4})/(\d{4})');
-  static final _tafForecastPattern = RegExp(r'(FM\d{6}|BECMG|PROB30\s+TEMPO|PROB30\s+INTER|PROB40\s+TEMPO|PROB40\s+INTER|PROB30|PROB40|INTER|TEMPO)');
-  static final _tafVisibilityPattern = RegExp(r'\b(P?\d{4})\b(?![/]\d{2})|CAVOK'); // Exclude time ranges like 2500/2503
-  static final _tafVisibilitySMPattern = RegExp(r'\b(P?\d{1,2})SM\b');
+
 
   DecodedWeather decodeMetar(String rawText) {
     return _metarParser.decodeMetar(rawText);
@@ -34,7 +32,7 @@ class DecoderService {
       print('DEBUG: EGLL raw text: "$rawText"');
     }
     
-    final decoder = DecoderService();
+
     
     // Parse TAF header
     final headerMatch = _tafHeaderPattern.firstMatch(rawText);

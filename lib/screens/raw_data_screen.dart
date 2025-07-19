@@ -60,15 +60,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   
 
   
-  // Generate hash for TAF data to detect changes
-  String _generateTafHash(Weather taf) {
-    return '${taf.rawText.hashCode}_${taf.decodedWeather?.forecastPeriods?.length ?? 0}';
-  }
-  
-  // Generate hash for timeline to detect changes
-  String _generateTimelineHash(List<DateTime> timeline) {
-    return '${timeline.length}_${timeline.isNotEmpty ? timeline.first.hashCode : 0}_${timeline.isNotEmpty ? timeline.last.hashCode : 0}';
-  }
+
   
 
   
@@ -113,19 +105,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     super.dispose();
   }
 
-  void _initializeData(Weather taf) {
-    if (taf.decodedWeather != null && taf.decodedWeather!.forecastPeriods != null) {
-      final decoder = DecoderService();
-      
-      // Use the new timeline-based approach
-      _timeline = taf.decodedWeather!.timeline;
-      
-      if (_timeline.isNotEmpty) {
-        // Find active periods at the first time point
-        _activePeriods = decoder.findActivePeriodsAtTime(_timeline.first, taf.decodedWeather!.forecastPeriods!);
-      }
-    }
-  }
+
 
   void _onSliderChanged(double value, Weather taf, FlightProvider flightProvider) {
     setState(() {
@@ -370,11 +350,11 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                       ? DecodedWeatherCard(
                           key: ValueKey('decoded_${flightProvider.selectedAirport}'),
                           baseline: _activePeriods!['baseline'] as DecodedForecastPeriod,
-                          completeWeather: _getCompleteWeatherForPeriod(
+                          completeWeather: _tafStateManager.getCompleteWeatherForPeriod(
                             _activePeriods!['baseline'] as DecodedForecastPeriod,
-                            selectedTaf.decodedWeather?.timeline ?? [],
+                            flightProvider.selectedAirport ?? '',
+                            sliderValue,
                             forecastPeriods,
-                            flightProvider,
                           ),
                           concurrentPeriods: _activePeriods!['concurrent'] as List<DecodedForecastPeriod>,
                           airport: flightProvider.selectedAirport,
@@ -427,74 +407,21 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}Z';
-  }
 
-  DecodedForecastPeriod? _getActiveBaselinePeriod(List<DecodedForecastPeriod> periods, DateTime time) {
-    // Use TafStateManager to get active baseline period
-    return _tafStateManager.getActiveBaselinePeriod(periods, time);
-  }
 
-  Widget _buildEmptyDecodedCard() {
-    return TafEmptyStates.emptyDecodedCard();
-  }
 
-  Widget _buildEmptyTimeSlider() {
-    return TafTimeSlider(
-      timeline: const [],
-      sliderValue: 0.0,
-      onChanged: (value) {},
-    );
-  }
 
-  Widget _buildAirportBubbles(List<String> airports, FlightProvider flightProvider) {
-    return TafAirportSelector(
-      airports: airports,
-      selectedAirport: flightProvider.selectedAirport,
-      onAirportSelected: (icao) {
-              flightProvider.setSelectedAirport(icao);
-            },
-      onCacheClear: _clearCache,
-    );
-  }
 
-  Widget _buildDecodedCardFromActivePeriods(Map<String, dynamic> activePeriods, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods, FlightProvider? flightProvider]) {
-    final baseline = activePeriods['baseline'] as DecodedForecastPeriod?;
-    final concurrent = activePeriods['concurrent'] as List<DecodedForecastPeriod>;
-    
-    if (baseline == null) {
-      return _buildEmptyDecodedCard();
-    }
-    // Get complete weather for the baseline period
-    final completeWeather = _getCompleteWeatherForPeriod(baseline, timeline, allPeriods, flightProvider);
-    // Return the card with period information for highlighting
-    return _buildDecodedCardWithHighlightingInfo(baseline, completeWeather, concurrent, allPeriods, flightProvider!);
-  }
+
+
+
+
+
+
   
-  Widget _buildDecodedCardWithHighlightingInfo(DecodedForecastPeriod baseline, Map<String, String> completeWeather, List<DecodedForecastPeriod> concurrentPeriods, List<DecodedForecastPeriod>? allPeriods, FlightProvider flightProvider) {
-    return DecodedWeatherCard(
-      baseline: baseline,
-      completeWeather: completeWeather,
-      concurrentPeriods: concurrentPeriods,
-      tafStateManager: _tafStateManager,
-      airport: flightProvider.selectedAirport,
-      sliderValue: _sliderPositions[flightProvider.selectedAirport!],
-      allPeriods: allPeriods,
-      taf: null, // This method is not used in the current implementation
-      timeline: null, // This method is not used in the current implementation
-    );
-  }
 
-  Map<String, String> _getCompleteWeatherForPeriod(DecodedForecastPeriod period, List<DateTime> timeline, [List<DecodedForecastPeriod>? allPeriods, FlightProvider? flightProvider]) {
-    // Use TafStateManager to get complete weather with inheritance
-    return _tafStateManager.getCompleteWeatherForPeriod(
-      period,
-      flightProvider?.selectedAirport ?? '',
-      _sliderPositions[flightProvider?.selectedAirport!] ?? 0.0,
-      allPeriods ?? [],
-    );
-  }
+
+
 
 
 

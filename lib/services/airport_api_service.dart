@@ -4,7 +4,7 @@ import '../models/airport.dart';
 
 class AirportApiService {
   static const String _baseUrl = 'https://aviationweather.gov/api/data/airport';
-  static const Duration _cacheDuration = Duration(hours: 24);
+
   static final Map<String, Airport> _cache = {};
   
   // Utility function to convert ALL CAPS to Title Case

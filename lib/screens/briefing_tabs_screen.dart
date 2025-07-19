@@ -30,7 +30,6 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
         onTap: (index) {
           // Save current system page state before switching tabs
           if (_currentIndex == 1) { // If currently on Airports tab
-            final flightProvider = context.read<FlightProvider>();
             // The system page state will be saved by the AirportDetailScreen
             // when it detects the tab change
           }

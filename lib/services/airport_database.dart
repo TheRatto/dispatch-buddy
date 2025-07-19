@@ -121,7 +121,7 @@ class AirportDatabase {
   static Future<String?> getIataCodeWithFallback(String icao) async {
     final embedded = getIataCode(icao);
     if (embedded != null) return embedded;
-    final airport = await AirportApiService.fetchAirportData(icao);
+          await AirportApiService.fetchAirportData(icao);
     // If API returns IATA code, extract it (requires API to provide it)
     // For now, return null if not in embedded database
     return null;
