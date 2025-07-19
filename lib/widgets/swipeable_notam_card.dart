@@ -318,7 +318,7 @@ class _SwipeableNotamCardState extends State<SwipeableNotamCard>
                               child: IgnorePointer(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.withOpacity(overlayOpacity),
+                                    color: Colors.grey.withValues(alpha: overlayOpacity),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
@@ -356,7 +356,7 @@ class _SwipeableNotamCardState extends State<SwipeableNotamCard>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

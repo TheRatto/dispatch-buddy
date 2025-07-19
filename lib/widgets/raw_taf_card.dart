@@ -37,7 +37,7 @@ class _RawTafCardState extends State<RawTafCard> {
   @override
   void initState() {
     super.initState();
-    print('DEBUG: RawTafCard initState for ${widget.taf.icao}');
+    debugPrint('DEBUG: RawTafCard initState for ${widget.taf.icao}');
     _scrollController.addListener(_onScroll);
     _updateAgeText();
     // Update age every minute
@@ -103,12 +103,12 @@ class _RawTafCardState extends State<RawTafCard> {
     }
     
     // Debug logging
-    print('DEBUG: RawTafCard age calculation for ${widget.taf.icao}:');
-    print('DEBUG:   Raw text: ${widget.taf.rawText}');
-    print('DEBUG:   Issue time: $issueTime');
-    print('DEBUG:   Current time: $now');
-    print('DEBUG:   Age: $finalAge');
-    print('DEBUG:   Age text: $ageText');
+    debugPrint('DEBUG: RawTafCard age calculation for ${widget.taf.icao}:');
+    debugPrint('DEBUG:   Raw text: ${widget.taf.rawText}');
+    debugPrint('DEBUG:   Issue time: $issueTime');
+    debugPrint('DEBUG:   Current time: $now');
+    debugPrint('DEBUG:   Age: $finalAge');
+    debugPrint('DEBUG:   Age text: $ageText');
     
     setState(() {
       _ageText = ageText;
@@ -142,9 +142,9 @@ class _RawTafCardState extends State<RawTafCard> {
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: RawTafCard build for ${widget.taf.icao}');
-    print('DEBUG: === RAW HIGHLIGHTING START ===');
-    print('DEBUG: Raw highlighting - activePeriods: ${widget.activePeriods}');
+    debugPrint('DEBUG: RawTafCard build for ${widget.taf.icao}');
+          debugPrint('DEBUG: === RAW HIGHLIGHTING START ===');
+      debugPrint('DEBUG: Raw highlighting - activePeriods: ${widget.activePeriods}');
     
     final originalRawText = widget.taf.rawText;
     final decoder = DecoderService();
@@ -398,7 +398,7 @@ class _RawTafCardState extends State<RawTafCard> {
           fontFamily: 'monospace', 
           fontSize: 12,
           // Only apply background highlighting for TEMPO, INTER, and PROB periods
-          backgroundColor: _shouldApplyBackgroundHighlight(highlightColor, baseline, concurrent) ? highlightColor?.withOpacity(0.2) : null,
+          backgroundColor: _shouldApplyBackgroundHighlight(highlightColor, baseline, concurrent) ? highlightColor?.withValues(alpha: 0.2) : null,
         )
       ));
     }

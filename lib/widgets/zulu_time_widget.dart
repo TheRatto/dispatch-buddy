@@ -54,7 +54,7 @@ class _ZuluTimeWidgetState extends State<ZuluTimeWidget> {
       return Text(
         _currentZuluTime,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
           fontSize: widget.fontSize ?? 11,
           fontWeight: FontWeight.w500,
           fontFamily: 'monospace',
@@ -68,7 +68,7 @@ class _ZuluTimeWidgetState extends State<ZuluTimeWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

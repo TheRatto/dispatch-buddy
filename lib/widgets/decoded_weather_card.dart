@@ -47,7 +47,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
   @override
   void initState() {
     super.initState();
-    print('DEBUG: DecodedWeatherCard initState for ${widget.taf?.icao ?? 'no TAF'}');
+    debugPrint('DEBUG: DecodedWeatherCard initState for ${widget.taf?.icao ?? 'no TAF'}');
     _updateAgeText();
     // Update age every minute
     _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -106,12 +106,12 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
     }
     
     // Debug logging
-    print('DEBUG: DecodedWeatherCard age calculation for ${widget.taf!.icao}:');
-    print('DEBUG:   Raw text: ${widget.taf!.rawText}');
-    print('DEBUG:   Issue time: $issueTime');
-    print('DEBUG:   Current time: $now');
-    print('DEBUG:   Age: $finalAge');
-    print('DEBUG:   Age text: $ageText');
+    debugPrint('DEBUG: DecodedWeatherCard age calculation for ${widget.taf!.icao}:');
+    debugPrint('DEBUG:   Raw text: ${widget.taf!.rawText}');
+    debugPrint('DEBUG:   Issue time: $issueTime');
+    debugPrint('DEBUG:   Current time: $now');
+    debugPrint('DEBUG:   Age: $finalAge');
+    debugPrint('DEBUG:   Age text: $ageText');
     
     setState(() {
       _ageText = ageText;
@@ -120,7 +120,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: DecodedWeatherCard build for ${widget.taf?.icao ?? 'no TAF'}');
+    debugPrint('DEBUG: DecodedWeatherCard build for ${widget.taf?.icao ?? 'no TAF'}');
     // Return the card with period information for highlighting
     return _buildDecodedCard(widget.baseline, widget.completeWeather, widget.concurrentPeriods);
   }
@@ -322,11 +322,11 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
     
     final isInTransition = currentTime.isAfter(transitionStart) && currentTime.isBefore(transitionEnd);
     
-    print('DEBUG: BECMG transition check for ${becmgPeriod.time}:');
-    print('DEBUG:   Transition start: $transitionStart');
-    print('DEBUG:   Transition end: $transitionEnd');
-    print('DEBUG:   Current time: $currentTime');
-    print('DEBUG:   Is in transition: $isInTransition');
+            debugPrint('DEBUG: BECMG transition check for ${becmgPeriod.time}:');
+        debugPrint('DEBUG:   Transition start: $transitionStart');
+        debugPrint('DEBUG:   Transition end: $transitionEnd');
+        debugPrint('DEBUG:   Current time: $currentTime');
+        debugPrint('DEBUG:   Is in transition: $isInTransition');
     
     return isInTransition;
   }
