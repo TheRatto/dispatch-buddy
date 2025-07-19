@@ -121,14 +121,17 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
               // System navigation tabs at top
               Container(
                 color: Colors.white,
+                height: 45, // Reduced height from default ~48px to 40px
                 child: TabBar(
                   controller: _systemTabController,
                   isScrollable: true,
                   labelColor: const Color(0xFF1E3A8A),
                   unselectedLabelColor: Colors.grey,
                   indicatorColor: const Color(0xFF1E3A8A),
+                  labelStyle: const TextStyle(fontSize: 12), // Smaller text
+                  unselectedLabelStyle: const TextStyle(fontSize: 12), // Smaller text
                   tabs: _systemPages.map((page) => Tab(
-                    icon: Icon(page['icon']),
+                    icon: Icon(page['icon'], size: 18), // Smaller icon
                     text: page['name'],
                   )).toList(),
                 ),

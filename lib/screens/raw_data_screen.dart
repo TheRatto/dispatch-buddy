@@ -129,6 +129,22 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    
+    // Add listener to save last viewed Raw Data tab
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        final flightProvider = context.read<FlightProvider>();
+        flightProvider.setLastViewedRawDataTab(_tabController.index);
+      }
+    });
+    
+    // Restore last viewed Raw Data tab if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final flightProvider = context.read<FlightProvider>();
+      if (flightProvider.lastViewedRawDataTab != null) {
+        _tabController.animateTo(flightProvider.lastViewedRawDataTab!);
+      }
+    });
   }
 
   @override
@@ -177,6 +193,9 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: const Color(0xFF1E3A8A),
+          foregroundColor: Colors.white,
+          elevation: 0,
           title: Column(
             mainAxisSize: MainAxisSize.min,
             children: const [
@@ -184,7 +203,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
               SizedBox(height: 2),
               Text(
                 'Raw Data',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
             ],
           ),
@@ -192,7 +211,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
           actions: [
             Builder(
               builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
+              icon: const Icon(Icons.menu, color: Colors.white),
               onPressed: () {
                   debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
                   Scaffold.of(context).openEndDrawer();
@@ -200,19 +219,6 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
               ),
             ),
           ],
-          bottom: TabBar(
-            controller: _tabController,
-            labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            indicatorColor: const Color(0xFFF97316), // Accent Orange
-            indicatorWeight: 3.0,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(text: 'NOTAMs'),
-              Tab(text: 'METARs'),
-              Tab(text: 'TAFs'),
-            ],
-          ),
         ),
         endDrawer: _buildEndDrawer(context),
         body: Consumer<FlightProvider>(
@@ -231,7 +237,35 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
             }
             return Column(
               children: [
-                // Fixed airport selector at top
+                // Tab bar at top (matching Airport Detail Screen)
+                Container(
+                  color: Colors.white,
+                  height: 45, // Reduced height from default ~48px to 40px
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: false,
+                    labelColor: const Color(0xFF1E3A8A),
+                    unselectedLabelColor: Colors.grey,
+                    indicatorColor: const Color(0xFF1E3A8A),
+                    labelStyle: const TextStyle(fontSize: 12), // Smaller text
+                    unselectedLabelStyle: const TextStyle(fontSize: 12), // Smaller text
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.warning_amber_outlined, size: 18), // Smaller icon
+                        text: 'NOTAMs',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.cloud, size: 18), // Smaller icon
+                        text: 'METARs',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.access_time, size: 18), // Smaller icon
+                        text: 'TAFs',
+                      ),
+                    ],
+                  ),
+                ),
+                // Fixed airport selector below tabs
                 if (airports.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   SizedBox(
@@ -257,25 +291,25 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
-              children: [
+                    children: [
                       // NOTAMs tab: grouped NOTAMs for selected airport
                       _buildNotams2Tab(context, flight.notams, flightProvider),
-                RefreshIndicator(
-                  onRefresh: () async {
+                      RefreshIndicator(
+                        onRefresh: () async {
                           _clearCache();
-                    await flightProvider.refreshFlightData();
-                  },
-                  child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
-                ),
+                          await flightProvider.refreshFlightData();
+                        },
+                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                      ),
                       // TAFs tab: timeline-based TAF display
-                _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
                     ],
                   ),
                 ),
               ],
-        );
-      },
-      ),
+            );
+          },
+        ),
     );
   }
 

@@ -451,7 +451,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
         child: Text(
           concurrentValue,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: color,
           ),
