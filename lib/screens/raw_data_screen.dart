@@ -14,8 +14,7 @@ import '../widgets/taf_time_slider.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/taf_empty_states.dart';
 import '../widgets/metar_tab.dart';
-import '../widgets/taf_tab.dart';
-import '../constants/weather_colors.dart';
+
 import '../widgets/notam_grouped_list.dart';
 import 'alternate_data_screen.dart';
 
@@ -33,11 +32,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   // Airport selection is now managed by FlightProvider
   // Store slider positions per airport
   final Map<String, double> _sliderPositions = {};
-  final double _sliderValue = 0.0;
-  final List<TimePeriod> _timePeriods = [];
   List<DateTime> _timeline = [];
   Map<String, dynamic>? _activePeriods;
-  Weather? _currentTaf;
   
   // Time filter for NOTAMs
   String _selectedTimeFilter = '24 hours'; // Default to 24 hours
@@ -58,14 +54,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   // Unified cache manager for UI-level caching
   final CacheManager _cacheManager = CacheManager();
   
-  // Performance tracking for UI state
-  String? _lastProcessedAirport;
-  double? _lastProcessedSliderValue;
-  String? _lastLoggedBuild; // Track last logged build to reduce debug output
-  
-  // Data change tracking for better cache management
-  String? _lastTafHash; // Hash of the last processed TAF data
-  String? _lastTimelineHash; // Hash of the last processed timeline
+
   
   
   
@@ -93,36 +82,6 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   void _clearCache() {
     _tafStateManager.clearCache();
     _cacheManager.clearPrefix('notam_');
-    _lastProcessedAirport = null;
-    _lastProcessedSliderValue = null;
-    _lastLoggedBuild = null;
-    _lastTafHash = null;
-    _lastTimelineHash = null;
-  }
-  
-  // Smart cache clearing based on data changes
-  void _clearCacheIfDataChanged(Weather taf, List<DateTime> timeline) {
-    _tafStateManager.clearCacheIfDataChanged(taf, timeline);
-    
-    // Update local tracking
-    _lastTafHash = _generateTafHash(taf);
-    _lastTimelineHash = _generateTimelineHash(timeline);
-  }
-  
-  // Limit cache size to prevent memory issues
-  void _limitCacheSize() {
-    // Cache size limiting is now handled by TafStateManager
-  }
-  
-  // Performance monitoring
-  void _logPerformanceStats(FlightProvider flightProvider) {
-    final tafMetrics = _tafStateManager.getPerformanceMetrics();
-    final cacheStats = _cacheManager.getStats();
-    
-    debugPrint('DEBUG: Performance Stats - Unified Cache: ${cacheStats['size']} entries, ${cacheStats['hitRate']}% hit rate');
-    debugPrint('DEBUG: Performance Stats - TAF Cache: ${tafMetrics['cacheSize']} entries, ${tafMetrics['cacheHitRate']}');
-    debugPrint('DEBUG: Performance Stats - Last Airport: ${flightProvider.selectedAirport}');
-    debugPrint('DEBUG: Performance Stats - Last Slider Value: ${_sliderPositions[flightProvider.selectedAirport!]}');
   }
 
   @override

@@ -266,26 +266,7 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
     );
   }
 
-  Widget _buildPlaceholderPage(String systemName) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.construction, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '$systemName System',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coming soon...',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildTimeFilterHeader() {
     return Consumer<FlightProvider>(
@@ -388,20 +369,7 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
     );
   }
 
-  int _getHoursFromFilter(String filter) {
-    switch (filter) {
-      case '6 hours':
-        return 6;
-      case '12 hours':
-        return 12;
-      case '24 hours':
-        return 24;
-      case '72 hours':
-        return 72;
-      default:
-        return 24;
-    }
-  }
+
 
   Map<String, SystemStatus> _calculateSystemStatuses(List<Notam> notams, String airportIcao) {
     final systemAnalyzer = AirportSystemAnalyzer();

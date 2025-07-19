@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../models/notam.dart';
-import '../models/weather.dart';
 import '../widgets/zulu_time_widget.dart';
-import '../widgets/metar_tab.dart';
 import '../widgets/taf_tab.dart';
 import '../widgets/taf_airport_selector.dart';
 

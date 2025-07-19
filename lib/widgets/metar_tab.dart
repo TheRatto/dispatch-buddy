@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/weather.dart';
 import '../providers/flight_provider.dart';
 import 'metar_compact_details.dart';
-import 'taf_airport_selector.dart';
+
 
 class MetarTab extends StatelessWidget {
   final Map<String, List<Weather>> metarsByIcao;

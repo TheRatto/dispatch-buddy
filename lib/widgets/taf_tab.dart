@@ -4,7 +4,7 @@ import '../models/weather.dart';
 import '../providers/flight_provider.dart';
 import 'taf_compact_details.dart';
 import 'taf_period_card.dart';
-import 'taf_airport_selector.dart';
+
 
 class TafTab extends StatelessWidget {
   final Map<String, List<Weather>> tafsByIcao;
