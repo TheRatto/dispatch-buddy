@@ -13,10 +13,14 @@ import '../widgets/raw_taf_card.dart';
 import '../widgets/taf_time_slider.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/taf_empty_states.dart';
-import '../widgets/metar_tab.dart';
-
+import '../widgets/taf_compact_details.dart';
+import '../widgets/taf_period_card.dart';
+import '../widgets/raw_taf_card.dart';
 import '../widgets/notam_grouped_list.dart';
+import '../widgets/metar_tab.dart';
 import 'alternate_data_screen.dart';
+import 'settings_screen.dart';
+import '../widgets/global_drawer.dart';
 
 class RawDataScreen extends StatefulWidget {
   const RawDataScreen({super.key});
@@ -159,7 +163,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
             ),
           ],
         ),
-        endDrawer: _buildEndDrawer(context),
+        endDrawer: const GlobalDrawer(currentScreen: '/briefing'),
         body: Consumer<FlightProvider>(
           builder: (context, flightProvider, child) {
             final flight = flightProvider.currentFlight;
@@ -1076,99 +1080,6 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEndDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  'Menu',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Dispatch Buddy',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: Icon(Icons.not_interested),
-            title: Text('NOTAMs'),
-            subtitle: Text('Grouped with swipe actions'),
-            onTap: () {
-              debugPrint('DEBUG: NOTAMs menu item tapped');
-              Navigator.of(context).pop(); // Close drawer
-              // Navigate to NOTAMs tab
-              final tabController = DefaultTabController.of(context);
-              if (tabController != null && tabController.length > 0) {
-                debugPrint('DEBUG: Animating to tab 0 (NOTAMs)');
-                tabController.animateTo(0);
-              } else {
-                debugPrint('DEBUG: TabController is null or has no tabs');
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.cloud),
-            title: Text('METARs'),
-            onTap: () {
-              Navigator.of(context).pop(); // Close drawer
-              // Navigate to METARs tab
-              final tabController = DefaultTabController.of(context);
-              if (tabController != null && tabController.length > 1) {
-                tabController.animateTo(1);
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.access_time),
-            title: Text('TAFs'),
-            subtitle: Text('Timeline-based display'),
-            onTap: () {
-              Navigator.of(context).pop(); // Close drawer
-              // Navigate to TAFs tab
-              final tabController = DefaultTabController.of(context);
-              if (tabController != null && tabController.length > 2) {
-                tabController.animateTo(2);
-              }
-            },
-          ),
-          Divider(),
-          ListTile(
-            leading: Icon(Icons.alternate_email),
-            title: Text('Alternate Data'),
-            subtitle: Text('Legacy NOTAMs & TAFs'),
-            onTap: () {
-              Navigator.of(context).pop(); // Close drawer
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const AlternateDataScreen(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
     );
   }

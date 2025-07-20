@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../widgets/zulu_time_widget.dart';
+import '../widgets/global_drawer.dart';
 import 'input_screen.dart';
 import 'briefing_tabs_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -25,14 +27,18 @@ class HomeScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              // TODO: Implement settings menu
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
       ),
+      endDrawer: const GlobalDrawer(currentScreen: '/home'),
       body: Consumer<FlightProvider>(
         builder: (context, flightProvider, child) {
           return Padding(
@@ -51,7 +57,8 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Image.asset(
                         'assets/images/logo.png',
-                        height: 80,
+                        width: 80,
+                        height: 80, // Restore original size
                       ),
                       const SizedBox(height: 16),
                       const Text(

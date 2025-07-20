@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../widgets/global_drawer.dart';
+import '../widgets/zulu_time_widget.dart';
 import '../models/airport.dart';
+import '../models/weather.dart';
 import '../models/notam.dart';
 import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
-import '../widgets/zulu_time_widget.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/system_pages/runway_system_widget.dart';
 import '../widgets/system_pages/taxiway_system_widget.dart';
@@ -14,6 +16,7 @@ import '../widgets/system_pages/airport_services_system_widget.dart';
 import '../widgets/system_pages/hazards_system_widget.dart';
 import '../widgets/system_pages/admin_system_widget.dart';
 import '../widgets/system_pages/other_system_widget.dart';
+import 'settings_screen.dart';
 
 
 class AirportDetailScreen extends StatefulWidget {
@@ -84,14 +87,18 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              // TODO: Implement settings menu
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
       ),
+      endDrawer: const GlobalDrawer(currentScreen: '/briefing'),
       body: Consumer<FlightProvider>(
         builder: (context, flightProvider, child) {
           final flight = flightProvider.currentFlight;

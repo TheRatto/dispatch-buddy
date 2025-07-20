@@ -4,7 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/summary_screen.dart';
+import 'screens/airport_detail_screen.dart';
+import 'screens/raw_data_screen.dart';
+import 'screens/decoded_screen.dart';
 import 'providers/flight_provider.dart';
+import 'screens/briefing_tabs_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +50,16 @@ class MyApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
+      initialRoute: '/splash',
+      routes: {
+        '/splash': (context) => const SplashScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/briefing': (context) => const BriefingTabsScreen(),
+        '/summary': (context) => const SummaryScreen(),
+        '/airports': (context) => const AirportDetailScreen(),
+        '/raw': (context) => const RawDataScreen(),
+        '/decoded': (context) => const DecodedScreen(),
+      },
       home: const SplashScreen(),
     );
   }

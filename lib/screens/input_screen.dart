@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
-import '../models/flight.dart';
-import '../models/airport.dart';
-import '../models/notam.dart';
-import '../models/weather.dart';
+import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
-import 'briefing_tabs_screen.dart';
-import '../services/api_service.dart';
 import '../widgets/flight_plan_form_card.dart';
 import '../widgets/quick_start_card.dart';
 import '../widgets/date_time_picker_dialog.dart';
+import '../models/flight.dart';
+import '../models/airport.dart';
+import '../models/weather.dart';
+import '../models/notam.dart';
+import '../services/api_service.dart';
+import '../services/decoder_service.dart';
+import '../services/cache_manager.dart';
 import '../services/airport_database.dart';
+import 'briefing_tabs_screen.dart';
+import 'settings_screen.dart';
 
 class InputScreen extends StatefulWidget {
   const InputScreen({super.key});
@@ -68,14 +72,18 @@ class _InputScreenState extends State<InputScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              // TODO: Implement settings menu
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
       ),
+      endDrawer: const GlobalDrawer(currentScreen: '/decoded'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

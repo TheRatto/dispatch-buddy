@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
+import '../widgets/decoded_weather_card.dart';
+import '../widgets/metar_tab.dart';
+import '../widgets/taf_tab.dart';
+import '../models/weather.dart';
+import '../models/notam.dart';
+import '../services/decoder_service.dart';
+import '../services/weather_parser.dart';
+import '../services/metar_parser.dart';
+import '../services/taf_state_manager.dart';
+import 'settings_screen.dart';
 
 class DecodedScreen extends StatelessWidget {
   const DecodedScreen({super.key});
@@ -25,11 +36,14 @@ class DecodedScreen extends StatelessWidget {
           ),
           centerTitle: true,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                // TODO: Implement settings menu
-              },
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                  Scaffold.of(context).openEndDrawer();
+                },
+              ),
             ),
           ],
           bottom: const TabBar(
@@ -45,6 +59,7 @@ class DecodedScreen extends StatelessWidget {
             ],
           ),
         ),
+        endDrawer: const GlobalDrawer(currentScreen: '/decoded'),
         body: Consumer<FlightProvider>(
           builder: (context, flightProvider, child) {
             final flight = flightProvider.currentFlight;

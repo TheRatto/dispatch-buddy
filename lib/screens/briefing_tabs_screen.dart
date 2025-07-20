@@ -6,7 +6,8 @@ import 'raw_data_screen.dart';
 import '../providers/flight_provider.dart';
 
 class BriefingTabsScreen extends StatefulWidget {
-  const BriefingTabsScreen({super.key});
+  final int initialTabIndex;
+  const BriefingTabsScreen({super.key, this.initialTabIndex = 0});
 
   @override
   _BriefingTabsScreenState createState() => _BriefingTabsScreenState();
@@ -20,6 +21,32 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
     const AirportDetailScreen(),
     const RawDataScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialTabIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check for route arguments
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is int && args >= 0 && args < _screens.length) {
+      setState(() {
+        _currentIndex = args;
+      });
+    }
+  }
+
+  void setTabIndex(int index) {
+    if (index >= 0 && index < _screens.length) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
-import '../models/airport.dart';
-import 'airport_detail_screen.dart';
+import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
+import '../widgets/quick_start_card.dart';
+import '../widgets/flight_plan_form_card.dart';
+import '../widgets/grid_item.dart';
+import '../widgets/grid_item_with_concurrent.dart';
+import '../models/flight.dart';
+import '../models/airport.dart';
+import '../models/weather.dart';
+import '../models/notam.dart';
+import 'input_screen.dart';
+import 'briefing_tabs_screen.dart';
+import 'airport_detail_screen.dart';
+import 'settings_screen.dart';
 
 class SummaryScreen extends StatelessWidget {
   const SummaryScreen({super.key});
@@ -25,14 +36,18 @@ class SummaryScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              // TODO: Implement settings menu
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                debugPrint('DEBUG: Hamburger menu pressed - opening end drawer');
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
       ),
+      endDrawer: const GlobalDrawer(currentScreen: '/briefing'),
       body: Consumer<FlightProvider>(
         builder: (context, flightProvider, child) {
           final flight = flightProvider.currentFlight;
@@ -227,19 +242,22 @@ class SummaryScreen extends StatelessWidget {
         color = Colors.grey;
         icon = Icons.help;
     }
-
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
+    
+    return Expanded(
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 } 
