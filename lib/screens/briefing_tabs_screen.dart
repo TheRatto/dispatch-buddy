@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'summary_screen.dart';
 import 'airport_detail_screen.dart';
 import 'raw_data_screen.dart';
-import '../providers/flight_provider.dart';
 
 class BriefingTabsScreen extends StatefulWidget {
   final int initialTabIndex;

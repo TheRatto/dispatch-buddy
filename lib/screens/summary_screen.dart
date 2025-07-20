@@ -3,18 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
-import '../widgets/quick_start_card.dart';
-import '../widgets/flight_plan_form_card.dart';
-import '../widgets/grid_item.dart';
-import '../widgets/grid_item_with_concurrent.dart';
-import '../models/flight.dart';
 import '../models/airport.dart';
-import '../models/weather.dart';
-import '../models/notam.dart';
-import 'input_screen.dart';
-import 'briefing_tabs_screen.dart';
 import 'airport_detail_screen.dart';
-import 'settings_screen.dart';
 
 class SummaryScreen extends StatelessWidget {
   const SummaryScreen({super.key});

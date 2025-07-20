@@ -3,16 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
-import '../widgets/decoded_weather_card.dart';
-import '../widgets/metar_tab.dart';
-import '../widgets/taf_tab.dart';
-import '../models/weather.dart';
-import '../models/notam.dart';
-import '../services/decoder_service.dart';
-import '../services/weather_parser.dart';
-import '../services/metar_parser.dart';
-import '../services/taf_state_manager.dart';
-import 'settings_screen.dart';
 
 class DecodedScreen extends StatelessWidget {
   const DecodedScreen({super.key});
@@ -635,30 +625,6 @@ class DecodedScreen extends StatelessWidget {
                 color: Colors.grey[900],
                 fontFamily: 'monospace',
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDecodedInfo(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? 'N/A' : value,
-              style: TextStyle(color: Colors.blue[700]),
             ),
           ),
         ],

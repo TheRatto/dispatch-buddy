@@ -4,7 +4,6 @@ import '../providers/flight_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../models/airport.dart';
-import '../models/weather.dart';
 import '../models/notam.dart';
 import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
@@ -16,7 +15,6 @@ import '../widgets/system_pages/airport_services_system_widget.dart';
 import '../widgets/system_pages/hazards_system_widget.dart';
 import '../widgets/system_pages/admin_system_widget.dart';
 import '../widgets/system_pages/other_system_widget.dart';
-import 'settings_screen.dart';
 
 
 class AirportDetailScreen extends StatefulWidget {

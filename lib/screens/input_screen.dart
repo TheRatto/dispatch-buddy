@@ -11,11 +11,8 @@ import '../models/airport.dart';
 import '../models/weather.dart';
 import '../models/notam.dart';
 import '../services/api_service.dart';
-import '../services/decoder_service.dart';
-import '../services/cache_manager.dart';
 import '../services/airport_database.dart';
 import 'briefing_tabs_screen.dart';
-import 'settings_screen.dart';
 
 class InputScreen extends StatefulWidget {
   const InputScreen({super.key});

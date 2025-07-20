@@ -7,20 +7,14 @@ import '../models/decoded_weather_models.dart';
 import '../services/decoder_service.dart';
 import '../services/taf_state_manager.dart';
 import '../services/cache_manager.dart';
+import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../widgets/decoded_weather_card.dart';
 import '../widgets/raw_taf_card.dart';
 import '../widgets/taf_time_slider.dart';
 import '../widgets/taf_airport_selector.dart';
-import '../widgets/taf_empty_states.dart';
-import '../widgets/taf_compact_details.dart';
-import '../widgets/taf_period_card.dart';
-import '../widgets/raw_taf_card.dart';
 import '../widgets/notam_grouped_list.dart';
 import '../widgets/metar_tab.dart';
-import 'alternate_data_screen.dart';
-import 'settings_screen.dart';
-import '../widgets/global_drawer.dart';
 
 class RawDataScreen extends StatefulWidget {
   const RawDataScreen({super.key});
@@ -36,7 +30,6 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   // Airport selection is now managed by FlightProvider
   // Store slider positions per airport
   final Map<String, double> _sliderPositions = {};
-  List<DateTime> _timeline = [];
   Map<String, dynamic>? _activePeriods;
   
   // Time filter for NOTAMs
@@ -738,39 +731,6 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
           ],
         );
       },
-    );
-  }
-
-  Widget _buildRawInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
-                color: Colors.grey[700],
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? 'N/A' : value,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[900],
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
