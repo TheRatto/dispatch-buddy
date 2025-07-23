@@ -269,7 +269,7 @@ class DecoderService {
                 final day = int.parse(timeMatch.group(1)!);
                 final hour = int.parse(timeMatch.group(2)!);
                 final minute = int.parse(timeMatch.group(3)!);
-                endTimeCandidate = _createDateTimeWithMonthTransition(day, hour, minute);
+                endTimeCandidate = createDateTimeWithMonthTransition(day, hour, minute);
                 break;
               }
             } else if (nextType == 'BECMG') {
@@ -278,7 +278,7 @@ class DecoderService {
               if (timeMatch != null) {
                 final toDay = int.parse(timeMatch.group(3)!);
                 final toHour = int.parse(timeMatch.group(4)!);
-                endTimeCandidate = _createDateTimeWithMonthTransition(toDay, toHour);
+                endTimeCandidate = createDateTimeWithMonthTransition(toDay, toHour);
                 break;
               }
             }
@@ -305,7 +305,7 @@ class DecoderService {
               print('DEBUG:   Day: $day, Hour: $hour, Minute: $minute');
             }
             
-            startTime = _createDateTimeWithMonthTransition(day, hour, minute);
+            startTime = createDateTimeWithMonthTransition(day, hour, minute);
             endTime = _findNextBaselinePeriodStartFromText(
               sections.map((s) => s['text'] as String).toList(),
               sections.indexOf(section),
@@ -336,8 +336,8 @@ class DecoderService {
             final fromHour = int.parse(timeMatch.group(2)!);
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
-            startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            endTime = _createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
+            startTime = createDateTimeWithMonthTransition(fromDay, fromHour);
+            endTime = createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
             timeString = 'BECMG ${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
             print('DEBUG: 🔍 BECMG transition period: $startTime to $endTime');
           }
@@ -350,8 +350,8 @@ class DecoderService {
             final fromHour = int.parse(timeMatch.group(2)!);
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
-            startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            endTime = _createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
+            startTime = createDateTimeWithMonthTransition(fromDay, fromHour);
+            endTime = createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
             timeString = '${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
           }
         } else if (periodType == 'TEMPO' || periodType == 'INTER') {
@@ -362,8 +362,8 @@ class DecoderService {
             final fromHour = int.parse(timeMatch.group(2)!);
             final toDay = int.parse(timeMatch.group(3)!);
             final toHour = int.parse(timeMatch.group(4)!);
-            startTime = _createDateTimeWithMonthTransition(fromDay, fromHour);
-            endTime = _createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
+            startTime = createDateTimeWithMonthTransition(fromDay, fromHour);
+            endTime = createEndDateTimeWithMonthTransition(startTime, toDay, toHour);
             timeString = '${fromDay.toString().padLeft(2, '0')}${fromHour.toString().padLeft(2, '0')}/${toDay.toString().padLeft(2, '0')}${toHour.toString().padLeft(2, '0')}';
             
             print('DEBUG: 🔍 Parsed $periodType time: $timeString');
@@ -516,7 +516,7 @@ class DecoderService {
           final minute = timeMatch?.group(3);
           
           if (day != null && hour != null && minute != null) {
-            return _createDateTimeWithMonthTransition(int.parse(day), int.parse(hour), int.parse(minute));
+            return createDateTimeWithMonthTransition(int.parse(day), int.parse(hour), int.parse(minute));
           }
         } else if (type == 'BECMG') {
           final timeMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(periodStr);
@@ -529,8 +529,8 @@ class DecoderService {
             // For BECMG periods, return the END time (not start time)
             // This ensures baseline periods end when BECMG ends, not when it starts
             // Create a temporary start time to use for month transition logic
-            final tempStartTime = _createDateTimeWithMonthTransition(int.parse(fromDay), int.parse(fromHour));
-            return _createEndDateTimeWithMonthTransition(tempStartTime, int.parse(toDay), int.parse(toHour));
+            final tempStartTime = createDateTimeWithMonthTransition(int.parse(fromDay), int.parse(fromHour));
+            return createEndDateTimeWithMonthTransition(tempStartTime, int.parse(toDay), int.parse(toHour));
           }
         }
       }
@@ -548,7 +548,7 @@ class DecoderService {
       final startHour = int.parse(validityMatch.group(2)!);
       
       // Use helper method for proper month transition handling
-      return _createDateTimeWithMonthTransition(startDay, startHour);
+      return createDateTimeWithMonthTransition(startDay, startHour);
     }
     
     // Fallback to current time if parsing fails
@@ -564,7 +564,7 @@ class DecoderService {
       
       // Use helper method for proper month transition handling
       final startTime = _parseTafCommencementTime(rawText);
-      return _createEndDateTimeWithMonthTransition(startTime, endDay, endHour);
+      return createEndDateTimeWithMonthTransition(startTime, endDay, endHour);
     }
     
     return null;
@@ -579,7 +579,7 @@ class DecoderService {
       final minute = int.parse(timeStr.substring(4, 6));
       
       // Use helper method for proper month transition handling
-      return _createDateTimeWithMonthTransition(day, hour, minute);
+      return createDateTimeWithMonthTransition(day, hour, minute);
     }
     return DateTime.now();
   }
@@ -612,8 +612,8 @@ class DecoderService {
     final endHour = int.parse(endDate.substring(2, 4));
     
     // Use helper methods for proper month transition handling
-    final startTime = _createDateTimeWithMonthTransition(startDay, startHour);
-    final endTime = _createEndDateTimeWithMonthTransition(startTime, endDay, endHour);
+    final startTime = createDateTimeWithMonthTransition(startDay, startHour);
+    final endTime = createEndDateTimeWithMonthTransition(startTime, endDay, endHour);
     
     print('DEBUG: TAF validity period: $startTime to $endTime');
     
@@ -860,25 +860,25 @@ class DecoderService {
 
   /// Helper method to create DateTime with proper month transition handling
   /// For TAF time ranges like 3020/0100 (June 30 20:00 to July 1 00:00)
-  DateTime _createDateTimeWithMonthTransition(int day, int hour, [int minute = 0]) {
+  /// Made public for testing purposes
+  /// 
+  /// CRITICAL: TAF validity periods are always relative to the current month.
+  /// DO NOT compare days to determine month - this was the source of a major bug.
+  /// 
+  /// Example: TAF 2315/2500 means:
+  /// - Start: 23rd day of current month at 15:00
+  /// - End: 25th day of current month at 00:00 (or next month if 25 < 23)
+  DateTime createDateTimeWithMonthTransition(int day, int hour, [int minute = 0]) {
     final now = DateTime.now();
     int year = now.year;
     int month = now.month;
     
     print('DEBUG: 🔍 _createDateTimeWithMonthTransition called with day: $day, hour: $hour, minute: $minute');
     print('DEBUG: 🔍   Current date: $now');
-    print('DEBUG: 🔍   Initial year: $year, month: $month');
+    print('DEBUG: 🔍   Using current year: $year, month: $month');
     
-    // If day is less than current day, assume it's next month
-    if (day < now.day) {
-      month++;
-      if (month > 12) {
-        month = 1;
-        year++;
-      }
-      print('DEBUG: 🔍   Day $day < current day ${now.day}, incrementing month to $month');
-    }
-    
+    // TAF validity periods are always relative to the current month
+    // Don't try to determine month by comparing days - this was causing issues
     final result = DateTime(year, month, day, hour, minute);
     print('DEBUG: 🔍   Created DateTime: $result');
     return result;
@@ -886,7 +886,11 @@ class DecoderService {
 
   /// Helper method to create end DateTime with proper month transition handling
   /// Takes the start DateTime as reference to determine if end time is in next month
-  DateTime _createEndDateTimeWithMonthTransition(DateTime startTime, int endDay, int endHour, [int endMinute = 0]) {
+  /// Made public for testing purposes
+  /// 
+  /// CRITICAL: Only increment month when end day < start day.
+  /// This handles cases like 3020/0100 where end is in next month.
+  DateTime createEndDateTimeWithMonthTransition(DateTime startTime, int endDay, int endHour, [int endMinute = 0]) {
     int year = startTime.year;
     int month = startTime.month;
     

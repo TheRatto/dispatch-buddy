@@ -347,3 +347,32 @@ class TafState extends ChangeNotifier {
 
 **Last Updated**: [Current Date]
 **Next Review**: [Next Review Date] 
+
+## Date/Time Parsing Best Practices
+
+### TAF Date Parsing Rules
+When parsing TAF validity periods (e.g., `2315/2500`):
+
+1. **NEVER compare days to determine month**: TAF validity periods are always relative to the current month
+2. **Use current month for start time**: Always use `DateTime.now().month` for the start time
+3. **Only increment month for end time**: Only increment month when end day < start day
+4. **Test with real examples**: Always test with actual TAF examples that span month boundaries
+
+### Common Pitfalls to Avoid
+- ❌ **Don't**: `if (day < now.day) month++` - This was the bug we fixed
+- ✅ **Do**: Use current month for start, increment only for end when needed
+- ❌ **Don't**: Assume TAF dates follow calendar logic
+- ✅ **Do**: Remember TAF validity periods are aviation-specific format
+
+### Testing Requirements
+- ✅ Test month transitions (e.g., `3020/0100`)
+- ✅ Test year transitions (e.g., `3120/0100`)
+- ✅ Test same-month periods (e.g., `1515/1600`)
+- ✅ Test the specific problematic case (`2315/2500`)
+
+### Code Review Checklist for Date/Time Code
+- [ ] Does the code handle month transitions correctly?
+- [ ] Does the code handle year transitions correctly?
+- [ ] Are there unit tests for edge cases?
+- [ ] Does the code avoid comparing days to determine months?
+- [ ] Is the logic documented with aviation-specific context? 

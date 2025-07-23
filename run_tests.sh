@@ -1,59 +1,29 @@
 #!/bin/bash
 
-echo "🧪 Running DecoderService Tests..."
-echo "=================================="
+# Test runner for Dispatch Buddy Flutter app
+# Runs all tests and generates coverage report
 
-# Run the decoder service tests
-flutter test test/decoder_service_test.dart
+echo "🧪 Running Dispatch Buddy Flutter Tests..."
 
-# Check if tests passed
+# Run TAF date parsing tests specifically (critical for preventing regression)
+echo "📅 Testing TAF date parsing (critical for preventing regression)..."
+flutter test test/taf_date_parsing_test.dart --coverage
+
+# Run all other tests
+echo "🔍 Running all tests..."
+flutter test --coverage
+
+# Generate coverage report
+echo "📊 Generating coverage report..."
+genhtml coverage/lcov.info -o coverage/html
+
+echo "✅ Tests completed!"
+echo "📁 Coverage report available at: coverage/html/index.html"
+
+# Check if any tests failed
 if [ $? -eq 0 ]; then
-    echo "✅ Core tests passed!"
+    echo "🎉 All tests passed!"
 else
-    echo "❌ Core tests failed!"
+    echo "❌ Some tests failed!"
     exit 1
-fi
-
-echo ""
-echo "🧪 Running Concurrent Weather Tests..."
-echo "====================================="
-
-# Run the concurrent weather tests
-flutter test test/concurrent_weather_test.dart
-
-# Check if tests passed
-if [ $? -eq 0 ]; then
-    echo "✅ Concurrent weather tests passed!"
-else
-    echo "❌ Concurrent weather tests failed!"
-    exit 1
-fi
-
-echo ""
-echo "🧪 Running Period Detector Tests..."
-echo "=================================="
-
-# Run the period detector tests
-flutter test test/period_detector_test.dart
-
-# Check if tests passed
-if [ $? -eq 0 ]; then
-    echo "✅ Period detector tests passed!"
-else
-    echo "❌ Period detector tests failed!"
-    exit 1
-fi
-
-echo ""
-echo "🎉 All tests passed!"
-echo ""
-echo "📊 Test Summary:"
-echo "================="
-echo "- DecoderService core functionality"
-echo "- TAF period detection"
-echo "- Weather parsing"
-echo "- Text formatting"
-echo "- Concurrent weather handling"
-echo "- Period detection logic"
-echo "- Weather code detection"
-echo "- Changed elements detection" 
+fi 
