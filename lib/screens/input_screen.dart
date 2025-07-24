@@ -10,8 +10,10 @@ import '../models/flight.dart';
 import '../models/airport.dart';
 import '../models/weather.dart';
 import '../models/notam.dart';
+import '../models/briefing.dart';
 import '../services/api_service.dart';
 import '../services/airport_database.dart';
+import '../services/briefing_storage_service.dart';
 import 'briefing_tabs_screen.dart';
 
 class InputScreen extends StatefulWidget {
@@ -271,6 +273,11 @@ class _InputScreenState extends State<InputScreen> {
       // Save to provider
       context.read<FlightProvider>().setCurrentFlight(newFlight);
 
+      // Auto-save briefing to storage
+      debugPrint('DEBUG: About to auto-save briefing...');
+      await _autoSaveBriefing(newFlight, allNotams, allWeather);
+      debugPrint('DEBUG: Auto-save briefing completed');
+
       // Navigate to summary
       Navigator.push(
         context,
@@ -318,6 +325,85 @@ class _InputScreenState extends State<InputScreen> {
     _selectedDateTime = DateTime.now().add(const Duration(hours: 3));
     _flightLevelController.text = 'FL380';
     _generateBriefing();
+  }
+
+  /// Auto-save briefing to storage with smart naming
+  Future<void> _autoSaveBriefing(Flight flight, List<Notam> notams, List<Weather> weather) async {
+    try {
+      debugPrint('DEBUG: _autoSaveBriefing called with ${notams.length} NOTAMs and ${weather.length} weather items');
+      
+      // Generate smart name for the briefing
+      final name = _generateBriefingName(flight);
+      debugPrint('DEBUG: Generated briefing name: $name');
+      
+      // Convert data to storage format
+      final notamsMap = <String, dynamic>{
+        for (final notam in notams)
+          notam.id: {
+            'id': notam.id,
+            'icao': notam.icao,
+            'rawText': notam.rawText,
+            'decodedText': notam.decodedText,
+            'validFrom': notam.validFrom.toIso8601String(),
+            'validTo': notam.validTo.toIso8601String(),
+            'affectedSystem': notam.affectedSystem,
+            'isCritical': notam.isCritical,
+            'type': notam.type.toString(),
+            'group': notam.group.toString(),
+          }
+      };
+
+      final weatherMap = <String, dynamic>{
+        for (final w in weather)
+          w.icao: {
+            'icao': w.icao,
+            'rawText': w.rawText,
+            'decodedText': w.decodedText,
+            'timestamp': w.timestamp.toIso8601String(),
+            'type': w.type,
+            'windDirection': w.windDirection,
+            'windSpeed': w.windSpeed,
+            'visibility': w.visibility,
+            'cloudCover': w.cloudCover,
+            'temperature': w.temperature,
+            'dewPoint': w.dewPoint,
+            'qnh': w.qnh,
+            'conditions': w.conditions,
+          }
+      };
+
+      // Create and save briefing
+      final briefing = Briefing.create(
+        name: name,
+        airports: flight.airports.map((a) => a.icao).toList(),
+        notams: notamsMap,
+        weather: weatherMap,
+      );
+
+      debugPrint('DEBUG: Created briefing object, about to save...');
+      await BriefingStorageService.saveBriefing(briefing);
+      debugPrint('DEBUG: BriefingStorageService.saveBriefing completed');
+      
+      debugPrint('DEBUG: Auto-saved briefing: $name');
+    } catch (e) {
+      debugPrint('DEBUG: Failed to auto-save briefing: $e');
+      // Don't show error to user - auto-save should be silent
+    }
+  }
+
+  /// Generate a smart name for the briefing
+  String _generateBriefingName(Flight flight) {
+    final departure = flight.departure;
+    final destination = flight.destination;
+    final date = flight.etd;
+    
+    // Format: "YSSY→YPPH 24/07" or "YSSY→YPPH→YMML 24/07"
+    if (flight.airports.length <= 2) {
+      return '$departure→$destination ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
+    } else {
+      // For multi-stop flights, show first and last
+      return '$departure→...→$destination ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
+    }
   }
 
   void _runNetworkDiagnostics() async {

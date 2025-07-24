@@ -3,11 +3,17 @@ import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../widgets/global_drawer.dart';
+import '../widgets/previous_briefings_list.dart';
 import 'input_screen.dart';
-import 'briefing_tabs_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +83,13 @@ class HomeScreen extends StatelessWidget {
                 
                 // New Briefing Button
                 ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const InputScreen()),
                     );
+                    // Refresh the briefings list when returning from input screen
+                    setState(() {});
                   },
                   icon: const Icon(Icons.add),
                   label: const Text(
@@ -113,9 +121,9 @@ class HomeScreen extends StatelessWidget {
                 
                 // Previous briefings list
                 Expanded(
-                  child: flightProvider.savedFlights.isEmpty
-                      ? _buildEmptyState()
-                      : _buildBriefingsList(context, flightProvider),
+                  child: PreviousBriefingsList(
+                    key: ValueKey('previous_briefings_${DateTime.now().millisecondsSinceEpoch}'),
+                  ),
                 ),
               ],
             ),
@@ -125,61 +133,5 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.history,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No previous briefings',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start your first briefing to see it here',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildBriefingsList(BuildContext context, FlightProvider flightProvider) {
-    return ListView.builder(
-      itemCount: flightProvider.savedFlights.length,
-      itemBuilder: (context, index) {
-        final flight = flightProvider.savedFlights[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: const Icon(Icons.flight),
-            title: Text('${flight.departure} → ${flight.destination}'),
-            subtitle: Text(
-              '${flight.etd.day}/${flight.etd.month}/${flight.etd.year} at ${flight.etd.hour.toString().padLeft(2, '0')}:${flight.etd.minute.toString().padLeft(2, '0')}',
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              flightProvider.loadFlight(flight);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BriefingTabsScreen()),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
 } 

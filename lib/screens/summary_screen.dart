@@ -4,6 +4,8 @@ import '../providers/flight_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../models/airport.dart';
+import '../models/briefing.dart';
+import '../services/briefing_storage_service.dart';
 import 'airport_detail_screen.dart';
 
 class SummaryScreen extends StatelessWidget {

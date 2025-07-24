@@ -8,6 +8,7 @@ import '../models/notam.dart';
 import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
 import '../widgets/taf_airport_selector.dart';
+import '../widgets/facilities_widget.dart';
 import '../widgets/system_pages/runway_system_widget.dart';
 import '../widgets/system_pages/taxiway_system_widget.dart';
 import '../widgets/system_pages/instrument_procedures_system_widget.dart';
@@ -30,6 +31,7 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
   
   // System pages configuration
   static const List<Map<String, dynamic>> _systemPages = [
+    {'name': 'Facilities', 'icon': Icons.airplanemode_active},
     {'name': 'Overview', 'icon': Icons.dashboard},
     {'name': 'Runways', 'icon': Icons.run_circle},
     {'name': 'Taxiways', 'icon': Icons.route},
@@ -183,6 +185,12 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
 
   List<Widget> _buildSystemPages(Airport selectedAirport, List<Notam> notams) {
     return [
+      // Facilities page
+      FacilitiesWidget(
+        airportName: selectedAirport.name,
+        icao: selectedAirport.icao,
+        notams: notams,
+      ),
       // Overview page
       _buildOverviewPage(selectedAirport, notams),
       // Runways page
