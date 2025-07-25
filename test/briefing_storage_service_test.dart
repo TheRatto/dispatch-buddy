@@ -137,5 +137,34 @@ void main() {
       expect(expiredBriefing.isStale, isFalse);
       expect(expiredBriefing.isExpired, isTrue);
     });
+
+    test('should handle briefing rename functionality', () {
+      // Create a test briefing
+      final briefing = Briefing.create(
+        name: 'Original Name',
+        airports: ['YSSY'],
+        notams: {'YSSY': []},
+        weather: {'YSSY': {}},
+      );
+      
+      // Test renaming the briefing
+      final renamedBriefing = briefing.copyWith(name: 'New Name');
+      expect(renamedBriefing.name, equals('New Name'));
+      expect(renamedBriefing.airports, equals(briefing.airports));
+      expect(renamedBriefing.notams, equals(briefing.notams));
+      expect(renamedBriefing.weather, equals(briefing.weather));
+      expect(renamedBriefing.id, equals(briefing.id));
+      expect(renamedBriefing.timestamp, equals(briefing.timestamp));
+      
+      // Test removing the name (setting to null)
+      final unnamedBriefing = briefing.copyWith(name: null);
+      expect(unnamedBriefing.name, isNull);
+      expect(unnamedBriefing.airports, equals(briefing.airports));
+      
+      // Test that other properties remain unchanged
+      expect(unnamedBriefing.id, equals(briefing.id));
+      expect(unnamedBriefing.timestamp, equals(briefing.timestamp));
+      expect(unnamedBriefing.isFlagged, equals(briefing.isFlagged));
+    });
   });
 } 

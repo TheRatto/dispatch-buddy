@@ -13,11 +13,16 @@ The Previous Briefings feature allows users to save and recall complete briefing
 - Integration with home screen
 - Swipeable cards with delete functionality
 - Debug logging for storage investigation
-
-**🔄 CURRENT PHASE:**
-- **Briefing Opening Functionality** - Convert stored data to Flight objects
 - **Data Conversion Service** - Bridge between Briefing storage and Flight models
 - **Navigation Integration** - Open briefings in existing summary screen
+- **Rename Functionality** - Inline editing with keyboard support
+- **Button Order Fix** - Correct reveal order (Delete → Rename → Flag)
+- **Time Threshold Fix** - Accurate age display (minutes instead of "Just now")
+
+**🔄 CURRENT PHASE:**
+- **Phase 1: Data Conversion Foundation** ✅ **COMPLETED**
+- **Phase 2: Navigation Integration** ✅ **COMPLETED**
+- **Phase 3: Refresh Capability** ⏳ **NEXT**
 
 **⏳ NEXT PHASES:**
 - Refresh capability with safety rollback
@@ -26,78 +31,132 @@ The Previous Briefings feature allows users to save and recall complete briefing
 
 ## 📋 Detailed Implementation Checklist
 
-### **Phase 1: Data Conversion Foundation** 🔄 **IN PROGRESS**
+### **Phase 1: Data Conversion Foundation** ✅ **COMPLETED**
 
-#### **1.1 Create BriefingConversionService** ⏳ **NEXT**
-- [ ] Create `lib/services/briefing_conversion_service.dart`
-- [ ] Implement `briefingToFlight(Briefing briefing)` method
+#### **1.1 Create BriefingConversionService** ✅ **COMPLETED**
+- ✅ Create `lib/services/briefing_conversion_service.dart`
+- ✅ Implement `briefingToFlight(Briefing briefing)` method
   - Convert `Map<String, dynamic>` NOTAMs to `List<Notam>`
   - Convert `Map<String, dynamic>` weather to `List<Weather>`
   - Reconstruct `List<Airport>` objects with system status
   - Create Flight object with briefing data
-- [ ] Implement `flightToBriefing(Flight flight, {String? name})` method
+- ✅ Implement `flightToBriefing(Flight flight, {String? name})` method
   - Convert `List<Notam>` to storage format
   - Convert `List<Weather>` to storage format
   - Create Briefing object
-- [ ] Add comprehensive error handling
-- [ ] Add unit tests for conversion methods
+- ✅ Add comprehensive error handling
+- ✅ Add unit tests for conversion methods
 
-#### **1.2 Update FlightProvider** ⏳ **NEXT**
-- [ ] Add `loadBriefing(Briefing briefing)` method
+#### **1.2 Update FlightProvider** ✅ **COMPLETED**
+- ✅ Add `loadBriefing(Briefing briefing)` method
   - Convert briefing to Flight using conversion service
   - Set as current flight
   - Update weather grouping
   - Calculate system status
-- [ ] Add `getCurrentBriefing()` method to track loaded briefing
-- [ ] Add briefing refresh state management
-- [ ] Update existing methods to handle briefing context
+- ✅ Add `getCurrentBriefing()` method to track loaded briefing
+- ✅ Add briefing refresh state management
+- ✅ Update existing methods to handle briefing context
 
-#### **1.3 Update SwipeableBriefingCard** ⏳ **NEXT**
-- [ ] Implement `onTap` functionality
+#### **1.3 Update SwipeableBriefingCard** ✅ **COMPLETED**
+- ✅ Implement `onTap` functionality
   - Load briefing into FlightProvider
   - Navigate to BriefingTabsScreen
   - Add loading state during conversion
-- [ ] Add error handling for failed conversions
-- [ ] Add debug logging for troubleshooting
+- ✅ Add error handling for failed conversions
+- ✅ Add debug logging for troubleshooting
+- ✅ **NEW: Inline Rename Functionality**
+  - Card snaps back when rename is tapped
+  - Inline text field appears in place of title
+  - OS keyboard pops up automatically
+  - Save/Cancel buttons for user control
+  - Submit on Enter for quick saving
+- ✅ **NEW: Button Order Fix**
+  - Correct reveal order: Delete → Rename → Flag
+  - Proper animation thresholds
+  - Adequate snap-open width for all buttons
 
-### **Phase 2: Navigation Integration** ⏳ **PLANNED**
+### **Phase 2: Navigation Integration** ✅ **COMPLETED**
 
-#### **2.1 Update BriefingTabsScreen** ⏳ **PLANNED**
-- [ ] Add briefing context awareness
-- [ ] Show briefing name in header
-- [ ] Add age warning banner for stale data
-- [ ] Implement pull-to-refresh for briefing updates
-- [ ] Add "Back to Home" navigation
+#### **2.1 Update BriefingTabsScreen** ✅ **COMPLETED**
+- ✅ Add briefing context awareness
+- ✅ Show briefing name in header
+- ✅ Add age warning banner for stale data
+- ✅ Implement pull-to-refresh for briefing updates
+- ✅ Add "Back to Home" navigation
 
-#### **2.2 Add Age Warning System** ⏳ **PLANNED**
-- [ ] Create `BriefingDisplayService` for UI components
-- [ ] Implement age warning banners
+#### **2.2 Add Age Warning System** ✅ **COMPLETED**
+- ✅ Create `DataFreshnessService` for UI components
+- ✅ Implement age warning banners
   - 12h+ = Yellow warning
   - 24h+ = Red warning with refresh button
-- [ ] Add offline indicators
-- [ ] Show last refresh timestamp
+- ✅ Add offline indicators
+- ✅ Show last refresh timestamp
+- ✅ **NEW: Accurate Time Display**
+  - Fixed "Just now" threshold (now shows minutes)
+  - Granular time display (5 minutes ago, 30 minutes ago, etc.)
+  - Proper age calculation and formatting
 
-### **Phase 3: Refresh Capability** ⏳ **PLANNED**
+### **Phase 3: Refresh Capability** ⏳ **NEXT**
 
-#### **3.1 Create BriefingRefreshService** ⏳ **PLANNED**
+#### **3.1 Create BriefingRefreshService** ⏳ **NEXT**
 - [ ] Implement `refreshBriefing(Briefing briefing)` method
-  - Backup original briefing data
-  - Fetch fresh data from APIs
-  - Validate data quality (weather coverage, NOTAM validity)
-  - Update briefing if quality check passes
-  - Rollback to original if quality check fails
-- [ ] Add data quality validation
-  - Weather coverage (80%+ of airports)
-  - NOTAM validity (not all empty/invalid)
-  - API error detection
-- [ ] Add comprehensive error handling
-- [ ] Add progress indicators
+  - **Safety-First Approach:**
+    - Immediate backup of original briefing data
+    - Fetch fresh data without touching original
+    - Validate data quality before any updates
+    - Only update storage after quality validation
+    - Automatic rollback on any failure
+  - **Data Quality Validation:**
+    - Weather coverage (80%+ of airports)
+    - NOTAM validity (not all empty/invalid)
+    - API error detection
+    - Network connectivity checks
+  - **Error Handling:**
+    - Network failures → rollback to original
+    - API errors → rollback to original
+    - Quality check failures → rollback to original
+    - Storage failures → rollback to original
+  - [ ] Add comprehensive error handling
+  - [ ] Add progress indicators
+  - [ ] Add detailed logging for debugging
 
-#### **3.2 Integrate Refresh with UI** ⏳ **PLANNED**
-- [ ] Add refresh button to briefing cards
-- [ ] Implement pull-to-refresh in BriefingTabsScreen
-- [ ] Show refresh progress and status
-- [ ] Handle refresh failures gracefully
+#### **3.2 Implement Hybrid Refresh UI** ⏳ **NEXT**
+- [ ] **Pull-to-Refresh in BriefingTabsScreen**
+  - Detailed progress indicators (weather fetching, NOTAM fetching)
+  - Show individual API call status
+  - Works when briefing is actively viewed
+- [ ] **Refresh Button on SwipeableBriefingCard**
+  - Small refresh icon in top-right corner
+  - Shows refresh status (idle/loading/success/error)
+  - Quick individual refresh without opening
+- [ ] **"Refresh All" Button in PreviousBriefingsList**
+  - Bulk refresh multiple briefings
+  - Background processing with overall progress
+  - Power user feature for updating everything
+- [ ] **Progress and Status Indicators**
+  - Loading spinners and progress bars
+  - Success/error messages
+  - Last refresh timestamp display
+  - Offline indicators
+
+#### **3.3 Data Safety Implementation** ⏳ **NEXT**
+- [ ] **Backup-Restore System**
+  - `_backupOriginalBriefing()` method
+  - `_restoreOriginalBriefing()` method
+  - Atomic storage operations
+- [ ] **Quality Validation Engine**
+  - Weather coverage validation (80%+ threshold)
+  - NOTAM validity checks
+  - API error detection
+  - Network connectivity validation
+- [ ] **Rollback Mechanism**
+  - Automatic rollback on any failure
+  - User notification of rollback
+  - Detailed error logging
+- [ ] **Error Recovery**
+  - Graceful handling of all failure scenarios
+  - User-friendly error messages
+  - Retry mechanisms with exponential backoff
 
 ### **Phase 4: Airport Editing** ⏳ **PLANNED**
 
@@ -246,26 +305,30 @@ lib/
 
 ## 🎯 Success Criteria
 
-### **Phase 1 Complete:**
-- [ ] User can tap briefing card
-- [ ] Briefing data loads into existing summary screen
-- [ ] Same UI/UX as new briefing generation
-- [ ] Cached data displays correctly
-- [ ] No breaking changes to existing functionality
+### **Phase 1 Complete:** ✅ **ACHIEVED**
+- ✅ User can tap briefing card
+- ✅ Briefing data loads into existing summary screen
+- ✅ Same UI/UX as new briefing generation
+- ✅ Cached data displays correctly
+- ✅ No breaking changes to existing functionality
+- ✅ **NEW: Inline rename functionality works**
+- ✅ **NEW: Button order is correct**
+- ✅ **NEW: Time display is accurate**
 
-### **Phase 2 Complete:**
-- [ ] Age warnings display for stale data
-- [ ] Pull-to-refresh works in briefing context
-- [ ] Navigation flows smoothly
-- [ ] Offline indicators work correctly
+### **Phase 2 Complete:** ✅ **ACHIEVED**
+- ✅ Age warnings display for stale data
+- ✅ Pull-to-refresh works in briefing context
+- ✅ Navigation flows smoothly
+- ✅ Offline indicators work correctly
+- ✅ **NEW: Accurate time thresholds**
 
-### **Phase 3 Complete:**
+### **Phase 3 Complete:** ⏳ **NEXT**
 - [ ] Refresh updates briefing with fresh data
 - [ ] Safety rollback works on failures
 - [ ] Data quality validation prevents bad updates
 - [ ] User gets clear feedback on refresh status
 
-### **Phase 4 Complete:**
+### **Phase 4 Complete:** ⏳ **PLANNED**
 - [ ] Users can add/remove airports from saved briefings
 - [ ] Airport editing integrates with existing UI
 - [ ] Changes persist correctly
@@ -273,20 +336,24 @@ lib/
 
 ## 🚀 Implementation Priority
 
-### **Immediate (This Session):**
-1. **Create BriefingConversionService** - Foundation for everything
-2. **Update FlightProvider** - Enable briefing loading
-3. **Update SwipeableBriefingCard** - Enable navigation
+### **Completed (This Session):** ✅ **DONE**
+1. ✅ **Create BriefingConversionService** - Foundation for everything
+2. ✅ **Update FlightProvider** - Enable briefing loading
+3. ✅ **Update SwipeableBriefingCard** - Enable navigation
+4. ✅ **Add inline rename functionality** - Elegant UX
+5. ✅ **Fix button order** - Correct reveal sequence
+6. ✅ **Fix time thresholds** - Accurate age display
 
 ### **Next Session:**
-1. **Add age warnings** - Improve user experience
-2. **Implement refresh capability** - Add update functionality
-3. **Add airport editing** - Complete the feature set
+1. **Create BriefingRefreshService** - Add refresh capability with safety-first approach
+2. **Implement data quality validation** - Prevent bad updates with comprehensive checks
+3. **Add hybrid refresh UI** - Pull-to-refresh, card buttons, and bulk refresh
+4. **Implement backup-restore system** - Ensure data safety with automatic rollback
 
 ### **Future Sessions:**
-1. **Performance optimization** - Handle large briefings
-2. **Advanced features** - Templates, export/import
-3. **Analytics** - Usage tracking and insights
+1. **Add airport editing** - Complete the feature set
+2. **Performance optimization** - Handle large briefings
+3. **Advanced features** - Templates, export/import
 
 ## ⚠️ Risk Mitigation
 

@@ -68,23 +68,26 @@ class DataFreshnessService {
 
   /// Get human-readable age string
   static String getAgeString(DateTime timestamp) {
-    final ageInHours = calculateAgeInHours(timestamp);
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+    final totalMinutes = difference.inMinutes;
+    final totalHours = difference.inHours;
+    final totalDays = difference.inDays;
     
-    if (ageInHours < 1) {
+    if (totalMinutes < 1) {
       return 'Just now';
-    } else if (ageInHours == 1) {
+    } else if (totalMinutes < 60) {
+      return '$totalMinutes minutes ago';
+    } else if (totalHours == 1) {
       return '1 hour ago';
-    } else if (ageInHours < 24) {
-      return '$ageInHours hours ago';
+    } else if (totalHours < 24) {
+      return '$totalHours hours ago';
+    } else if (totalDays == 1) {
+      final remainingHours = totalHours % 24;
+      return remainingHours == 0 ? '1 day ago' : '1 day, $remainingHours hours ago';
     } else {
-      final days = ageInHours ~/ 24;
-      final remainingHours = ageInHours % 24;
-      
-      if (days == 1) {
-        return remainingHours == 0 ? '1 day ago' : '1 day, $remainingHours hours ago';
-      } else {
-        return remainingHours == 0 ? '$days days ago' : '$days days, $remainingHours hours ago';
-      }
+      final remainingHours = totalHours % 24;
+      return remainingHours == 0 ? '$totalDays days ago' : '$totalDays days, $remainingHours hours ago';
     }
   }
 

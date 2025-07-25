@@ -65,13 +65,13 @@ class Briefing {
   }) {
     return Briefing(
       id: id ?? this.id,
-      name: name ?? this.name,
+      name: name, // Allow explicit null values
       airports: airports ?? this.airports,
       notams: notams ?? this.notams,
       weather: weather ?? this.weather,
       timestamp: timestamp ?? this.timestamp,
       isFlagged: isFlagged ?? this.isFlagged,
-      userNotes: userNotes ?? this.userNotes,
+      userNotes: userNotes, // Allow explicit null values
     );
   }
 

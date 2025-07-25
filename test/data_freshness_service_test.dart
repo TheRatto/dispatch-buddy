@@ -67,13 +67,17 @@ void main() {
 
     test('should generate correct age strings', () {
       final now = DateTime.now();
-      final justNow = now.subtract(const Duration(minutes: 30));
+      final justNow = now.subtract(const Duration(seconds: 30));
+      final fiveMinutesAgo = now.subtract(const Duration(minutes: 5));
+      final thirtyMinutesAgo = now.subtract(const Duration(minutes: 30));
       final oneHourAgo = now.subtract(const Duration(hours: 1));
       final threeHoursAgo = now.subtract(const Duration(hours: 3));
       final oneDayAgo = now.subtract(const Duration(hours: 24));
       final twoDaysAgo = now.subtract(const Duration(hours: 48));
       
       expect(DataFreshnessService.getAgeString(justNow), equals('Just now'));
+      expect(DataFreshnessService.getAgeString(fiveMinutesAgo), equals('5 minutes ago'));
+      expect(DataFreshnessService.getAgeString(thirtyMinutesAgo), equals('30 minutes ago'));
       expect(DataFreshnessService.getAgeString(oneHourAgo), equals('1 hour ago'));
       expect(DataFreshnessService.getAgeString(threeHoursAgo), equals('3 hours ago'));
       expect(DataFreshnessService.getAgeString(oneDayAgo), equals('1 day ago'));

@@ -28,6 +28,7 @@ class SwipeableBriefingCard extends StatefulWidget {
 
 class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
     with TickerProviderStateMixin {
+  
   late AnimationController _animationController;
   late AnimationController _dismissController;
   double _dragExtent = 0.0;
@@ -35,6 +36,11 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
   bool _isDismissing = false;
   bool _autoDeleteTriggered = false;
   bool _dragStarted = false;
+  
+  // Inline editing state
+  bool _isEditing = false;
+  late TextEditingController _editController;
+  late FocusNode _editFocusNode;
 
   static const double _actionWidth = 72.0;
   static const double _maxDrag = 400.0; // Allow much more drag to reach 80% of card width
@@ -53,6 +59,10 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
       duration: const Duration(milliseconds: 300),
       value: 0.0,
     );
+    
+    // Initialize inline editing controllers
+    _editController = TextEditingController(text: widget.briefing.name ?? '');
+    _editFocusNode = FocusNode();
   }
 
   @override
@@ -61,12 +71,19 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
     if (widget.shouldClose && !oldWidget.shouldClose) {
       _closeActions();
     }
+    
+    // Update edit controller if briefing name changes
+    if (widget.briefing.name != oldWidget.briefing.name) {
+      _editController.text = widget.briefing.name ?? '';
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _dismissController.dispose();
+    _editController.dispose();
+    _editFocusNode.dispose();
     super.dispose();
   }
 
@@ -95,111 +112,240 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
   void _handleDragEnd(DragEndDetails details) async {
     final cardWidth = MediaQuery.of(context).size.width;
     final currentSlidePx = -_dragExtent;
-    final halfOpenThreshold = 74.0; // Threshold for snap decisions
-    final buttonFullyVisiblePx = 112.0 + 36.0; // flagStartPx + fadeWindow = 148px
+    const halfOpenThreshold = 74.0; // Threshold for snap decisions
+    const buttonFullyVisiblePx = 48.0 + 8.0 + 48.0 + 8.0 + 48.0 + 16.0 + 36.0; // Three buttons + spacing + padding + extra space
     final autoDeleteThreshold = cardWidth * 0.8;
     
-    // Notify parent that swipe ended
-    widget.onSwipeEnd?.call();
+    // Determine final position based on velocity and current position
+    double targetSlide = 0.0;
     
-    // Reset drag started flag
-    _dragStarted = false;
-    
-    if (_maxSlideDuringDrag >= autoDeleteThreshold) {
-      // Auto-delete triggered, let the build method handle it
+    if (currentSlidePx >= autoDeleteThreshold) {
+      // Auto-delete threshold reached
+      targetSlide = autoDeleteThreshold;
+    } else if (currentSlidePx >= buttonFullyVisiblePx) {
+      // Buttons fully visible - snap to open
+      targetSlide = buttonFullyVisiblePx;
     } else if (currentSlidePx >= halfOpenThreshold) {
-      // Snap to buttons fully visible (148px) - if we released at or past 74px
-      _snapToButtons();
+      // Past half-open threshold - snap to open
+      targetSlide = buttonFullyVisiblePx;
     } else {
-      // Snap closed (0px) - if we released before 74px
-      _closeActions();
+      // Below threshold - snap to closed
+      targetSlide = 0.0;
+    }
+    
+    // Animate to target position
+    final animationDuration = Duration(
+      milliseconds: (300 * (targetSlide - currentSlidePx).abs() / buttonFullyVisiblePx).round(),
+    );
+    
+    _animationController.duration = animationDuration;
+    final targetValue = -targetSlide / _maxDrag;
+    
+    await _animationController.animateTo(targetValue);
+    
+    setState(() {
+      _dragExtent = -targetSlide;
+      _dragStarted = false;
+    });
+    
+    // Trigger auto-delete if threshold reached
+    if (targetSlide >= autoDeleteThreshold && !_autoDeleteTriggered) {
+      _autoDeleteTriggered = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _onDeleteTap();
+        }
+      });
     }
   }
 
   void _closeActions() {
-    _animationController.animateTo(0.0, curve: Curves.easeOut);
+    _animationController.animateTo(0.0);
     setState(() {
       _dragExtent = 0.0;
-      _maxSlideDuringDrag = 0.0; // Reset max slide when closing
     });
   }
 
-  void _snapToButtons() {
-    final buttonFullyVisiblePx = 112.0 + 36.0; // flagStartPx + fadeWindow
-    final targetValue = buttonFullyVisiblePx / _maxDrag;
-    _animationController.animateTo(targetValue, curve: Curves.easeOut);
-    setState(() {
-      _dragExtent = -buttonFullyVisiblePx;
-    });
-  }
-
-  Future<void> _onDeleteTap() async {
-    HapticFeedback.mediumImpact();
-    
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Briefing'),
-        content: Text('Are you sure you want to delete "${widget.briefing.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      // Close actions first, then animate dismiss
-      _closeActions();
-      // Wait for close animation to complete
-      await Future.delayed(const Duration(milliseconds: 250));
+  void _onFlagTap() async {
+    try {
+      final updatedBriefing = widget.briefing.copyWith(
+        isFlagged: !widget.briefing.isFlagged,
+      );
       
-      // Animate dismiss, then delete
-      setState(() {
-        _isDismissing = true;
-      });
-      await _dismissController.forward();
+      final success = await BriefingStorageService.updateBriefing(updatedBriefing);
       
-      final success = await BriefingStorageService.deleteBriefing(widget.briefing.id);
       if (success) {
+        // Show success feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              updatedBriefing.isFlagged ? 'Briefing flagged' : 'Briefing unflagged',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        
+        // Refresh the list
         widget.onRefresh?.call();
-        _showUndoToast('Briefing deleted');
+      } else {
+        // Show error feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update briefing'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
-      
-      _dismissController.value = 0.0;
-      setState(() {
-        _isDismissing = false;
-      });
-    }
-  }
-
-  Future<void> _onFlagTap() async {
-    HapticFeedback.mediumImpact();
-    
-    final success = await BriefingStorageService.toggleFlag(widget.briefing.id);
-    if (success) {
-      widget.onRefresh?.call();
-      _showUndoToast(
-        widget.briefing.isFlagged ? 'Unflagged briefing' : 'Flagged briefing',
+    } catch (e) {
+      debugPrint('ERROR: Failed to flag/unflag briefing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
       );
     }
-    _closeActions();
   }
 
-  void _showUndoToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+  void _onRenameTap() async {
+    // Snap card back to closed position
+    await _animationController.animateTo(0.0);
+    setState(() {
+      _dragExtent = 0.0;
+      _isEditing = true;
+    });
+    
+    // Focus the text field and show keyboard
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _editFocusNode.requestFocus();
+    });
+  }
+
+  void _saveRename() async {
+    final newName = _editController.text.trim();
+    
+    if (newName != widget.briefing.name) {
+      try {
+        final updatedBriefing = widget.briefing.copyWith(
+          name: newName.isEmpty ? null : newName,
+        );
+        
+        final success = await BriefingStorageService.updateBriefing(updatedBriefing);
+        
+        if (success) {
+          // Show success feedback
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                newName.isEmpty 
+                  ? 'Briefing name removed' 
+                  : 'Briefing renamed to "$newName"',
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          
+          // Refresh the list
+          widget.onRefresh?.call();
+        } else {
+          // Show error feedback
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to rename briefing'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('ERROR: Failed to rename briefing: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+    
+    // Exit editing mode
+    setState(() {
+      _isEditing = false;
+    });
+    _editFocusNode.unfocus();
+  }
+
+  void _cancelRename() {
+    // Restore original name
+    _editController.text = widget.briefing.name ?? '';
+    
+    // Exit editing mode
+    setState(() {
+      _isEditing = false;
+    });
+    _editFocusNode.unfocus();
+  }
+
+  void _onDeleteTap() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Briefing'),
+          content: Text(
+            'Are you sure you want to delete "${widget.briefing.displayName}"? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
+    
+    if (confirmed == true) {
+      try {
+        final success = await BriefingStorageService.deleteBriefing(widget.briefing.id);
+        
+        if (success) {
+          // Animate out the card
+          _isDismissing = true;
+          await _dismissController.forward();
+          
+          // Refresh the list
+          widget.onRefresh?.call();
+        } else {
+          // Show error feedback
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete briefing'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('ERROR: Failed to delete briefing: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -209,16 +355,29 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
     final animValue = _animationController.value;
     
     // Calculate button positions and animations
-    const hideStartPx = 52.0;
-    const flagStartPx = 112.0;
-    const sidePadding = 16.0;
-    const buttonSpacing = 8.0;
     const buttonSize = 48.0;
+    const buttonSpacing = 8.0;
+    const sidePadding = 16.0;
+    const fadeWindow = 36.0;
     
-    final hideAnim = ((slide - hideStartPx) / 36.0).clamp(0.0, 1.0); // 36px fade window
-    final flagAnim = ((slide - flagStartPx) / 36.0).clamp(0.0, 1.0);
-    final expansionAnim = ((slide - 148.0) / 36.0).clamp(0.0, 1.0); // Expand hide button
-    final hideButtonWidth = buttonSize + (expansionAnim * 24.0).clamp(0.0, 24.0);
+    // Calculate when each button should start appearing (right to left)
+    const deleteStartPx = buttonSize + sidePadding; // Rightmost button appears first
+    const renameStartPx = deleteStartPx + buttonSpacing + buttonSize; // Middle button appears second
+    const flagStartPx = renameStartPx + buttonSpacing + buttonSize; // Leftmost button appears third
+    
+    final deleteAnim = ((slide - deleteStartPx) / fadeWindow).clamp(0.0, 1.0);
+    final renameAnim = ((slide - renameStartPx) / fadeWindow).clamp(0.0, 1.0);
+    final flagAnim = ((slide - flagStartPx) / fadeWindow).clamp(0.0, 1.0);
+    
+    // Delete button expansion: starts after all buttons are fully visible
+    final expansionStartPx = flagStartPx + fadeWindow;
+    final expansionEndPx = cardWidth * 0.8;
+    double deleteButtonWidth = buttonSize;
+    double expansionAnim = 0.0;
+    if (slide > expansionStartPx) {
+      expansionAnim = ((slide - expansionStartPx) / (expansionEndPx - expansionStartPx)).clamp(0.0, 1.0);
+      deleteButtonWidth = buttonSize + (expansionAnim * 24.0).clamp(0.0, 24.0);
+    }
     
     final overlayOpacity = (animValue * 0.3).clamp(0.0, 0.3);
     final showActions = slide > 0;
@@ -267,15 +426,25 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
                             width: buttonSize,
                           ),
                           const SizedBox(width: buttonSpacing),
+                          // Rename button (middle)
+                          _buildAnimatedActionButton(
+                            color: Colors.orange,
+                            icon: Icons.edit,
+                            label: 'Rename',
+                            onTap: _onRenameTap,
+                            anim: renameAnim,
+                            width: buttonSize,
+                          ),
+                          const SizedBox(width: buttonSpacing),
                           // Delete button (right, expands internally)
                           SizedBox(
-                            width: hideButtonWidth,
+                            width: deleteButtonWidth,
                             child: _buildAnimatedActionButton(
                               color: Colors.red,
                               icon: Icons.delete,
                               label: 'Delete',
                               onTap: _onDeleteTap,
-                              anim: hideAnim,
+                              anim: deleteAnim,
                               width: buttonSize, // Keep internal button size fixed
                             ),
                           ),
@@ -326,7 +495,7 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: InkWell(
-        onTap: widget.onTap,
+        onTap: _isEditing ? null : widget.onTap, // Disable tap when editing
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -337,26 +506,30 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      widget.briefing.name ?? 'Untitled Briefing',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _isEditing 
+                      ? _buildInlineEditField()
+                      : Text(
+                          widget.briefing.displayName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                   ),
-                  if (widget.briefing.isFlagged)
-                    const Icon(
-                      Icons.flag,
-                      color: Colors.blue,
+                  if (!_isEditing) ...[
+                    if (widget.briefing.isFlagged)
+                      const Icon(
+                        Icons.flag,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.access_time,
+                      color: freshnessColor,
                       size: 20,
                     ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.access_time,
-                    color: freshnessColor,
-                    size: 20,
-                  ),
+                  ],
                 ],
               ),
               const SizedBox(height: 8),
@@ -384,6 +557,50 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInlineEditField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _editController,
+          focusNode: _editFocusNode,
+          decoration: const InputDecoration(
+            hintText: 'Enter briefing name...',
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+          textCapitalization: TextCapitalization.words,
+          onSubmitted: (_) => _saveRename(),
+          onEditingComplete: _saveRename,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: _cancelRename,
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _saveRename,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
