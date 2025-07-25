@@ -6,10 +6,20 @@ import '../widgets/zulu_time_widget.dart';
 import '../models/airport.dart';
 import '../models/briefing.dart';
 import '../services/briefing_storage_service.dart';
+import '../services/taf_state_manager.dart';
+import '../services/cache_manager.dart';
 import 'airport_detail_screen.dart';
 
 class SummaryScreen extends StatelessWidget {
   const SummaryScreen({super.key});
+
+  // Clear cache when refreshing data
+  void _clearCache() {
+    final tafStateManager = TafStateManager();
+    tafStateManager.clearCache();
+    final cacheManager = CacheManager();
+    cacheManager.clearPrefix('notam_');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,38 +89,92 @@ class SummaryScreen extends StatelessWidget {
                 ),
               ),
               
-              // Summary Cards
+              // Summary Cards with Pull-to-Refresh
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _buildSummaryCard(
-                      context,
-                      'Departure',
-                      flight.departure,
-                      flight.airports.firstWhere((a) => a.icao == flight.departure),
-                      Icons.flight_takeoff,
-                      const Color(0xFF10B981),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSummaryCard(
-                      context,
-                      'Enroute',
-                      'Flight Level ${flight.flightLevel}',
-                      null,
-                      Icons.flight,
-                      const Color(0xFF3B82F6),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSummaryCard(
-                      context,
-                      'Arrival',
-                      flight.destination,
-                      flight.airports.firstWhere((a) => a.icao == flight.destination),
-                      Icons.flight_land,
-                      const Color(0xFFF59E0B),
-                    ),
-                  ],
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    debugPrint('DEBUG: SummaryScreen - Pull-to-refresh triggered');
+                    
+                    // Clear caches like Raw Data screen does
+                    _clearCache();
+                    
+                    if (flightProvider.currentBriefing != null) {
+                      debugPrint('DEBUG: SummaryScreen - Refreshing briefing ${flightProvider.currentBriefing!.id}');
+                      
+                      try {
+                        // First refresh the flight data (like Raw Data screen)
+                        await flightProvider.refreshFlightData();
+                        
+                        // Then update the stored briefing with fresh data
+                        final success = await flightProvider.refreshCurrentBriefing();
+                        
+                        if (success) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Briefing refreshed successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to refresh briefing. Original data preserved.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        debugPrint('DEBUG: SummaryScreen - Refresh failed: $e');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Refresh failed: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      debugPrint('DEBUG: SummaryScreen - Not viewing a briefing, just refreshing flight data');
+                      // Just refresh flight data for new flights
+                      await flightProvider.refreshFlightData();
+                    }
+                  },
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildSummaryCard(
+                        context,
+                        'Departure',
+                        flight.departure,
+                        flight.airports.firstWhere((a) => a.icao == flight.departure),
+                        Icons.flight_takeoff,
+                        const Color(0xFF10B981),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSummaryCard(
+                        context,
+                        'Enroute',
+                        'Flight Level ${flight.flightLevel}',
+                        null,
+                        Icons.flight,
+                        const Color(0xFF3B82F6),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSummaryCard(
+                        context,
+                        'Arrival',
+                        flight.destination,
+                        flight.airports.firstWhere((a) => a.icao == flight.destination),
+                        Icons.flight_land,
+                        const Color(0xFFF59E0B),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -389,10 +389,12 @@ class _InputScreenState extends State<InputScreen> {
       debugPrint('DEBUG: Weather breakdown - METARs: ${metars.length}, TAFs: ${tafs.length}');
       
       for (final metar in metars) {
-        debugPrint('DEBUG: METAR - ICAO: ${metar.icao}, Raw: ${metar.rawText.substring(0, 30)}...');
+        final preview = metar.rawText.length > 30 ? '${metar.rawText.substring(0, 30)}...' : metar.rawText;
+        debugPrint('DEBUG: METAR - ICAO: ${metar.icao}, Raw: $preview');
       }
       for (final taf in tafs) {
-        debugPrint('DEBUG: TAF - ICAO: ${taf.icao}, Raw: ${taf.rawText.substring(0, 30)}...');
+        final preview = taf.rawText.length > 30 ? '${taf.rawText.substring(0, 30)}...' : taf.rawText;
+        debugPrint('DEBUG: TAF - ICAO: ${taf.icao}, Raw: $preview');
       }
       
       // Debug: Print some sample data to verify format

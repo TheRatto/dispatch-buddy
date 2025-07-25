@@ -7,6 +7,8 @@ import '../models/airport.dart';
 import '../models/notam.dart';
 import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
+import '../services/taf_state_manager.dart';
+import '../services/cache_manager.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/facilities_widget.dart';
 import '../widgets/system_pages/runway_system_widget.dart';
@@ -41,6 +43,14 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
     {'name': 'Admin', 'icon': Icons.admin_panel_settings},
     {'name': 'Other', 'icon': Icons.more_horiz},
   ];
+
+  // Clear cache when refreshing data
+  void _clearCache() {
+    final tafStateManager = TafStateManager();
+    tafStateManager.clearCache();
+    final cacheManager = CacheManager();
+    cacheManager.clearPrefix('notam_');
+  }
 
   @override
   void initState() {
@@ -171,9 +181,63 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
               ),
               // System content
               Expanded(
-                child: TabBarView(
-                  controller: _systemTabController,
-                  children: _buildSystemPages(selectedAirport, flight.notams),
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    debugPrint('DEBUG: AirportDetailScreen - Pull-to-refresh triggered');
+                    
+                    // Clear caches like Raw Data screen does
+                    _clearCache();
+                    
+                    if (flightProvider.currentBriefing != null) {
+                      debugPrint('DEBUG: AirportDetailScreen - Refreshing briefing ${flightProvider.currentBriefing!.id}');
+                      
+                      try {
+                        // First refresh the flight data (like Raw Data screen)
+                        await flightProvider.refreshFlightData();
+                        
+                        // Then update the stored briefing with fresh data
+                        final success = await flightProvider.refreshCurrentBriefing();
+                        
+                        if (success) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Briefing refreshed successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to refresh briefing. Original data preserved.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        debugPrint('DEBUG: AirportDetailScreen - Refresh failed: $e');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Refresh failed: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      debugPrint('DEBUG: AirportDetailScreen - Not viewing a briefing, just refreshing flight data');
+                      // Just refresh flight data for new flights
+                      await flightProvider.refreshFlightData();
+                    }
+                  },
+                  child: TabBarView(
+                    controller: _systemTabController,
+                    children: _buildSystemPages(selectedAirport, flight.notams),
+                  ),
                 ),
               ),
             ],

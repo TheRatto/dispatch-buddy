@@ -127,7 +127,9 @@ class BriefingConversionService {
         // Extract ICAO from the key (format: "TYPE_ICAO_briefingId")
         final icao = weatherData['icao'] as String? ?? '';
         
-        debugPrint('DEBUG: Converting weather for $weatherKey (ICAO: $icao) - Type: ${weatherData['type']}, Raw: ${weatherData['rawText']?.toString().substring(0, 30)}...');
+        final rawText = weatherData['rawText']?.toString() ?? '';
+        final preview = rawText.length > 30 ? '${rawText.substring(0, 30)}...' : rawText;
+        debugPrint('DEBUG: Converting weather for $weatherKey (ICAO: $icao) - Type: ${weatherData['type']}, Raw: $preview');
         
         try {
           final weatherObj = Weather.fromJson(weatherData);

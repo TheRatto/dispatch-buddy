@@ -9,11 +9,14 @@ import '../services/api_service.dart';
 import '../services/airport_system_analyzer.dart';
 import '../services/briefing_conversion_service.dart';
 import '../services/taf_state_manager.dart';
+import '../services/briefing_refresh_service.dart'; // Added for refreshCurrentBriefing
+import '../services/briefing_storage_service.dart'; // Added for loadBriefing
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
   final AirportSystemAnalyzer _systemAnalyzer = AirportSystemAnalyzer();
   Flight? _currentFlight;
+  Briefing? _currentBriefing; // Track the currently loaded briefing
   List<Flight> _savedFlights = [];
   bool _isLoading = false;
   Map<String, List<Weather>> _metarsByIcao = {};
@@ -42,6 +45,7 @@ class FlightProvider with ChangeNotifier {
 
   // Getters
   Flight? get currentFlight => _currentFlight;
+  Briefing? get currentBriefing => _currentBriefing; // Get the currently loaded briefing
   List<Flight> get savedFlights => _savedFlights;
   bool get isLoading => _isLoading;
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
@@ -99,7 +103,8 @@ class FlightProvider with ChangeNotifier {
     _lastViewedSystemPage = null;
     _lastViewedRawDataTab = null;
     _lastViewedAirport = null;
-    debugPrint('DEBUG: Navigation state - Cleared all navigation state');
+    _currentBriefing = null; // Clear current briefing when starting new
+    debugPrint('DEBUG: Navigation state cleared for new briefing');
     notifyListeners();
   }
   
@@ -204,6 +209,9 @@ class FlightProvider with ChangeNotifier {
     debugPrint('DEBUG: Briefing NOTAM count: ${briefing.notams.length}');
     debugPrint('DEBUG: Briefing weather count: ${briefing.weather.length}');
     
+    // Set the current briefing
+    _currentBriefing = briefing;
+    
     // Debug: Print sample data from briefing storage
     if (briefing.notams.isNotEmpty) {
       final sampleNotamKey = briefing.notams.keys.first;
@@ -213,7 +221,9 @@ class FlightProvider with ChangeNotifier {
     if (briefing.weather.isNotEmpty) {
       final sampleWeatherKey = briefing.weather.keys.first;
       final sampleWeather = briefing.weather[sampleWeatherKey];
-      debugPrint('DEBUG: Sample stored Weather - Key: $sampleWeatherKey, Type: ${sampleWeather['type']}, Raw: ${sampleWeather['rawText']?.toString().substring(0, 30)}...');
+      final rawText = sampleWeather['rawText']?.toString() ?? '';
+      final preview = rawText.length > 30 ? '${rawText.substring(0, 30)}...' : rawText;
+      debugPrint('DEBUG: Sample stored Weather - Key: $sampleWeatherKey, Type: ${sampleWeather['type']}, Raw: $preview');
     }
     
     final flight = BriefingConversionService.briefingToFlight(briefing);
@@ -227,7 +237,8 @@ class FlightProvider with ChangeNotifier {
     }
     if (flight.weather.isNotEmpty) {
       final sampleWeather = flight.weather.first;
-      debugPrint('DEBUG: Sample converted Weather - Type: ${sampleWeather.type}, ICAO: ${sampleWeather.icao}, Raw: ${sampleWeather.rawText.substring(0, 30)}...');
+      final preview = sampleWeather.rawText.length > 30 ? '${sampleWeather.rawText.substring(0, 30)}...' : sampleWeather.rawText;
+      debugPrint('DEBUG: Sample converted Weather - Type: ${sampleWeather.type}, ICAO: ${sampleWeather.icao}, Raw: $preview');
     }
     
     // Clear any UI-level caches that might interfere with loaded briefing data
@@ -244,6 +255,38 @@ class FlightProvider with ChangeNotifier {
     
     setCurrentFlight(flight);
     debugPrint('DEBUG: FlightProvider - Loaded briefing ${briefing.id} as current flight');
+  }
+
+  /// Refresh the current briefing with fresh data
+  Future<bool> refreshCurrentBriefing() async {
+    if (_currentBriefing == null) {
+      debugPrint('DEBUG: No current briefing to refresh');
+      return false;
+    }
+    
+    debugPrint('DEBUG: Starting refresh of current briefing ${_currentBriefing!.id}');
+    
+    try {
+      final success = await BriefingRefreshService.refreshBriefing(_currentBriefing!);
+      
+      if (success) {
+        // Reload the briefing from storage to get the updated data
+        final refreshedBriefing = await BriefingStorageService.loadBriefing(_currentBriefing!.id);
+        if (refreshedBriefing != null) {
+          _currentBriefing = refreshedBriefing;
+          loadBriefing(refreshedBriefing);
+          debugPrint('DEBUG: Successfully refreshed briefing and updated flight data');
+        } else {
+          debugPrint('DEBUG: Failed to reload refreshed briefing from storage');
+          return false;
+        }
+      }
+      
+      return success;
+    } catch (e) {
+      debugPrint('DEBUG: Failed to refresh briefing: $e');
+      return false;
+    }
   }
 
   // Save the current flight to the database
@@ -288,13 +331,15 @@ class FlightProvider with ChangeNotifier {
       for (final weather in _currentFlight!.weather) {
         debugPrint('DEBUG: Processing weather - Type: ${weather.type}, ICAO: ${weather.icao}, Timestamp: ${weather.timestamp}');
         if (weather.type == 'METAR') {
-          debugPrint('DEBUG: Adding METAR for ${weather.icao} - Timestamp: ${weather.timestamp}, Raw: ${weather.rawText.substring(0, 30)}...');
+          final preview = weather.rawText.length > 30 ? '${weather.rawText.substring(0, 30)}...' : weather.rawText;
+          debugPrint('DEBUG: Adding METAR for ${weather.icao} - Timestamp: ${weather.timestamp}, Raw: $preview');
           if (!_metarsByIcao.containsKey(weather.icao)) {
             _metarsByIcao[weather.icao] = [];
           }
           _metarsByIcao[weather.icao]!.add(weather);
         } else if (weather.type == 'TAF') {
-          debugPrint('DEBUG: Adding TAF for ${weather.icao} - Timestamp: ${weather.timestamp}, Raw: ${weather.rawText.substring(0, 30)}...');
+          final preview = weather.rawText.length > 30 ? '${weather.rawText.substring(0, 30)}...' : weather.rawText;
+          debugPrint('DEBUG: Adding TAF for ${weather.icao} - Timestamp: ${weather.timestamp}, Raw: $preview');
           if (!_tafsByIcao.containsKey(weather.icao)) {
             _tafsByIcao[weather.icao] = [];
           }
