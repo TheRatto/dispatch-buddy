@@ -3,6 +3,9 @@ import '../models/briefing.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/data_freshness_service.dart';
 import 'swipeable_briefing_card.dart';
+import 'package:provider/provider.dart';
+import '../providers/flight_provider.dart';
+import '../screens/briefing_tabs_screen.dart';
 
 /// Previous Briefings List Widget
 /// 
@@ -163,8 +166,15 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
                 return SwipeableBriefingCard(
                   briefing: briefing,
                   onTap: () {
+                    // Load the briefing into FlightProvider
+                    Provider.of<FlightProvider>(context, listen: false).loadBriefing(briefing);
+                    // Navigate to the briefing tabs screen (with bottom navigation)
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const BriefingTabsScreen(),
+                      ),
+                    );
                     widget.onBriefingSelected?.call();
-                    // TODO: Navigate to briefing detail
                   },
                   onRefresh: _loadBriefings,
                   onSwipeStart: () => _onBriefingSwipeStart(briefing.id),

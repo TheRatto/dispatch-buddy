@@ -225,12 +225,17 @@ class ApiService {
 
   Future<List<Weather>> fetchWeather(List<String> icaos) async {
     final stationString = icaos.map((e) => e.trim()).join(',');
+    print('DEBUG: 🔍 fetchWeather called for ICAOs: $icaos');
+    print('DEBUG: 🔍 Station string: $stationString');
+    
     try {
       final url = _getUrl(_weatherBaseUrl, queryParams: {
         'ids': stationString,
         'format': 'json',
         'hours': '1'
       });
+      
+      print('DEBUG: 🔍 METAR API URL: $url');
       
       final response = await _makeRequestWithRetry(
         Uri.parse(url),
@@ -240,11 +245,35 @@ class ApiService {
         },
       );
 
+      print('DEBUG: 🔍 METAR API response status: ${response.statusCode}');
+      print('DEBUG: 🔍 METAR API response body length: ${response.body.length}');
+      print('DEBUG: 🔍 METAR API response body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        print('DEBUG: 🔍 METAR API returned ${data.length} records');
+        
+        // Debug: Print the first few records to see the structure
         if (data.isNotEmpty) {
-          final List<Weather> weatherList = data.map((item) => Weather.fromMetar(item)).toList();
+          print('DEBUG: 🔍 First METAR record structure: ${data.first}');
+          print('DEBUG: 🔍 METAR record keys: ${(data.first as Map<String, dynamic>).keys.toList()}');
+          
+          // Check if the expected fields exist
+          final firstRecord = data.first as Map<String, dynamic>;
+          print('DEBUG: 🔍 METAR icaoId field: ${firstRecord['icaoId']}');
+          print('DEBUG: 🔍 METAR rawOb field: ${firstRecord['rawOb']}');
+          print('DEBUG: 🔍 METAR icao field: ${firstRecord['icao']}');
+          print('DEBUG: 🔍 METAR rawText field: ${firstRecord['rawText']}');
+        }
+        
+        if (data.isNotEmpty) {
+          final List<Weather> weatherList = data.map((item) {
+            print('DEBUG: 🔍 Processing METAR item: $item');
+            return Weather.fromMetar(item);
+          }).toList();
           final receivedIcaos = weatherList.map((w) => w.icao).toSet();
+          print('DEBUG: 🔍 METAR weather list created with ${weatherList.length} items');
+          print('DEBUG: 🔍 Received ICAOs: $receivedIcaos');
 
           // Handle missing data by creating empty weather objects
           for (final icao in icaos) {
@@ -253,13 +282,20 @@ class ApiService {
               weatherList.add(_createEmptyWeather(icao, 'METAR'));
             }
           }
+          print('DEBUG: 🔍 Final METAR weather list: ${weatherList.length} items');
           return weatherList;
+        } else {
+          print('DEBUG: ⚠️ METAR API returned empty data array');
         }
+      } else {
+        print('DEBUG: ⚠️ METAR API returned status code: ${response.statusCode}');
       }
       // If call fails or returns empty, create empty data for all requested ICAOs
+      print('DEBUG: 🔍 Creating empty METAR objects for all ICAOs: $icaos');
       return icaos.map((icao) => _createEmptyWeather(icao, 'METAR')).toList();
     } catch (e) {
       print('Error fetching METAR data: $e');
+      print('DEBUG: 🔍 Creating empty METAR objects due to error for ICAOs: $icaos');
       return icaos.map((icao) => _createEmptyWeather(icao, 'METAR')).toList();
     }
   }

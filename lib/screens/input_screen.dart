@@ -335,6 +335,7 @@ class _InputScreenState extends State<InputScreen> {
       // Generate smart name for the briefing
       final name = _generateBriefingName(flight);
       debugPrint('DEBUG: Generated briefing name: $name');
+      debugPrint('DEBUG: Converting ${notams.length} NOTAMs and ${weather.length} weather items to storage format');
       
       // Convert data to storage format
       final notamsMap = <String, dynamic>{
@@ -348,14 +349,21 @@ class _InputScreenState extends State<InputScreen> {
             'validTo': notam.validTo.toIso8601String(),
             'affectedSystem': notam.affectedSystem,
             'isCritical': notam.isCritical,
-            'type': notam.type.toString(),
-            'group': notam.group.toString(),
+            'type': notam.type.name,
+            'group': notam.group.name,
+            'qCode': notam.qCode,
           }
       };
 
+      // Generate a unique briefing ID for weather keys
+      final briefingId = 'briefing_${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Store weather data with composite key: <TYPE>_<ICAO>_<briefingId>
+      // Example: METAR_YSSY_briefing_1753416661996 or TAF_YSSY_briefing_1753416661996
+      // This ensures both METAR and TAF for the same airport/briefing are preserved and do not overwrite each other.
       final weatherMap = <String, dynamic>{
         for (final w in weather)
-          w.icao: {
+          '${w.type}_${w.icao}_$briefingId': {
             'icao': w.icao,
             'rawText': w.rawText,
             'decodedText': w.decodedText,
@@ -369,8 +377,35 @@ class _InputScreenState extends State<InputScreen> {
             'dewPoint': w.dewPoint,
             'qnh': w.qnh,
             'conditions': w.conditions,
-          }
+            'decodedWeather': w.decodedWeather?.toJson(),
+          },
       };
+
+      debugPrint('DEBUG: Converted ${notamsMap.length} NOTAMs and ${weatherMap.length} weather items to storage format');
+      
+      // Debug: Print detailed weather breakdown
+      final metars = weather.where((w) => w.type == 'METAR').toList();
+      final tafs = weather.where((w) => w.type == 'TAF').toList();
+      debugPrint('DEBUG: Weather breakdown - METARs: ${metars.length}, TAFs: ${tafs.length}');
+      
+      for (final metar in metars) {
+        debugPrint('DEBUG: METAR - ICAO: ${metar.icao}, Raw: ${metar.rawText.substring(0, 30)}...');
+      }
+      for (final taf in tafs) {
+        debugPrint('DEBUG: TAF - ICAO: ${taf.icao}, Raw: ${taf.rawText.substring(0, 30)}...');
+      }
+      
+      // Debug: Print some sample data to verify format
+      if (notamsMap.isNotEmpty) {
+        final sampleNotam = notamsMap.values.first;
+        debugPrint('DEBUG: Sample NOTAM - Type: ${sampleNotam['type']}, Group: ${sampleNotam['group']}, ICAO: ${sampleNotam['icao']}');
+      }
+      if (weatherMap.isNotEmpty) {
+        final sampleWeather = weatherMap.values.first;
+        final sampleKey = weatherMap.keys.first;
+        debugPrint('DEBUG: Sample Weather - Type: ${sampleWeather['type']}, ICAO: ${sampleWeather['icao']}');
+        debugPrint('DEBUG: Sample weather key format: $sampleKey');
+      }
 
       // Create and save briefing
       final briefing = Briefing.create(

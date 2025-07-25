@@ -11,311 +11,347 @@ The Previous Briefings feature allows users to save and recall complete briefing
 - Basic UI with auto-save functionality
 - Smart naming and data freshness indicators
 - Integration with home screen
+- Swipeable cards with delete functionality
+- Debug logging for storage investigation
 
-**🔄 IN PROGRESS:**
-- Briefing management (rename, notes)
-- Briefing opening and refresh functionality
+**🔄 CURRENT PHASE:**
+- **Briefing Opening Functionality** - Convert stored data to Flight objects
+- **Data Conversion Service** - Bridge between Briefing storage and Flight models
+- **Navigation Integration** - Open briefings in existing summary screen
 
-**⏳ PLANNED:**
-- Advanced features (templates, export/import)
-- Analytics and insights
+**⏳ NEXT PHASES:**
+- Refresh capability with safety rollback
+- Age warnings and offline indicators
+- Airport editing functionality
 
-## 📋 Feature Requirements
+## 📋 Detailed Implementation Checklist
 
-### Core Functionality
-- **Save Complete Briefings**: Store all airports, NOTAMs, weather, and user data
-- **Offline Access**: View cached briefings without internet connectivity
-- **Smart Refresh**: Attempt data updates when opened, fallback to cached data
-- **Dynamic Airport Management**: Add/remove airports from saved briefings
-- **Flagging System**: Mark important briefings for quick access
+### **Phase 1: Data Conversion Foundation** 🔄 **IN PROGRESS**
 
-### Data Freshness
-- **12h**: 🟢 Green - Fresh data
-- **24h**: 🟡 Yellow - Stale data  
-- **36h+**: 🔴 Red - Expired data
-- **Offline Behavior**: Show expired data with warning, don't hide
+#### **1.1 Create BriefingConversionService** ⏳ **NEXT**
+- [ ] Create `lib/services/briefing_conversion_service.dart`
+- [ ] Implement `briefingToFlight(Briefing briefing)` method
+  - Convert `Map<String, dynamic>` NOTAMs to `List<Notam>`
+  - Convert `Map<String, dynamic>` weather to `List<Weather>`
+  - Reconstruct `List<Airport>` objects with system status
+  - Create Flight object with briefing data
+- [ ] Implement `flightToBriefing(Flight flight, {String? name})` method
+  - Convert `List<Notam>` to storage format
+  - Convert `List<Weather>` to storage format
+  - Create Briefing object
+- [ ] Add comprehensive error handling
+- [ ] Add unit tests for conversion methods
 
-### User Interface
-- **Card Layout**: Airport list, timestamp, status indicators
-- **Swipe Actions**: Delete, flag/unflag, rename
-- **Sorting**: Flagged briefings at top, then newest to oldest
-- **Storage Limit**: 20 previous briefings maximum
+#### **1.2 Update FlightProvider** ⏳ **NEXT**
+- [ ] Add `loadBriefing(Briefing briefing)` method
+  - Convert briefing to Flight using conversion service
+  - Set as current flight
+  - Update weather grouping
+  - Calculate system status
+- [ ] Add `getCurrentBriefing()` method to track loaded briefing
+- [ ] Add briefing refresh state management
+- [ ] Update existing methods to handle briefing context
 
-## 🏗️ Implementation Phases
+#### **1.3 Update SwipeableBriefingCard** ⏳ **NEXT**
+- [ ] Implement `onTap` functionality
+  - Load briefing into FlightProvider
+  - Navigate to BriefingTabsScreen
+  - Add loading state during conversion
+- [ ] Add error handling for failed conversions
+- [ ] Add debug logging for troubleshooting
 
-### Phase 1: Core Infrastructure ✅ COMPLETED
+### **Phase 2: Navigation Integration** ⏳ **PLANNED**
 
-#### 1.1 Briefing Data Model ✅
-- [x] Create `Briefing` model class
-  - `id`: Unique identifier (timestamp-based)
-  - `name`: User-defined name (optional)
-  - `airports`: List of airport ICAOs
-  - `notams`: Cached NOTAM data
-  - `weather`: Cached weather data
-  - `timestamp`: Last refresh time
-  - `isFlagged`: Boolean flag status
-  - `userNotes`: Optional user notes
+#### **2.1 Update BriefingTabsScreen** ⏳ **PLANNED**
+- [ ] Add briefing context awareness
+- [ ] Show briefing name in header
+- [ ] Add age warning banner for stale data
+- [ ] Implement pull-to-refresh for briefing updates
+- [ ] Add "Back to Home" navigation
 
-#### 1.2 Briefing Storage Service ✅
-- [x] Create `BriefingStorageService`
-  - Save briefing to SharedPreferences
-  - Load briefing from cache
-  - Update existing briefing
-  - Delete briefing
-  - List all briefings
-  - Auto-cleanup old briefings (keep 20 max)
+#### **2.2 Add Age Warning System** ⏳ **PLANNED**
+- [ ] Create `BriefingDisplayService` for UI components
+- [ ] Implement age warning banners
+  - 12h+ = Yellow warning
+  - 24h+ = Red warning with refresh button
+- [ ] Add offline indicators
+- [ ] Show last refresh timestamp
 
-#### 1.3 Data Freshness Logic ✅
-- [x] Create `DataFreshnessService`
-  - Calculate data age from timestamp
-  - Determine freshness color (green/yellow/red)
-  - Handle offline scenarios
-  - Show appropriate warnings
+### **Phase 3: Refresh Capability** ⏳ **PLANNED**
 
-### Phase 2: Basic UI Implementation ✅ COMPLETED
+#### **3.1 Create BriefingRefreshService** ⏳ **PLANNED**
+- [ ] Implement `refreshBriefing(Briefing briefing)` method
+  - Backup original briefing data
+  - Fetch fresh data from APIs
+  - Validate data quality (weather coverage, NOTAM validity)
+  - Update briefing if quality check passes
+  - Rollback to original if quality check fails
+- [ ] Add data quality validation
+  - Weather coverage (80%+ of airports)
+  - NOTAM validity (not all empty/invalid)
+  - API error detection
+- [ ] Add comprehensive error handling
+- [ ] Add progress indicators
 
-#### 2.1 Previous Briefings List ✅
-- [x] Create `PreviousBriefingsList` widget
-  - Display list of saved briefings
-  - Sort by flagged status, then timestamp
-  - Show airport list on each card
-  - Display timestamp with color coding
-  - Show briefings count
-
-#### 2.2 Briefing Card Widget ✅
-- [x] Create `BriefingCard` widget
-  - Airport list (primary + alternates)
-  - Last refreshed timestamp
-  - Freshness indicator (color-coded)
-  - Flag status indicator
-  - Briefing name (if set)
-  - Swipe actions (delete, flag)
-
-#### 2.3 Integration with Home Screen ✅
-- [x] Add "Previous Briefings" section to home screen
-- [x] Replace placeholder with actual list
-- [x] Handle empty state (no saved briefings)
-- [x] Add navigation to briefing detail
-
-#### 2.4 Auto-Save Functionality ✅
-- [x] Implement automatic saving on briefing generation
-- [x] Smart naming system (e.g., "YSSY→YPPH 24/07")
-- [x] Silent operation (no user interaction required)
-- [x] Error handling without disrupting user experience
-
-### Phase 3: Interactive Features (Current Phase)
-
-#### 3.1 Swipe Actions ✅ COMPLETED
-- [x] Implement swipe-to-delete
-- [x] Implement swipe-to-flag
-- [x] Add confirmation dialogs
-- [x] Handle undo functionality
-
-#### 3.2 Briefing Management
-- [ ] Add rename functionality
-- [ ] Implement briefing deletion
-- [ ] Add flag/unflag toggle
-- [ ] Handle user notes
-
-#### 3.3 Open Briefing Functionality
-- [ ] Load briefing data into existing screens
-- [ ] Attempt data refresh on open
-- [ ] Show offline warning when data is stale
-- [ ] Integrate with existing briefing tabs
-
-### Phase 4: Advanced Features (Future)
-
-#### 4.1 Briefing Templates
-- [ ] Save common routes as templates
-- [ ] Quick-start from templates
-- [ ] Template management UI
-
-#### 4.2 Export/Import
-- [ ] Export briefings to file
-- [ ] Import briefings from file
-- [ ] Share briefings between devices
-
-#### 4.3 Analytics & Insights
-- [ ] Track briefing usage patterns
-- [ ] Show most common routes
-- [ ] Data freshness analytics
-- [ ] Show offline warning if no connectivity
+#### **3.2 Integrate Refresh with UI** ⏳ **PLANNED**
+- [ ] Add refresh button to briefing cards
+- [ ] Implement pull-to-refresh in BriefingTabsScreen
+- [ ] Show refresh progress and status
 - [ ] Handle refresh failures gracefully
 
-### Phase 4: Advanced Features (Week 2-3)
+### **Phase 4: Airport Editing** ⏳ **PLANNED**
 
-#### 4.1 Airport Management
-- [ ] Add airport to existing briefing
-- [ ] Remove airport from briefing
-- [ ] Update briefing when airports change
-- [ ] Handle airport validation
+#### **4.1 Create BriefingEditService** ⏳ **PLANNED**
+- [ ] Implement `editBriefingAirports(Briefing briefing, List<String> newAirports)`
+  - Add new airports to briefing
+  - Fetch data for new airports
+  - Remove data for removed airports
+  - Update briefing storage
+- [ ] Add airport validation
+- [ ] Handle API failures during editing
+- [ ] Add undo functionality
 
-#### 4.2 Offline Enhancements
-- [ ] Show connectivity status
-- [ ] Display last successful refresh
-- [ ] Handle partial data scenarios
-- [ ] Provide manual refresh option
+#### **4.2 Integrate with Existing Airport UI** ⏳ **PLANNED**
+- [ ] Enable airport bubble editing in briefing context
+- [ ] Add airport management to briefing cards
+- [ ] Show airport count and list
+- [ ] Handle airport addition/removal
 
-#### 4.3 Performance Optimization
-- [ ] Implement lazy loading for large briefings
-- [ ] Optimize storage usage
-- [ ] Add data compression
-- [ ] Handle storage limits gracefully
+## 🔧 Technical Implementation Details
+
+### **Data Conversion Strategy**
+
+#### **Briefing → Flight Conversion:**
+```dart
+static Flight briefingToFlight(Briefing briefing) {
+  // 1. Convert NOTAMs from Map to List
+  final notams = _convertNotamsMapToList(briefing.notams);
+  
+  // 2. Convert Weather from Map to List  
+  final weather = _convertWeatherMapToList(briefing.weather);
+  
+  // 3. Reconstruct Airports with system status
+  final airports = _reconstructAirports(briefing.airports, notams);
+  
+  // 4. Create Flight object
+  return Flight(
+    id: briefing.id,
+    route: briefing.airports.join(' → '),
+    departure: briefing.airports.first,
+    destination: briefing.airports.last,
+    etd: briefing.timestamp,
+    flightLevel: 'FL000', // Default
+    alternates: briefing.airports.skip(2).toList(),
+    createdAt: briefing.timestamp,
+    airports: airports,
+    notams: notams,
+    weather: weather,
+  );
+}
+```
+
+#### **Flight → Briefing Conversion:**
+```dart
+static Briefing flightToBriefing(Flight flight, {String? name}) {
+  // 1. Convert NOTAMs to storage format
+  final notamsMap = _convertNotamsListToMap(flight.notams);
+  
+  // 2. Convert Weather to storage format
+  final weatherMap = _convertWeatherListToMap(flight.weather);
+  
+  // 3. Create Briefing
+  return Briefing.create(
+    name: name,
+    airports: flight.airports.map((a) => a.icao).toList(),
+    notams: notamsMap,
+    weather: weatherMap,
+  );
+}
+```
+
+### **Data Quality Validation**
+
+#### **Acceptable Quality Standards:**
+- ✅ Weather coverage: 80%+ of airports have weather data
+- ✅ NOTAMs: Optional (small airports may have none)
+- ✅ API errors: No critical failures (US airports should have NOTAMs)
+- ✅ Data validity: NOTAMs have valid raw text
+
+#### **Quality Check Implementation:**
+```dart
+static bool _isDataQualityAcceptable(
+  List<List<Notam>> notamResults,
+  List<Weather> metars,
+  List<Weather> tafs,
+  List<String> airports,
+) {
+  // Weather coverage check
+  final airportsWithWeather = <String>{};
+  for (final weather in [...metars, ...tafs]) {
+    airportsWithWeather.add(weather.icao);
+  }
+  final weatherCoverage = airportsWithWeather.length / airports.length;
+  if (weatherCoverage < 0.8) return false;
+  
+  // NOTAM validity check (optional)
+  final totalNotams = notamResults.expand((list) => list).length;
+  if (totalNotams > 0) {
+    final validNotams = notamResults.expand((list) => list)
+        .where((notam) => notam.rawText.isNotEmpty)
+        .length;
+    if (validNotams == 0) return false;
+  }
+  
+  return true;
+}
+```
+
+### **Error Handling Strategy**
+
+#### **Conversion Errors:**
+- ❌ Invalid data format in storage
+- ❌ Missing required fields
+- ❌ Corrupted briefing data
+
+#### **Refresh Errors:**
+- ❌ Network connectivity issues
+- ❌ API rate limiting
+- ❌ Data quality failures
+- ❌ Storage write failures
+
+#### **Recovery Actions:**
+- 🔄 Rollback to original data
+- 🔄 Show user-friendly error messages
+- 🔄 Log detailed errors for debugging
+- 🔄 Maintain offline functionality
 
 ## 📁 File Structure
 
 ```
 lib/
 ├── models/
-│   └── briefing.dart                    # Briefing data model
+│   └── briefing.dart                    # ✅ COMPLETED
 ├── services/
-│   ├── briefing_storage_service.dart    # Storage operations
-│   └── data_freshness_service.dart     # Freshness calculations
-├── screens/
-│   └── previous_briefings_screen.dart   # Main list screen
-└── widgets/
-    ├── briefing_card.dart               # Individual briefing card
-    └── briefing_actions.dart            # Swipe actions
+│   ├── briefing_storage_service.dart    # ✅ COMPLETED
+│   ├── data_freshness_service.dart     # ✅ COMPLETED
+│   ├── briefing_conversion_service.dart # ⏳ NEXT
+│   ├── briefing_refresh_service.dart    # ⏳ PLANNED
+│   └── briefing_edit_service.dart       # ⏳ PLANNED
+├── widgets/
+│   ├── previous_briefings_list.dart     # ✅ COMPLETED
+│   └── swipeable_briefing_card.dart     # ✅ COMPLETED
+└── providers/
+    └── flight_provider.dart             # 🔄 UPDATE NEEDED
 ```
 
-## 🔧 Technical Implementation
+## 🎯 Success Criteria
 
-### Data Storage Strategy
-```json
-{
-  "briefing_20250115_143022": {
-    "id": "20250115_143022",
-    "name": "YSCB YMML YSSY",
-    "airports": ["YSCB", "YMML", "YSSY", "YMAV", "YSRI", "YWLM"],
-    "notams": { /* cached NOTAM data */ },
-    "weather": { /* cached weather data */ },
-    "timestamp": "2025-01-15T14:30:22Z",
-    "isFlagged": true,
-    "userNotes": "Regular route"
-  }
-}
-```
+### **Phase 1 Complete:**
+- [ ] User can tap briefing card
+- [ ] Briefing data loads into existing summary screen
+- [ ] Same UI/UX as new briefing generation
+- [ ] Cached data displays correctly
+- [ ] No breaking changes to existing functionality
 
-### Freshness Calculation
-```dart
-enum DataFreshness {
-  fresh,    // < 12h - Green
-  stale,    // 12-24h - Yellow  
-  expired   // > 24h - Red
-}
-```
+### **Phase 2 Complete:**
+- [ ] Age warnings display for stale data
+- [ ] Pull-to-refresh works in briefing context
+- [ ] Navigation flows smoothly
+- [ ] Offline indicators work correctly
 
-### Integration Points
-- **Home Screen**: Display previous briefings list
-- **Flight Provider**: Load briefing data into existing workflow
-- **Cache Manager**: Leverage existing caching infrastructure
-- **Navigation**: Seamless integration with existing screens
+### **Phase 3 Complete:**
+- [ ] Refresh updates briefing with fresh data
+- [ ] Safety rollback works on failures
+- [ ] Data quality validation prevents bad updates
+- [ ] User gets clear feedback on refresh status
 
-## 🎨 UI/UX Design
+### **Phase 4 Complete:**
+- [ ] Users can add/remove airports from saved briefings
+- [ ] Airport editing integrates with existing UI
+- [ ] Changes persist correctly
+- [ ] Error handling works for all scenarios
 
-### Card Layout
-```
-┌─────────────────────────────────────┐
-│ 🏁 YSCB YMML YSSY                 │
-│ YSCB, YMML, YSSY + YMAV, YSRI     │
-│ 🕐 2h ago • 🟢 Fresh              │
-└─────────────────────────────────────┘
-```
+## 🚀 Implementation Priority
 
-### Color Coding
-- **🟢 Green**: Data < 12h old
-- **🟡 Yellow**: Data 12-24h old
-- **🔴 Red**: Data > 24h old
-- **⚪ Gray**: Offline/unknown status
+### **Immediate (This Session):**
+1. **Create BriefingConversionService** - Foundation for everything
+2. **Update FlightProvider** - Enable briefing loading
+3. **Update SwipeableBriefingCard** - Enable navigation
 
-### Swipe Actions
-- **Left Swipe**: Flag/Unflag
-- **Right Swipe**: Delete
-- **Long Press**: Rename
+### **Next Session:**
+1. **Add age warnings** - Improve user experience
+2. **Implement refresh capability** - Add update functionality
+3. **Add airport editing** - Complete the feature set
 
-## 🧪 Testing Strategy
+### **Future Sessions:**
+1. **Performance optimization** - Handle large briefings
+2. **Advanced features** - Templates, export/import
+3. **Analytics** - Usage tracking and insights
 
-### Unit Tests
-- [ ] `BriefingStorageService` tests
-- [ ] `DataFreshnessService` tests
-- [ ] `Briefing` model tests
-- [ ] Storage limit tests
+## ⚠️ Risk Mitigation
 
-### Integration Tests
-- [ ] Briefing save/load workflow
-- [ ] Offline functionality
-- [ ] Data refresh scenarios
-- [ ] Airport management
+### **Data Loss Prevention:**
+- ✅ Backup original data before any operations
+- ✅ Validate data quality before updates
+- ✅ Rollback on any failures
+- ✅ Comprehensive error logging
 
-### UI Tests
+### **Performance Considerations:**
+- ✅ Efficient data conversion algorithms
+- ✅ Lazy loading for large briefings
+- ✅ Memory management for large datasets
+- ✅ Background processing for refresh operations
+
+### **User Experience:**
+- ✅ Clear loading states
+- ✅ Informative error messages
+- ✅ Consistent UI patterns
+- ✅ Offline-first design
+
+## 📝 Testing Strategy
+
+### **Unit Tests:**
+- [ ] BriefingConversionService tests
+- [ ] Data quality validation tests
+- [ ] Error handling tests
+- [ ] Edge case tests
+
+### **Integration Tests:**
+- [ ] Briefing load workflow
+- [ ] Refresh functionality
+- [ ] Airport editing
+- [ ] Error recovery
+
+### **UI Tests:**
 - [ ] Card interactions
-- [ ] Swipe actions
 - [ ] Navigation flows
-- [ ] Error handling
+- [ ] Refresh operations
+- [ ] Error scenarios 
 
-## 📊 Success Metrics
+## Data Storage Format (as of July 2024)
 
-- **User Adoption**: % of users who save briefings
-- **Time Savings**: Average time saved per briefing recall
-- **Offline Usage**: % of briefings accessed offline
-- **Storage Efficiency**: Average briefing size < 5MB
-- **Performance**: Briefing load time < 2 seconds
+### Weather Data (METAR/TAF)
+- **Key format:** Each weather report is stored in the briefing's weather map with a key of the form:
+  - `METAR_<ICAO>_<briefingId>` for METARs
+  - `TAF_<ICAO>_<briefingId>` for TAFs
+- **Rationale:** This ensures that both METAR and TAF for the same airport and briefing are stored separately and do not overwrite each other. This is critical for accurate recall of all weather data associated with a briefing.
+- **Example:**
+  ```json
+  {
+    "METAR_YSSY_briefing_1753416661996": { ... },
+    "TAF_YSSY_briefing_1753416661996": { ... }
+  }
+  ```
+- **How to replicate for other data types:**
+  - Use a composite key that includes the data type, unique identifier (e.g., ICAO), and briefing ID.
+  - This pattern prevents collisions and ensures all relevant data is preserved for each briefing.
 
-## 🚀 Future Enhancements
+### NOTAM Data
+- **Key format:** Each NOTAM is stored with a key of the form:
+  - `<notamId>_<briefingId>`
+- **Rationale:** Ensures that NOTAMs with the same ID from different briefings do not overwrite each other.
 
-### Phase 5: Advanced Features
-- [ ] Briefing templates
-- [ ] Export/import briefings
-- [ ] Cloud sync (future backend)
-- [ ] Briefing sharing
-- [ ] Advanced filtering/search
-
-### Phase 6: Analytics
-- [ ] Usage analytics
-- [ ] Performance monitoring
-- [ ] Storage optimization
-- [ ] User feedback integration
-
-## ⚠️ Considerations
-
-### Storage Limits
-- **Individual Briefing**: ~1-5MB (NOTAMs + weather)
-- **Total Storage**: ~100MB (20 briefings × 5MB)
-- **Cleanup Strategy**: Remove oldest when limit reached
-
-### Performance
-- **Load Time**: < 2 seconds for cached briefings
-- **Memory Usage**: Efficient data structures
-- **Battery Impact**: Minimal background processing
-
-### User Experience
-- **Offline First**: Always show cached data
-- **Clear Warnings**: Obvious data freshness indicators
-- **Intuitive Actions**: Standard swipe patterns
-- **Consistent UI**: Match existing app design
-
-## 📝 Acceptance Criteria
-
-### Phase 1 Complete
-- [ ] User can save a briefing after requesting data
-- [ ] Briefing appears in previous briefings list
-- [ ] Basic card shows airports and timestamp
-- [ ] Freshness indicators work correctly
-
-### Phase 2 Complete  
-- [ ] User can flag/unflag briefings
-- [ ] Swipe actions work (delete, flag)
-- [ ] User can rename briefings
-- [ ] Briefing opens existing screens with data
-
-### Phase 3 Complete
-- [ ] User can add/remove airports from saved briefings
-- [ ] Offline warnings display correctly
-- [ ] Data refresh attempts work
-- [ ] Storage limits enforced
-
-### Phase 4 Complete
-- [ ] Performance optimized
-- [ ] Error handling robust
-- [ ] User experience polished
-- [ ] All edge cases handled 
+## Implementation Notes
+- When adding new data types to the briefing storage, always use a composite key that uniquely identifies the data by type, location, and briefing.
+- Update both the saving logic and the conversion service to handle the new key format.
+- Add debug logging to verify the structure of stored and loaded data. 

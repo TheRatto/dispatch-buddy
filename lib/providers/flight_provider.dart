@@ -3,9 +3,12 @@ import '../models/flight.dart';
 import '../models/airport.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
+import '../models/briefing.dart';
 import '../services/database_service.dart';
 import '../services/api_service.dart';
 import '../services/airport_system_analyzer.dart';
+import '../services/briefing_conversion_service.dart';
+import '../services/taf_state_manager.dart';
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -193,6 +196,56 @@ class FlightProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Load a briefing as the current flight (from saved/cached data)
+  void loadBriefing(Briefing briefing) {
+    debugPrint('DEBUG: FlightProvider.loadBriefing called for briefing ${briefing.id}');
+    debugPrint('DEBUG: Briefing name: ${briefing.displayName}');
+    debugPrint('DEBUG: Briefing airports: ${briefing.airports}');
+    debugPrint('DEBUG: Briefing NOTAM count: ${briefing.notams.length}');
+    debugPrint('DEBUG: Briefing weather count: ${briefing.weather.length}');
+    
+    // Debug: Print sample data from briefing storage
+    if (briefing.notams.isNotEmpty) {
+      final sampleNotamKey = briefing.notams.keys.first;
+      final sampleNotam = briefing.notams[sampleNotamKey];
+      debugPrint('DEBUG: Sample stored NOTAM - Key: $sampleNotamKey, Type: ${sampleNotam['type']}, ICAO: ${sampleNotam['icao']}');
+    }
+    if (briefing.weather.isNotEmpty) {
+      final sampleWeatherKey = briefing.weather.keys.first;
+      final sampleWeather = briefing.weather[sampleWeatherKey];
+      debugPrint('DEBUG: Sample stored Weather - Key: $sampleWeatherKey, Type: ${sampleWeather['type']}, Raw: ${sampleWeather['rawText']?.toString().substring(0, 30)}...');
+    }
+    
+    final flight = BriefingConversionService.briefingToFlight(briefing);
+    
+    debugPrint('DEBUG: FlightProvider - Converted flight has ${flight.notams.length} NOTAMs and ${flight.weather.length} weather items');
+    
+    // Debug: Print sample converted data
+    if (flight.notams.isNotEmpty) {
+      final sampleNotam = flight.notams.first;
+      debugPrint('DEBUG: Sample converted NOTAM - ID: ${sampleNotam.id}, Type: ${sampleNotam.type}, ICAO: ${sampleNotam.icao}');
+    }
+    if (flight.weather.isNotEmpty) {
+      final sampleWeather = flight.weather.first;
+      debugPrint('DEBUG: Sample converted Weather - Type: ${sampleWeather.type}, ICAO: ${sampleWeather.icao}, Raw: ${sampleWeather.rawText.substring(0, 30)}...');
+    }
+    
+    // Clear any UI-level caches that might interfere with loaded briefing data
+    debugPrint('DEBUG: Clearing UI caches before loading briefing data');
+    
+    // Import and clear TAF state manager cache
+    try {
+      final tafStateManager = TafStateManager();
+      tafStateManager.clearCache();
+      debugPrint('DEBUG: Cleared TAF state manager cache');
+    } catch (e) {
+      debugPrint('DEBUG: Failed to clear TAF cache: $e');
+    }
+    
+    setCurrentFlight(flight);
+    debugPrint('DEBUG: FlightProvider - Loaded briefing ${briefing.id} as current flight');
+  }
+
   // Save the current flight to the database
   Future<void> saveCurrentFlight() async {
     if (_currentFlight == null) return;
@@ -228,16 +281,20 @@ class FlightProvider with ChangeNotifier {
   }
 
   void _groupWeatherData() {
+    debugPrint('DEBUG: _groupWeatherData called with ${_currentFlight?.weather.length ?? 0} weather items');
     _metarsByIcao = {};
     _tafsByIcao = {};
     if (_currentFlight != null) {
       for (final weather in _currentFlight!.weather) {
+        debugPrint('DEBUG: Processing weather - Type: ${weather.type}, ICAO: ${weather.icao}, Timestamp: ${weather.timestamp}');
         if (weather.type == 'METAR') {
+          debugPrint('DEBUG: Adding METAR for ${weather.icao} - Timestamp: ${weather.timestamp}, Raw: ${weather.rawText.substring(0, 30)}...');
           if (!_metarsByIcao.containsKey(weather.icao)) {
             _metarsByIcao[weather.icao] = [];
           }
           _metarsByIcao[weather.icao]!.add(weather);
         } else if (weather.type == 'TAF') {
+          debugPrint('DEBUG: Adding TAF for ${weather.icao} - Timestamp: ${weather.timestamp}, Raw: ${weather.rawText.substring(0, 30)}...');
           if (!_tafsByIcao.containsKey(weather.icao)) {
             _tafsByIcao[weather.icao] = [];
           }

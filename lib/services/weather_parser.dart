@@ -138,6 +138,11 @@ class WeatherParser {
       if (isEgll) {
         print('DEBUG: EGLL cloud parsed: ${weather['Cloud']}');
       }
+    } else if (segment.contains('NSC')) {
+      weather['Cloud'] = 'No Significant Cloud';
+      if (isEgll) {
+        print('DEBUG: EGLL cloud parsed: No Significant Cloud (NSC detected)');
+      }
     } else if (isEgll) {
       print('DEBUG: 🚨 EGLL cloud not found in segment!');
     }

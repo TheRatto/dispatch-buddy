@@ -1,5 +1,6 @@
 import 'decoded_weather_models.dart';
 import '../services/decoder_service.dart' as decoder;
+import 'package:flutter/foundation.dart';
 
 class Weather {
   final String icao;
@@ -35,11 +36,42 @@ class Weather {
   });
 
   factory Weather.fromJson(Map<String, dynamic> json) {
+    final icao = json['icao'] ?? '';
+    final rawText = json['rawText'] ?? '';
+    final type = json['type'] ?? 'METAR';
+    
+    // For TAF and METAR data, try to load decoded weather from JSON first, then re-decode if needed
+    DecodedWeather? decodedWeather;
+    if (rawText.isNotEmpty) {
+      if (json['decodedWeather'] != null) {
+        debugPrint('DEBUG: Weather.fromJson - loading decoded weather from JSON for $icao ($type)');
+        try {
+          decodedWeather = DecodedWeather.fromJson(json['decodedWeather']);
+        } catch (e) {
+          debugPrint('DEBUG: Weather.fromJson - failed to load from JSON, re-decoding for $icao ($type): $e');
+          final decoderService = decoder.DecoderService();
+          if (type == 'TAF') {
+            decodedWeather = decoderService.decodeTaf(rawText);
+          } else if (type == 'METAR') {
+            decodedWeather = decoderService.decodeMetar(rawText);
+          }
+        }
+      } else {
+        debugPrint('DEBUG: Weather.fromJson - no decoded weather in JSON, calling decoder for $icao ($type)');
+        final decoderService = decoder.DecoderService();
+        if (type == 'TAF') {
+          decodedWeather = decoderService.decodeTaf(rawText);
+        } else if (type == 'METAR') {
+          decodedWeather = decoderService.decodeMetar(rawText);
+        }
+      }
+    }
+    
     return Weather(
-      icao: json['icao'] ?? '',
+      icao: icao,
       timestamp: DateTime.parse(json['timestamp']),
-      rawText: json['rawText'] ?? '',
-      decodedText: json['decodedText'] ?? '',
+      rawText: rawText,
+      decodedText: decodedWeather != null ? _generateDecodedText(decodedWeather) : (json['decodedText'] ?? ''),
       windDirection: json['windDirection'] ?? 0,
       windSpeed: json['windSpeed'] ?? 0,
       visibility: json['visibility'] ?? 0,
@@ -48,7 +80,8 @@ class Weather {
       dewPoint: json['dewPoint'] ?? 0.0,
       qnh: json['qnh'] ?? 0,
       conditions: json['conditions'] ?? '',
-      type: json['type'] ?? 'METAR',
+      type: type,
+      decodedWeather: decodedWeather,
     );
   }
 
