@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/briefing.dart';
 import '../services/briefing_storage_service.dart';
+import '../services/briefing_refresh_service.dart';
 import '../services/data_freshness_service.dart';
 
 class SwipeableBriefingCard extends StatefulWidget {
@@ -41,6 +43,12 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
   bool _isEditing = false;
   late TextEditingController _editController;
   late FocusNode _editFocusNode;
+  
+  // Refresh state
+  bool _isRefreshing = false;
+  
+  // Age update timer
+  Timer? _ageUpdateTimer;
 
   static const double _actionWidth = 72.0;
   static const double _maxDrag = 400.0; // Allow much more drag to reach 80% of card width
@@ -63,6 +71,15 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
     // Initialize inline editing controllers
     _editController = TextEditingController(text: widget.briefing.name ?? '');
     _editFocusNode = FocusNode();
+    
+    // Start timer to update age string every minute
+    _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild to update age string
+        });
+      }
+    });
   }
 
   @override
@@ -84,6 +101,7 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
     _dismissController.dispose();
     _editController.dispose();
     _editFocusNode.dispose();
+    _ageUpdateTimer?.cancel();
     super.dispose();
   }
 
@@ -287,6 +305,43 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
       _isEditing = false;
     });
     _editFocusNode.unfocus();
+  }
+
+  void _onRefreshTap() async {
+    if (_isRefreshing) return; // Prevent multiple simultaneous refreshes
+    
+    setState(() {
+      _isRefreshing = true;
+    });
+    
+    try {
+      // Use the same safety-first approach as pull-to-refresh
+      await BriefingRefreshService.refreshBriefing(widget.briefing);
+      
+      // Show success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Briefing refreshed successfully'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Notify parent to refresh the list
+      widget.onRefresh?.call();
+    } catch (e) {
+      debugPrint('ERROR: Failed to refresh briefing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to refresh briefing: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isRefreshing = false;
+      });
+    }
   }
 
   void _onDeleteTap() async {
@@ -502,7 +557,7 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with name, flag, and freshness
+              // Header with name, flag, freshness, and refresh
               Row(
                 children: [
                   Expanded(
@@ -517,6 +572,33 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
                         ),
                   ),
                   if (!_isEditing) ...[
+                    // Refresh button
+                    IconButton(
+                      onPressed: _isRefreshing ? null : _onRefreshTap,
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: _isRefreshing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.refresh_outlined,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     if (widget.briefing.isFlagged)
                       const Icon(
                         Icons.flag,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/briefing.dart';
 import '../services/briefing_storage_service.dart';
@@ -28,12 +29,22 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
   bool _isLoading = true;
   String? _error;
   String? _currentlySwipedBriefingId;
+  Timer? _ageUpdateTimer;
 
   @override
   void initState() {
     super.initState();
     _loadBriefings();
     // _addTestData(); // Removed - now using real auto-save
+    
+    // Start timer to update age strings every minute
+    _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild to update age strings
+        });
+      }
+    });
   }
 
   @override
@@ -86,6 +97,12 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
     setState(() {
       _currentlySwipedBriefingId = null;
     });
+  }
+
+  @override
+  void dispose() {
+    _ageUpdateTimer?.cancel();
+    super.dispose();
   }
 
 

@@ -234,9 +234,9 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
                       await flightProvider.refreshFlightData();
                     }
                   },
-                  child: TabBarView(
-                    controller: _systemTabController,
-                    children: _buildSystemPages(selectedAirport, flight.notams),
+                child: TabBarView(
+                  controller: _systemTabController,
+                  children: _buildSystemPages(selectedAirport, flight.notams),
                   ),
                 ),
               ),

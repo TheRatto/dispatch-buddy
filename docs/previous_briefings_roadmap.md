@@ -95,6 +95,7 @@ The Previous Briefings feature allows users to save and recall complete briefing
   - Fixed "Just now" threshold (now shows minutes)
   - Granular time display (5 minutes ago, 30 minutes ago, etc.)
   - Proper age calculation and formatting
+  - **Real-time updates** - Age strings update every minute automatically
 
 ### **Phase 3: Refresh Capability** ⏳ **NEXT**
 
@@ -137,10 +138,13 @@ The Previous Briefings feature allows users to save and recall complete briefing
   - `refreshCurrentBriefing()` in FlightProvider
   - Integrates with BriefingRefreshService
   - Updates stored briefing with fresh data
-- [ ] **Refresh Button on SwipeableBriefingCard**
+- ✅ **Refresh Button on SwipeableBriefingCard**
   - Small refresh icon in top-right corner
   - Shows refresh status (idle/loading/success/error)
   - Quick individual refresh without opening
+  - Uses same safety-first approach as pull-to-refresh
+  - Animated loading indicator during refresh
+  - Success/error feedback via SnackBar
 - [ ] **"Refresh All" Button in PreviousBriefingsList**
   - Bulk refresh multiple briefings
   - Background processing with overall progress
@@ -365,9 +369,10 @@ lib/
 10. ✅ **Implement backup-restore system** - Data safety with rollback
 11. ✅ **Fix RangeError issues** - Proper substring handling
 12. ✅ **Integrate refresh with FlightProvider** - Seamless data updates
+13. ✅ **Add real-time age updates** - Timer-based age string updates
 
 ### **Next Session:**
-1. **Add refresh buttons on cards** - Individual briefing refresh
+1. ✅ **Add refresh buttons on cards** - Individual briefing refresh
 2. **Implement bulk refresh** - "Refresh All" functionality
 3. **Add progress indicators** - Better user feedback
 4. **Begin Phase 4** - Airport editing functionality

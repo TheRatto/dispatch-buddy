@@ -144,36 +144,36 @@ class SummaryScreen extends StatelessWidget {
                       await flightProvider.refreshFlightData();
                     }
                   },
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _buildSummaryCard(
-                        context,
-                        'Departure',
-                        flight.departure,
-                        flight.airports.firstWhere((a) => a.icao == flight.departure),
-                        Icons.flight_takeoff,
-                        const Color(0xFF10B981),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildSummaryCard(
-                        context,
-                        'Enroute',
-                        'Flight Level ${flight.flightLevel}',
-                        null,
-                        Icons.flight,
-                        const Color(0xFF3B82F6),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildSummaryCard(
-                        context,
-                        'Arrival',
-                        flight.destination,
-                        flight.airports.firstWhere((a) => a.icao == flight.destination),
-                        Icons.flight_land,
-                        const Color(0xFFF59E0B),
-                      ),
-                    ],
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildSummaryCard(
+                      context,
+                      'Departure',
+                      flight.departure,
+                      flight.airports.firstWhere((a) => a.icao == flight.departure),
+                      Icons.flight_takeoff,
+                      const Color(0xFF10B981),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSummaryCard(
+                      context,
+                      'Enroute',
+                      'Flight Level ${flight.flightLevel}',
+                      null,
+                      Icons.flight,
+                      const Color(0xFF3B82F6),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSummaryCard(
+                      context,
+                      'Arrival',
+                      flight.destination,
+                      flight.airports.firstWhere((a) => a.icao == flight.destination),
+                      Icons.flight_land,
+                      const Color(0xFFF59E0B),
+                    ),
+                  ],
                   ),
                 ),
               ),
