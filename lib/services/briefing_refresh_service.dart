@@ -6,6 +6,8 @@ import '../models/weather.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/api_service.dart';
 import '../services/briefing_conversion_service.dart';
+import '../services/cache_manager.dart';
+import '../services/taf_state_manager.dart';
 
 class RefreshException implements Exception {
   final String message;
@@ -29,68 +31,143 @@ class BriefingRefreshService {
   Future<bool> _refreshBriefing(Briefing briefing) async {
     debugPrint('DEBUG: Starting refresh for briefing ${briefing.id}');
     
-    // 1. IMMEDIATE BACKUP
-    final originalBriefing = briefing.copyWith();
-    debugPrint('DEBUG: Created backup of original briefing data');
+    // 1. IMMEDIATE BACKUP - Store current data as a version
+    final currentData = {
+      'notams': briefing.notams,
+      'weather': briefing.weather,
+      'timestamp': briefing.timestamp.toIso8601String(),
+    };
+    
+    // Get current version number
+    final currentVersion = await BriefingStorageService.getLatestVersion(briefing.id);
+    if (currentVersion > 0) {
+      await BriefingStorageService.storeVersionedData(briefing.id, currentData, currentVersion);
+      debugPrint('DEBUG: Created backup version $currentVersion of current data');
+    }
     
     try {
-      // 2. FETCH NEW DATA (without touching original)
+      // 2. CLEAR CACHES ONLY FOR RELEVANT AIRPORTS
+      debugPrint('DEBUG: Clearing caches for relevant airports');
+      final cacheManager = CacheManager();
+      for (final airport in briefing.airports) {
+        cacheManager.clearPrefix('notam_${airport}_');
+        cacheManager.clearPrefix('weather_${airport}_');
+        cacheManager.clearPrefix('taf_${airport}_');
+      }
+      // Also clear TAF state manager cache for relevant airports
+      final tafStateManager = TafStateManager();
+      // (Assume TafStateManager can clear per-airport, if not, skip this step)
+      // tafStateManager.clearCacheForAirports(briefing.airports);
+      
+      // 3. FETCH NEW DATA (without touching original)
       debugPrint('DEBUG: Fetching fresh data for airports: ${briefing.airports}');
       final newData = await _fetchFreshData(briefing.airports);
       
-      // 3. VALIDATE NEW DATA QUALITY
+      // 4. VALIDATE NEW DATA QUALITY
       debugPrint('DEBUG: Validating new data quality');
       if (!_isDataQualityAcceptable(newData, briefing.airports)) {
         throw RefreshException('New data quality check failed');
       }
       
-      // 4. ONLY THEN UPDATE STORAGE
-      debugPrint('DEBUG: Data quality passed, updating briefing');
-      final updatedBriefing = _mergeNewData(briefing, newData);
+      // 5. CREATE NEW VERSION WITH FRESH DATA
+      debugPrint('DEBUG: Data quality passed, creating new version');
+      final newVersionData = _prepareVersionedData(newData);
+      final newVersion = await BriefingStorageService.createNewVersion(briefing.id, newVersionData);
+      
+      // 6. UPDATE BRIEFING METADATA (but keep versioned data separate)
+      final updatedBriefing = briefing.copyWith(
+        timestamp: DateTime.now(),
+      );
       await BriefingStorageService.updateBriefing(updatedBriefing);
       
-      debugPrint('DEBUG: Refresh completed successfully');
+      debugPrint('DEBUG: Refresh completed successfully - created version $newVersion');
       return true;
       
     } catch (e) {
-      // 5. AUTOMATIC ROLLBACK ON ANY FAILURE
       debugPrint('DEBUG: Refresh failed: $e, rolling back to original data');
-      await BriefingStorageService.updateBriefing(originalBriefing);
       throw RefreshException('Refresh failed, original data preserved: $e');
     }
   }
-  
+
   /// Fetch fresh data for the given airports
   Future<RefreshData> _fetchFreshData(List<String> airports) async {
     final notams = <Notam>[];
     final weather = <Weather>[];
     
-    for (final airport in airports) {
-      try {
-        // Fetch NOTAMs
-        final airportNotams = await _apiService.fetchNotams(airport);
-        notams.addAll(airportNotams);
-        
-        // Fetch METARs (using fetchWeather for single airport)
-        final metars = await _apiService.fetchWeather([airport]);
-        weather.addAll(metars);
-        
-        // Fetch TAFs (using fetchTafs for single airport)
-        final tafs = await _apiService.fetchTafs([airport]);
-        weather.addAll(tafs);
-        
-        debugPrint('DEBUG: Fetched data for $airport: ${airportNotams.length} NOTAMs, ${metars.length} METARs, ${tafs.length} TAFs');
-        
-      } catch (e) {
-        debugPrint('DEBUG: Failed to fetch data for $airport: $e');
-        // Continue with other airports even if one fails
+    try {
+      final apiService = ApiService();
+      
+      // Use the exact same approach as new briefing flow
+      // Fetch all data in parallel using the new batch methods
+      // Use SATCOM-optimized NOTAM fetching with fallback strategies
+      final notamsFuture = Future.wait(
+        airports.map((icao) => apiService.fetchNotamsWithSatcomFallback(icao).catchError((e) {
+          debugPrint('Warning: All SATCOM NOTAM strategies failed for $icao: $e');
+          return <Notam>[]; // Return empty list on error
+        }))
+      );
+      final weatherFuture = apiService.fetchWeather(airports);
+      final tafsFuture = apiService.fetchTafs(airports);
+
+      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
+
+      final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
+      final List<Weather> metars = results[1] as List<Weather>;
+      final List<Weather> tafs = results[2] as List<Weather>;
+
+      // Flatten the list of lists into a single list (exactly like new briefing)
+      final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
+      
+      // For refresh: Select only the latest METAR and TAF for each airport
+      final Map<String, Weather> latestMetars = {};
+      final Map<String, Weather> latestTafs = {};
+      
+      // Group METARs by airport and select the latest
+      for (final metar in metars) {
+        if (!latestMetars.containsKey(metar.icao) || 
+            metar.timestamp.isAfter(latestMetars[metar.icao]!.timestamp)) {
+          latestMetars[metar.icao] = metar;
+        }
       }
+      
+      // Group TAFs by airport and select the latest
+      for (final taf in tafs) {
+        if (!latestTafs.containsKey(taf.icao) || 
+            taf.timestamp.isAfter(latestTafs[taf.icao]!.timestamp)) {
+          latestTafs[taf.icao] = taf;
+        }
+      }
+      
+      // Add only the latest weather for each airport
+      weather.addAll(latestMetars.values);
+      weather.addAll(latestTafs.values);
+      
+      notams.addAll(allNotams);
+      
+      debugPrint('DEBUG: Total fetched: ${notams.length} NOTAMs, ${weather.length} weather items');
+      debugPrint('DEBUG: Latest METARs: ${latestMetars.length}, Latest TAFs: ${latestTafs.length}');
+      
+      // Debug: Show timestamps for each airport
+      for (final airport in airports) {
+        final metar = latestMetars[airport];
+        final taf = latestTafs[airport];
+        if (metar != null) {
+          debugPrint('DEBUG: $airport - Latest METAR: ${metar.timestamp}');
+        }
+        if (taf != null) {
+          debugPrint('DEBUG: $airport - Latest TAF: ${taf.timestamp}');
+        }
+      }
+      
+    } catch (e) {
+      debugPrint('DEBUG: Failed to fetch data: $e');
+      // Continue with whatever data we have
     }
     
     return RefreshData(
       notams: notams,
       weather: weather,
-      hasApiErrors: false, // Will be set based on overall success
+      hasApiErrors: false,
     );
   }
   
@@ -131,42 +208,43 @@ class BriefingRefreshService {
     return true;
   }
   
-  /// Merge new data into the briefing
-  Briefing _mergeNewData(Briefing briefing, RefreshData newData) {
-    // Convert new data to storage format
-    final newNotamsMap = <String, dynamic>{};
-    final newWeatherMap = <String, dynamic>{};
+  /// Prepare data for versioned storage
+  Map<String, dynamic> _prepareVersionedData(RefreshData newData) {
+    final notamsMap = <String, dynamic>{};
+    final weatherMap = <String, dynamic>{};
     
-    // Convert NOTAMs to storage format
+    // Convert NOTAMs to storage format - use NOTAM ID as key (not versioned)
     for (final notam in newData.notams) {
-      final key = '${notam.id}_${briefing.id}';
-      newNotamsMap[key] = {
-        'id': notam.id,
-        'type': notam.type.toString(),
-        'icao': notam.icao,
-        'rawText': notam.rawText,
-        'validFrom': notam.validFrom.toIso8601String(),
-        'validTo': notam.validTo.toIso8601String(),
-      };
+      final key = notam.id; // Use NOTAM ID as key, not versioned
+      notamsMap[key] = notam.toJson(); // Use the complete toJson method
     }
     
-    // Convert weather to storage format
+    // Convert weather to storage format - use simple key format
     for (final weather in newData.weather) {
-      final key = '${weather.type}_${weather.icao}_${briefing.id}';
-      newWeatherMap[key] = {
-        'type': weather.type,
-        'icao': weather.icao,
-        'rawText': weather.rawText,
-        'timestamp': weather.timestamp.toIso8601String(),
-      };
+      final key = '${weather.type}_${weather.icao}'; // Use simple key format
+      weatherMap[key] = weather.toJson(); // Use the complete toJson method
     }
     
-    // Create updated briefing with new data
-    return briefing.copyWith(
-      notams: newNotamsMap,
-      weather: newWeatherMap,
-      timestamp: DateTime.now(), // Update timestamp to now
-    );
+    return {
+      'notams': notamsMap,
+      'weather': weatherMap,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+  }
+  
+  /// Load the latest versioned data for a briefing
+  static Future<Map<String, dynamic>?> loadLatestVersionedData(String briefingId) async {
+    return await BriefingStorageService.getLatestVersionedData(briefingId);
+  }
+  
+  /// Get the latest version number for a briefing
+  static Future<int> getLatestVersion(String briefingId) async {
+    return await BriefingStorageService.getLatestVersion(briefingId);
+  }
+  
+  /// Get all available versions for a briefing
+  static Future<List<int>> getAvailableVersions(String briefingId) async {
+    return await BriefingStorageService.getAvailableVersions(briefingId);
   }
 }
 

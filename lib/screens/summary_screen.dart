@@ -93,7 +93,7 @@ class SummaryScreen extends StatelessWidget {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    debugPrint('DEBUG: SummaryScreen - Pull-to-refresh triggered');
+                    debugPrint('DEBUG: SummaryScreen - Unified pull-to-refresh triggered');
                     
                     // Clear caches like Raw Data screen does
                     _clearCache();
@@ -102,11 +102,8 @@ class SummaryScreen extends StatelessWidget {
                       debugPrint('DEBUG: SummaryScreen - Refreshing briefing ${flightProvider.currentBriefing!.id}');
                       
                       try {
-                        // First refresh the flight data (like Raw Data screen)
-                        await flightProvider.refreshFlightData();
-                        
-                        // Then update the stored briefing with fresh data
-                        final success = await flightProvider.refreshCurrentBriefing();
+                        // Use the unified refresh method
+                        final success = await flightProvider.refreshCurrentBriefingUnified();
                         
                         if (success) {
                           if (context.mounted) {
@@ -128,7 +125,7 @@ class SummaryScreen extends StatelessWidget {
                           }
                         }
                       } catch (e) {
-                        debugPrint('DEBUG: SummaryScreen - Refresh failed: $e');
+                        debugPrint('DEBUG: SummaryScreen - Unified refresh failed: $e');
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

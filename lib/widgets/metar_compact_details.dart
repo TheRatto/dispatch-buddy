@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/weather.dart';
 import 'grid_item.dart';
 
-class MetarCompactDetails extends StatelessWidget {
+class MetarCompactDetails extends StatefulWidget {
   final Weather metar;
 
   const MetarCompactDetails({
@@ -11,16 +12,98 @@ class MetarCompactDetails extends StatelessWidget {
   });
 
   @override
+  State<MetarCompactDetails> createState() => _MetarCompactDetailsState();
+}
+
+class _MetarCompactDetailsState extends State<MetarCompactDetails> {
+  Timer? _ageUpdateTimer;
+  String _ageText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('DEBUG: MetarCompactDetails initState for ${widget.metar.icao}');
+    _updateAgeText();
+    // Update age every minute
+    _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateAgeText();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ageUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _updateAgeText() {
+    if (!mounted) return;
+    
+    // Extract issue time from METAR raw text
+    final issueTimeMatch = RegExp(r'(\d{2})(\d{2})(\d{2})Z').firstMatch(widget.metar.rawText);
+    if (issueTimeMatch == null) {
+      setState(() {
+        _ageText = '';
+      });
+      return;
+    }
+    
+    final day = int.parse(issueTimeMatch.group(1)!);
+    final hour = int.parse(issueTimeMatch.group(2)!);
+    final minute = int.parse(issueTimeMatch.group(3)!);
+    
+    // Create issue time with proper date handling
+    final now = DateTime.now().toUtc();
+    DateTime issueTime;
+    
+    // Try current month first
+    issueTime = DateTime.utc(now.year, now.month, day, hour, minute);
+    
+    // If the calculated age is more than 24 hours, the METAR might be from the previous month
+    final age = now.difference(issueTime);
+    if (age.inHours > 24) {
+      // Try previous month
+      final previousMonth = now.month == 1 ? 12 : now.month - 1;
+      final previousYear = now.month == 1 ? now.year - 1 : now.year;
+      issueTime = DateTime.utc(previousYear, previousMonth, day, hour, minute);
+    }
+    
+    // Recalculate age with the correct date
+    final finalAge = now.difference(issueTime);
+    final hours = finalAge.inHours;
+    final minutes = finalAge.inMinutes % 60;
+    
+    String ageText;
+    if (hours > 0) {
+      ageText = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')} hrs old';
+    } else {
+      ageText = '${minutes.toString().padLeft(2, '0')} mins old';
+    }
+    
+    // Debug logging
+    debugPrint('DEBUG: MetarCompactDetails age calculation for ${widget.metar.icao}:');
+    debugPrint('DEBUG:   Raw text: ${widget.metar.rawText}');
+    debugPrint('DEBUG:   Issue time: $issueTime');
+    debugPrint('DEBUG:   Current time: $now');
+    debugPrint('DEBUG:   Age: $finalAge');
+    debugPrint('DEBUG:   Age text: $ageText');
+    
+    setState(() {
+      _ageText = ageText;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (metar.decodedWeather == null) {
+    if (widget.metar.decodedWeather == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8.0),
         child: Text('No decoded data available.'),
       );
     }
 
-    final decoded = metar.decodedWeather!;
-    final isCavok = metar.rawText.contains('CAVOK');
+    final decoded = widget.metar.decodedWeather!;
+    final isCavok = widget.metar.rawText.contains('CAVOK');
     
     String? temp, dewPoint;
     if (decoded.temperatureDescription.isNotEmpty && !decoded.temperatureDescription.contains('unavailable')) {
@@ -31,51 +114,83 @@ class MetarCompactDetails extends StatelessWidget {
         }
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GridItem(label: 'Wind', value: decoded.windDescription.replaceFirst('Wind ', '')),
-              const SizedBox(width: 16),
-              GridItem(label: 'Visibility', value: isCavok ? 'CAVOK' : decoded.visibilityDescription.replaceFirst('Visibility ', '')),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GridItem(label: 'Weather', value: decoded.conditionsDescription, isPhenomenaOrRemark: true),
-              const SizedBox(width: 16),
-              GridItem(label: 'Cloud', value: decoded.cloudDescription),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GridItem(label: 'Temp / Dew Point', value: '$temp / $dewPoint'),
-              const SizedBox(width: 16),
-              GridItem(label: 'QNH', value: decoded.pressureDescription.replaceFirst('QNH ', '')),
-            ],
-          ),
-          if (decoded.rvrDescription.isNotEmpty)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GridItem(label: 'RVR', value: decoded.rvrDescription.replaceFirst('Runway Visual Range: ', '')),
-                const SizedBox(width: 16),
-                const Expanded(child: SizedBox()), // Placeholder for alignment
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Age indicator in top left
+        Row(
+          children: [
+            if (_ageText.isNotEmpty)
+              Text(
+                _ageText,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Weather grid
+        Row(
+          children: [
+            Expanded(
+              child: GridItem(
+                label: 'Wind',
+                value: decoded.windDescription,
+              ),
             ),
-           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GridItem(label: 'Remarks', value: decoded.remarks, isPhenomenaOrRemark: true),
-            ],
-          ),
-        ],
-      ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: GridItem(
+                label: 'Visibility',
+                value: decoded.visibilityDescription,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GridItem(
+                label: 'Weather',
+                value: decoded.conditionsDescription,
+                isPhenomenaOrRemark: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: GridItem(
+                label: 'Cloud',
+                value: decoded.cloudDescription,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GridItem(
+                label: 'Temp / Dew Point',
+                value: decoded.temperatureDescription,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: GridItem(
+                label: 'Remarks',
+                value: decoded.remarks?.isNotEmpty == true ? decoded.remarks! : '-',
+                isPhenomenaOrRemark: true,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 } 

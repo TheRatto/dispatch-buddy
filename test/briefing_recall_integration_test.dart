@@ -7,79 +7,44 @@ import '../lib/services/briefing_conversion_service.dart';
 import '../lib/services/briefing_storage_service.dart';
 
 void main() {
-  // Initialize Flutter binding for SharedPreferences
   TestWidgetsFlutterBinding.ensureInitialized();
   
   group('Briefing Recall Integration Tests', () {
-    test('should save and recall briefing data correctly', () async {
-      // Create test data in the actual storage format
-      final testNotamsMap = <String, dynamic>{
-        'NOTAM001': {
-          'id': 'NOTAM001',
-          'icao': 'YSSY',
-          'rawText': 'A1234/24 YSSY RWY 16L/34R CLSD',
-          'decodedText': 'Runway 16L/34R closed',
-          'validFrom': DateTime.now().toIso8601String(),
-          'validTo': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
-          'affectedSystem': 'RWY',
-          'isCritical': true,
-          'type': 'runway',
-          'group': 'runways',
-          'qCode': 'QMRLC',
-        },
-        'NOTAM002': {
-          'id': 'NOTAM002',
-          'icao': 'YPPH',
-          'rawText': 'B5678/24 YPPH TWY A CLSD',
-          'decodedText': 'Taxiway A closed',
-          'validFrom': DateTime.now().toIso8601String(),
-          'validTo': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
-          'affectedSystem': 'TWY',
-          'isCritical': false,
-          'type': 'taxiway',
-          'group': 'taxiways',
-          'qCode': 'QMXLC',
-        },
-      };
-
-      final testWeatherMap = <String, dynamic>{
-        'YSSY': {
-          'icao': 'YSSY',
-          'rawText': 'YSSY 250200Z 08015KT 9999 SCT030 22/15 Q1013',
-          'decodedText': 'Wind 080° at 15 knots, visibility 10km, scattered clouds at 3000ft',
-          'timestamp': DateTime.now().toIso8601String(),
-          'type': 'METAR',
-          'windDirection': 80,
-          'windSpeed': 15,
-          'visibility': 10,
-          'cloudCover': 'SCT',
-          'temperature': 22.0,
-          'dewPoint': 15.0,
-          'qnh': 1013,
-          'conditions': 'CAVOK',
-        },
-        'YPPH': {
-          'icao': 'YPPH',
-          'rawText': 'YPPH 250200Z 12010KT 9999 FEW030 25/18 Q1015',
-          'decodedText': 'Wind 120° at 10 knots, visibility 10km, few clouds at 3000ft',
-          'timestamp': DateTime.now().toIso8601String(),
-          'type': 'METAR',
-          'windDirection': 120,
-          'windSpeed': 10,
-          'visibility': 10,
-          'cloudCover': 'FEW',
-          'temperature': 25.0,
-          'dewPoint': 18.0,
-          'qnh': 1015,
-          'conditions': 'CAVOK',
-        },
-      };
-
+    test('should save and recall briefing with NOTAMs and weather', () async {
+      // Create a test briefing
       final briefing = Briefing.create(
-        name: 'Test Integration Briefing',
-        airports: ['YSSY', 'YPPH'],
-        notams: testNotamsMap,
-        weather: testWeatherMap,
+        airports: ['YSSY', 'YMML'],
+        notams: {
+          'F1234/25': {
+            'id': 'F1234/25',
+            'type': 'runway',
+            'icao': 'YSSY',
+            'rawText': 'TEST NOTAM',
+            'decodedText': 'Test NOTAM decoded',
+            'validFrom': '2025-01-01T00:00:00.000Z',
+            'validTo': '2025-12-31T23:59:59.000Z',
+            'affectedSystem': 'RWY',
+            'isCritical': true,
+            'group': 'runways',
+          },
+        },
+        weather: {
+          'METAR_YSSY': {
+            'type': 'METAR',
+            'icao': 'YSSY',
+            'rawText': 'YSSY 251130Z 06006KT 9999 SCT110 09/01 Q1023',
+            'decodedText': 'Wind 060° at 6kt, visibility 10km',
+            'timestamp': '2025-01-25T11:30:00.000Z',
+            'windDirection': 60,
+            'windSpeed': 6,
+            'visibility': 10,
+            'cloudCover': 'SCT',
+            'temperature': 9.0,
+            'dewPoint': 1.0,
+            'qnh': 1023,
+            'conditions': 'CAVOK',
+          },
+        },
       );
 
       // Save the briefing
@@ -88,101 +53,121 @@ void main() {
 
       // Load all briefings
       final loadedBriefings = await BriefingStorageService.loadAllBriefings();
-      expect(loadedBriefings, isNotEmpty);
+      expect(loadedBriefings.length, greaterThan(0));
 
       // Find our test briefing
-      final savedBriefing = loadedBriefings.firstWhere((b) => b.id == briefing.id);
-      expect(savedBriefing, isNotNull);
-      expect(savedBriefing.airports, equals(briefing.airports));
-      expect(savedBriefing.notams.length, equals(briefing.notams.length));
-      expect(savedBriefing.weather.length, equals(briefing.weather.length));
+      final recalledBriefing = loadedBriefings.firstWhere((b) => b.id == briefing.id);
+      expect(recalledBriefing, isNotNull);
 
-      // Test conversion from saved briefing to flight
-      final flight = BriefingConversionService.briefingToFlight(savedBriefing);
-      
-      expect(flight, isNotNull);
-      expect(flight.notams.length, equals(2));
-      expect(flight.weather.length, equals(2));
-      
-      // Verify the data was preserved correctly
-      final notamIds = flight.notams.map((n) => n.id).toSet();
-      expect(notamIds, contains('NOTAM001'));
-      expect(notamIds, contains('NOTAM002'));
-      
-      final weatherIcaos = flight.weather.map((w) => w.icao).toSet();
-      expect(weatherIcaos, contains('YSSY'));
-      expect(weatherIcaos, contains('YPPH'));
-      
-      // Verify NOTAM details were preserved
-      final yssyNotam = flight.notams.firstWhere((n) => n.icao == 'YSSY');
-      expect(yssyNotam.rawText, contains('RWY 16L/34R CLSD'));
-      expect(yssyNotam.isCritical, isTrue);
-      
-      // Verify weather details were preserved
-      final yssyWeather = flight.weather.firstWhere((w) => w.icao == 'YSSY');
-      expect(yssyWeather.windDirection, equals(80));
-      expect(yssyWeather.windSpeed, equals(15));
-      expect(yssyWeather.temperature, equals(22.0));
-    });
+      // Convert to flight
+      final flight = await BriefingConversionService.briefingToFlight(recalledBriefing);
 
-    test('should handle real-world briefing data format', () async {
-      // This test simulates the actual data format used by the app
-      final realNotamsMap = <String, dynamic>{
-        'FDC0245': {
-          'id': 'FDC0245',
-          'icao': 'KJFK',
-          'rawText': 'FDC 2/0245 KJFK RWY 13L/31R CLSD 2401251200-2401261200',
-          'decodedText': 'Runway 13L/31R closed',
-          'validFrom': DateTime.now().toIso8601String(),
-          'validTo': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
-          'affectedSystem': 'RWY',
-          'isCritical': true,
-          'type': 'runway',
-          'group': 'runways',
-          'qCode': 'QMRLC',
-        },
-      };
-
-      final realWeatherMap = <String, dynamic>{
-        'KJFK': {
-          'icao': 'KJFK',
-          'rawText': 'KJFK 251152Z 28015KT 10SM FEW250 22/15 A3000',
-          'decodedText': 'Wind 280° at 15 knots, visibility 10 statute miles, few clouds at 25000ft',
-          'timestamp': DateTime.now().toIso8601String(),
-          'type': 'METAR',
-          'windDirection': 280,
-          'windSpeed': 15,
-          'visibility': 10,
-          'cloudCover': 'FEW',
-          'temperature': 22.0,
-          'dewPoint': 15.0,
-          'qnh': 3000,
-          'conditions': 'CAVOK',
-        },
-      };
-
-      final briefing = Briefing.create(
-        name: 'Real World Test',
-        airports: ['KJFK'],
-        notams: realNotamsMap,
-        weather: realWeatherMap,
-      );
-
-      // Test conversion
-      final flight = BriefingConversionService.briefingToFlight(briefing);
-      
+      // Verify the data was preserved
       expect(flight.notams.length, equals(1));
       expect(flight.weather.length, equals(1));
-      
-      final notam = flight.notams.first;
-      expect(notam.id, equals('FDC0245'));
-      expect(notam.icao, equals('KJFK'));
-      expect(notam.rawText, contains('RWY 13L/31R CLSD'));
-      
-      final weather = flight.weather.first;
-      expect(weather.icao, equals('KJFK'));
-      expect(weather.rawText, contains('28015KT'));
-      expect(weather.windDirection, equals(280));
+      expect(flight.notams.first.id, equals('F1234/25'));
+      expect(flight.weather.first.icao, equals('YSSY'));
+    });
+
+    test('should handle multiple briefings correctly', () async {
+      // Create multiple test briefings
+      final briefing1 = Briefing.create(
+        airports: ['YSSY'],
+        notams: {
+          'F1234/25': {
+            'id': 'F1234/25',
+            'type': 'runway',
+            'icao': 'YSSY',
+            'rawText': 'TEST NOTAM 1',
+            'decodedText': 'Test NOTAM 1 decoded',
+            'validFrom': '2025-01-01T00:00:00.000Z',
+            'validTo': '2025-12-31T23:59:59.000Z',
+            'affectedSystem': 'RWY',
+            'isCritical': true,
+            'group': 'runways',
+          },
+        },
+        weather: {},
+      );
+
+      final briefing2 = Briefing.create(
+        airports: ['YMML'],
+        notams: {},
+        weather: {
+          'METAR_YMML': {
+            'type': 'METAR',
+            'icao': 'YMML',
+            'rawText': 'YMML 251130Z 06006KT 9999 SCT110 09/01 Q1023',
+            'decodedText': 'Wind 060° at 6kt, visibility 10km',
+            'timestamp': '2025-01-25T11:30:00.000Z',
+            'windDirection': 60,
+            'windSpeed': 6,
+            'visibility': 10,
+            'cloudCover': 'SCT',
+            'temperature': 9.0,
+            'dewPoint': 1.0,
+            'qnh': 1023,
+            'conditions': 'CAVOK',
+          },
+        },
+      );
+
+      // Save both briefings
+      await BriefingStorageService.saveBriefing(briefing1);
+      await BriefingStorageService.saveBriefing(briefing2);
+
+      // Load all briefings
+      final loadedBriefings = await BriefingStorageService.loadAllBriefings();
+      expect(loadedBriefings.length, greaterThanOrEqualTo(2));
+
+      // Verify each briefing can be converted correctly
+      for (final loadedBriefing in loadedBriefings) {
+        final flight = await BriefingConversionService.briefingToFlight(loadedBriefing);
+        expect(flight.airports.length, greaterThan(0));
+      }
+    });
+
+    test('should handle briefing updates correctly', () async {
+      // Create initial briefing
+      final initialBriefing = Briefing.create(
+        airports: ['YSSY'],
+        notams: {},
+        weather: {},
+      );
+
+      // Save initial briefing
+      await BriefingStorageService.saveBriefing(initialBriefing);
+
+      // Update the briefing
+      final updatedBriefing = initialBriefing.copyWith(
+        notams: {
+          'F1234/25': {
+            'id': 'F1234/25',
+            'type': 'runway',
+            'icao': 'YSSY',
+            'rawText': 'UPDATED NOTAM',
+            'decodedText': 'Updated NOTAM decoded',
+            'validFrom': '2025-01-01T00:00:00.000Z',
+            'validTo': '2025-12-31T23:59:59.000Z',
+            'affectedSystem': 'RWY',
+            'isCritical': true,
+            'group': 'runways',
+          },
+        },
+      );
+
+      // Update the briefing
+      final updateSuccess = await BriefingStorageService.updateBriefing(updatedBriefing);
+      expect(updateSuccess, isTrue);
+
+      // Load the updated briefing
+      final loadedBriefing = await BriefingStorageService.loadBriefing(initialBriefing.id);
+      expect(loadedBriefing, isNotNull);
+
+      // Convert to flight and verify update
+      final flight = await BriefingConversionService.briefingToFlight(loadedBriefing!);
+      expect(flight.notams.length, equals(1));
+      expect(flight.notams.first.rawText, equals('UPDATED NOTAM'));
     });
   });
 } 

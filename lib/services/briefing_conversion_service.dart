@@ -5,6 +5,7 @@ import '../models/flight.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
 import '../models/airport.dart';
+import '../services/briefing_storage_service.dart';
 
 /// Service for converting between Briefing storage format and Flight objects
 /// 
@@ -14,22 +15,62 @@ import '../models/airport.dart';
 /// 
 /// This enables loading saved briefings into the existing FlightProvider workflow
 /// without breaking the current API-based functionality.
+/// 
+/// Now includes support for versioned data storage.
 class BriefingConversionService {
   
   /// Convert a Briefing object to a Flight object
   /// 
   /// This reconstructs the Flight object with all its associated data
   /// (NOTAMs, weather, airports) from the stored briefing data.
-  static Flight briefingToFlight(Briefing briefing) {
+  /// 
+  /// If versioned data is available, it will use the latest version.
+  /// If no versioned data is available, it will migrate the briefing to versioned data first.
+  static Future<Flight> briefingToFlight(Briefing briefing) async {
     try {
       debugPrint('DEBUG: Converting briefing ${briefing.id} to Flight object');
       debugPrint('DEBUG: Briefing has ${briefing.airports.length} airports: ${briefing.airports}');
-      debugPrint('DEBUG: Briefing has ${briefing.notams.length} NOTAM entries');
-      debugPrint('DEBUG: Briefing has ${briefing.weather.length} weather entries');
+      
+      // Try to load the latest versioned data first
+      final versionedData = await BriefingStorageService.getLatestVersionedData(briefing.id);
+      
+      Map<String, dynamic> notamsMap;
+      Map<String, dynamic> weatherMap;
+      
+      if (versionedData != null) {
+        debugPrint('DEBUG: Using versioned data for briefing ${briefing.id}');
+        notamsMap = Map<String, dynamic>.from(versionedData['notams'] ?? {});
+        weatherMap = Map<String, dynamic>.from(versionedData['weather'] ?? {});
+      } else {
+        debugPrint('DEBUG: No versioned data found, migrating briefing ${briefing.id} to versioned data system');
+        
+        // Migrate the briefing to versioned data system
+        final migrationSuccess = await BriefingStorageService.migrateBriefingToVersioned(briefing.id);
+        if (migrationSuccess) {
+          // Try to load the newly created versioned data
+          final newVersionedData = await BriefingStorageService.getLatestVersionedData(briefing.id);
+          if (newVersionedData != null) {
+            debugPrint('DEBUG: Using newly migrated versioned data for briefing ${briefing.id}');
+            notamsMap = Map<String, dynamic>.from(newVersionedData['notams'] ?? {});
+            weatherMap = Map<String, dynamic>.from(newVersionedData['weather'] ?? {});
+          } else {
+            debugPrint('DEBUG: Migration failed, using briefing metadata');
+            notamsMap = briefing.notams;
+            weatherMap = briefing.weather;
+          }
+        } else {
+          debugPrint('DEBUG: Migration failed, using briefing metadata');
+          notamsMap = briefing.notams;
+          weatherMap = briefing.weather;
+        }
+      }
+      
+      debugPrint('DEBUG: Briefing has ${notamsMap.length} NOTAM entries');
+      debugPrint('DEBUG: Briefing has ${weatherMap.length} weather entries');
       
       // Convert stored data back to proper objects
-      final notams = _convertNotamsMapToList(briefing.notams);
-      final weather = _convertWeatherMapToList(briefing.weather);
+      final notams = _convertNotamsMapToList(notamsMap);
+      final weather = _convertWeatherMapToList(weatherMap);
       final airports = _reconstructAirports(briefing.airports, notams, weather);
       
       debugPrint('DEBUG: Converted ${notams.length} NOTAMs, ${weather.length} weather reports, ${airports.length} airports');
@@ -87,6 +128,39 @@ class BriefingConversionService {
     }
   }
   
+  /// Load and convert the latest versioned data for a briefing
+  /// 
+  /// This method loads the latest versioned data and converts it to a Flight object.
+  /// If no versioned data is available, it falls back to the briefing metadata.
+  static Future<Flight?> loadLatestVersionedFlight(String briefingId) async {
+    try {
+      debugPrint('DEBUG: Loading latest versioned flight for briefing $briefingId');
+      
+      // Load the briefing metadata
+      final briefing = await BriefingStorageService.loadBriefing(briefingId);
+      if (briefing == null) {
+        debugPrint('DEBUG: Briefing $briefingId not found');
+        return null;
+      }
+      
+      // Convert to flight (this will automatically use versioned data if available)
+      return await briefingToFlight(briefing);
+    } catch (e) {
+      debugPrint('ERROR: Failed to load latest versioned flight for $briefingId: $e');
+      return null;
+    }
+  }
+  
+  /// Get the latest version number for a briefing
+  static Future<int> getLatestVersion(String briefingId) async {
+    return await BriefingStorageService.getLatestVersion(briefingId);
+  }
+  
+  /// Get all available versions for a briefing
+  static Future<List<int>> getAvailableVersions(String briefingId) async {
+    return await BriefingStorageService.getAvailableVersions(briefingId);
+  }
+  
   /// Convert stored NOTAMs Map back to List<Notam> objects
   static List<Notam> _convertNotamsMapToList(Map<String, dynamic> notamsMap) {
     try {
@@ -98,12 +172,12 @@ class BriefingConversionService {
         final notamId = entry.key;
         final notamData = entry.value as Map<String, dynamic>;
         
-          try {
+        try {
           final notam = Notam.fromJson(notamData);
-            notams.add(notam);
-          } catch (e) {
+          notams.add(notam);
+        } catch (e) {
           debugPrint('WARNING: Failed to convert NOTAM $notamId: $e');
-            // Continue with other NOTAMs
+          // Continue with other NOTAMs
         }
       }
       
@@ -209,11 +283,9 @@ class BriefingConversionService {
     try {
       final Map<String, Map<String, dynamic>> weatherMap = {};
       
-      // Generate a unique briefing ID for weather keys
-      final briefingId = 'briefing_${DateTime.now().millisecondsSinceEpoch}';
-      
       for (final weatherObj in weather) {
-        weatherMap['${weatherObj.icao}_$briefingId'] = weatherObj.toJson();
+        // Use consistent key format: TYPE_ICAO
+        weatherMap['${weatherObj.type}_${weatherObj.icao}'] = weatherObj.toJson();
       }
       
       return weatherMap;
@@ -264,9 +336,14 @@ class BriefingConversionService {
       
       // Check data completeness per airport
       for (final airportCode in briefing.airports) {
-        final hasNotams = briefing.notams.containsKey(airportCode) && 
-                         (briefing.notams[airportCode] as List).isNotEmpty;
-        final hasWeather = briefing.weather.containsKey(airportCode);
+        // Check for NOTAMs for this airport (NOTAMs are stored by ID, so we need to check content)
+        final hasNotams = briefing.notams.values.any((notamData) {
+          final notamMap = notamData as Map<String, dynamic>;
+          return notamMap['icao'] == airportCode;
+        });
+        
+        // Check for weather for this airport (weather is stored by TYPE_ICAO key)
+        final hasWeather = briefing.weather.keys.any((key) => key.endsWith('_$airportCode'));
         
         // It's okay if an airport has no NOTAMs (small airports often don't)
         // But we should have weather data for major airports

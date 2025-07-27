@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/briefing.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/briefing_refresh_service.dart';
 import '../services/data_freshness_service.dart';
+import '../providers/flight_provider.dart';
 
 class SwipeableBriefingCard extends StatefulWidget {
   final Briefing briefing;
@@ -14,7 +16,7 @@ class SwipeableBriefingCard extends StatefulWidget {
   final VoidCallback? onSwipeEnd;
   final bool shouldClose;
 
-  const SwipeableBriefingCard({
+  SwipeableBriefingCard({
     super.key,
     required this.briefing,
     this.onTap,
@@ -22,7 +24,9 @@ class SwipeableBriefingCard extends StatefulWidget {
     this.onSwipeStart,
     this.onSwipeEnd,
     this.shouldClose = false,
-  });
+  }) {
+    debugPrint('DEBUG: 🎯 SwipeableBriefingCard constructor called for briefing ${briefing.id}');
+  }
 
   @override
   State<SwipeableBriefingCard> createState() => _SwipeableBriefingCardState();
@@ -57,6 +61,7 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
   @override
   void initState() {
     super.initState();
+    debugPrint('DEBUG: 🎯 SwipeableBriefingCard initState called for briefing ${widget.briefing.id}');
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 250),
@@ -310,24 +315,42 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
   void _onRefreshTap() async {
     if (_isRefreshing) return; // Prevent multiple simultaneous refreshes
     
+    debugPrint('DEBUG: 🔄 REFRESH BUTTON TAPPED for briefing ${widget.briefing.id}');
+    
     setState(() {
       _isRefreshing = true;
     });
     
     try {
-      // Use the same safety-first approach as pull-to-refresh
-      await BriefingRefreshService.refreshBriefing(widget.briefing);
+      debugPrint('DEBUG: Starting unified card refresh for briefing ${widget.briefing.id}');
       
-      // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Briefing refreshed successfully'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // Use the unified refresh method that can refresh any briefing
+      final flightProvider = Provider.of<FlightProvider>(context, listen: false);
+      final success = await flightProvider.refreshBriefingByIdUnified(widget.briefing.id);
       
-      // Notify parent to refresh the list
-      widget.onRefresh?.call();
+      if (success) {
+        debugPrint('DEBUG: Unified card refresh completed successfully');
+        
+        // Show success feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Briefing refreshed successfully'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // Notify parent to refresh the list
+        widget.onRefresh?.call();
+      } else {
+        debugPrint('DEBUG: Unified card refresh failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to refresh briefing'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('ERROR: Failed to refresh briefing: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -374,12 +397,12 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
         final success = await BriefingStorageService.deleteBriefing(widget.briefing.id);
         
         if (success) {
-          // Animate out the card
+          // Immediately refresh the list to remove the gap
+          widget.onRefresh?.call();
+          
+          // Then animate out the card
           _isDismissing = true;
           await _dismissController.forward();
-          
-          // Refresh the list
-          widget.onRefresh?.call();
         } else {
           // Show error feedback
           ScaffoldMessenger.of(context).showSnackBar(
@@ -574,7 +597,11 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
                   if (!_isEditing) ...[
                     // Refresh button
                     IconButton(
-                      onPressed: _isRefreshing ? null : _onRefreshTap,
+                      onPressed: _isRefreshing ? null : () {
+                        debugPrint('DEBUG: 🔄 REFRESH BUTTON PRESSED for briefing ${widget.briefing.id}');
+                        debugPrint('DEBUG: 🎯 ABOUT TO CALL _onRefreshTap()');
+                        _onRefreshTap();
+                      },
                       icon: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
                         child: _isRefreshing

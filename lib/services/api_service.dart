@@ -232,7 +232,7 @@ class ApiService {
       final url = _getUrl(_weatherBaseUrl, queryParams: {
         'ids': stationString,
         'format': 'json',
-        'hours': '1'
+        'hours': '6' // Increased from 1 to 6 hours to get more recent METARs
       });
       
       print('DEBUG: 🔍 METAR API URL: $url');

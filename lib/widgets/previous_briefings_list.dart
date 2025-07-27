@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/briefing.dart';
 import '../services/briefing_storage_service.dart';
+import '../services/briefing_refresh_service.dart';
 import '../services/data_freshness_service.dart';
 import 'swipeable_briefing_card.dart';
 import 'package:provider/provider.dart';
@@ -30,6 +31,11 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
   String? _error;
   String? _currentlySwipedBriefingId;
   Timer? _ageUpdateTimer;
+  
+  // Bulk refresh state
+  bool _isBulkRefreshing = false;
+  int _refreshProgress = 0;
+  int _totalBriefings = 0;
 
   @override
   void initState() {
@@ -45,6 +51,7 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
         });
       }
     });
+    
   }
 
   @override
@@ -97,6 +104,87 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
     setState(() {
       _currentlySwipedBriefingId = null;
     });
+  }
+
+  Future<void> _refreshAllBriefings() async {
+    if (_isBulkRefreshing || _briefings.isEmpty) return;
+    
+    setState(() {
+      _isBulkRefreshing = true;
+      _refreshProgress = 0;
+      _totalBriefings = _briefings.length;
+    });
+    
+    int successCount = 0;
+    int failureCount = 0;
+    
+    try {
+      // Refresh from bottom to top so the last refreshed ones stay at the top
+      for (int i = _briefings.length - 1; i >= 0; i--) {
+        final briefing = _briefings[i];
+        
+        try {
+          debugPrint('DEBUG: Starting unified bulk refresh for briefing ${briefing.id} (${_briefings.length - i}/${_briefings.length})');
+          
+          // Use the bulk refresh method that doesn't load into UI
+          final flightProvider = Provider.of<FlightProvider>(context, listen: false);
+          final success = await flightProvider.refreshBriefingByIdForBulk(briefing.id);
+          
+          if (success) {
+            debugPrint('DEBUG: ✅ Unified bulk refresh completed for briefing ${briefing.id}');
+            successCount++;
+          } else {
+            debugPrint('DEBUG: ❌ Unified bulk refresh failed for briefing ${briefing.id}');
+            failureCount++;
+          }
+        } catch (e) {
+          debugPrint('ERROR: Failed to refresh briefing ${briefing.id}: $e');
+          failureCount++;
+        }
+        
+        setState(() {
+          _refreshProgress = _briefings.length - i;
+        });
+        
+        // Add a small delay between refreshes to avoid overwhelming the APIs
+        if (i > 0) {
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+      
+      debugPrint('DEBUG: Bulk refresh completed - Success: $successCount, Failed: $failureCount');
+      
+      // Reload briefings to get updated data
+      await _loadBriefings();
+      
+      // Show results
+      final message = failureCount == 0 
+        ? 'Successfully refreshed all $successCount briefings'
+        : 'Refreshed $successCount briefings, $failureCount failed';
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+          backgroundColor: failureCount == 0 ? Colors.green : Colors.orange,
+        ),
+      );
+    } catch (e) {
+      debugPrint('ERROR: Bulk refresh failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to refresh briefings: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isBulkRefreshing = false;
+        _refreshProgress = 0;
+        _totalBriefings = 0;
+      });
+    }
   }
 
   @override
@@ -173,34 +261,78 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadBriefings,
-      child: ListView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: _briefings.length,
-                      itemBuilder: (context, index) {
-                final briefing = _briefings[index];
-                return SwipeableBriefingCard(
-                  briefing: briefing,
-                  onTap: () {
-                    // Load the briefing into FlightProvider
-                    Provider.of<FlightProvider>(context, listen: false).loadBriefing(briefing);
-                    // Navigate to the briefing tabs screen (with bottom navigation)
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const BriefingTabsScreen(),
-                      ),
-                    );
-                    widget.onBriefingSelected?.call();
-                  },
-                  onRefresh: _loadBriefings,
-                  onSwipeStart: () => _onBriefingSwipeStart(briefing.id),
-                  onSwipeEnd: _onBriefingSwipeEnd,
-                  shouldClose: _currentlySwipedBriefingId != null && 
-                              _currentlySwipedBriefingId != briefing.id,
-                );
-              },
-      ),
+    return Column(
+      children: [
+        // Header with Refresh All button
+        if (_briefings.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Previous Briefings',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _isBulkRefreshing ? null : _refreshAllBriefings,
+                  icon: _isBulkRefreshing
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh, size: 16),
+                  label: Text(_isBulkRefreshing 
+                    ? 'Refreshing... ($_refreshProgress/$_totalBriefings)'
+                    : 'Refresh All'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        // Briefings list
+        Expanded(
+          child: ListView.builder(
+            key: ValueKey('briefings_list_${_briefings.length}_${_briefings.map((b) => b.id).join('_')}'),
+            padding: EdgeInsets.zero,
+            itemCount: _briefings.length,
+            itemBuilder: (context, index) {
+              final briefing = _briefings[index];
+              return SwipeableBriefingCard(
+                briefing: briefing,
+                onTap: () async {
+                  debugPrint('DEBUG: 🎯 BRIEFING CARD TAPPED for briefing ${briefing.id}');
+                  // Load the briefing into FlightProvider
+                  await Provider.of<FlightProvider>(context, listen: false).loadBriefing(briefing);
+                  debugPrint('DEBUG: 🎯 loadBriefing completed for briefing ${briefing.id}');
+                  // Navigate to the briefing tabs screen (with bottom navigation)
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const BriefingTabsScreen(),
+                    ),
+                  );
+                  debugPrint('DEBUG: 🎯 Navigation completed for briefing ${briefing.id}');
+                  widget.onBriefingSelected?.call();
+                },
+                onRefresh: _loadBriefings,
+                onSwipeStart: () => _onBriefingSwipeStart(briefing.id),
+                onSwipeEnd: _onBriefingSwipeEnd,
+                shouldClose: _currentlySwipedBriefingId != null && 
+                            _currentlySwipedBriefingId != briefing.id,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

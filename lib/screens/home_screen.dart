@@ -6,6 +6,8 @@ import '../widgets/global_drawer.dart';
 import '../widgets/previous_briefings_list.dart';
 import 'input_screen.dart';
 
+
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -108,17 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 
                 const SizedBox(height: 24),
-                
-                // Previous Briefings Section
-                const Text(
-                  'Previous Briefings',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
                 
                 // Previous briefings list
                 Expanded(

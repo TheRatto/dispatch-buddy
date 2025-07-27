@@ -11,6 +11,7 @@ import '../services/briefing_conversion_service.dart';
 import '../services/taf_state_manager.dart';
 import '../services/briefing_refresh_service.dart'; // Added for refreshCurrentBriefing
 import '../services/briefing_storage_service.dart'; // Added for loadBriefing
+import '../services/cache_manager.dart'; // Added for cache clearing
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -202,7 +203,7 @@ class FlightProvider with ChangeNotifier {
   }
 
   // Load a briefing as the current flight (from saved/cached data)
-  void loadBriefing(Briefing briefing) {
+  Future<void> loadBriefing(Briefing briefing) async {
     debugPrint('DEBUG: FlightProvider.loadBriefing called for briefing ${briefing.id}');
     debugPrint('DEBUG: Briefing name: ${briefing.displayName}');
     debugPrint('DEBUG: Briefing airports: ${briefing.airports}');
@@ -217,6 +218,8 @@ class FlightProvider with ChangeNotifier {
       final sampleNotamKey = briefing.notams.keys.first;
       final sampleNotam = briefing.notams[sampleNotamKey];
       debugPrint('DEBUG: Sample stored NOTAM - Key: $sampleNotamKey, Type: ${sampleNotam['type']}, ICAO: ${sampleNotam['icao']}');
+    } else {
+      debugPrint('DEBUG: No NOTAMs found in briefing storage');
     }
     if (briefing.weather.isNotEmpty) {
       final sampleWeatherKey = briefing.weather.keys.first;
@@ -224,9 +227,12 @@ class FlightProvider with ChangeNotifier {
       final rawText = sampleWeather['rawText']?.toString() ?? '';
       final preview = rawText.length > 30 ? '${rawText.substring(0, 30)}...' : rawText;
       debugPrint('DEBUG: Sample stored Weather - Key: $sampleWeatherKey, Type: ${sampleWeather['type']}, Raw: $preview');
+    } else {
+      debugPrint('DEBUG: No weather found in briefing storage');
     }
     
-    final flight = BriefingConversionService.briefingToFlight(briefing);
+    // Convert briefing to flight using the new async method with versioned data support
+    final flight = await BriefingConversionService.briefingToFlight(briefing);
     
     debugPrint('DEBUG: FlightProvider - Converted flight has ${flight.notams.length} NOTAMs and ${flight.weather.length} weather items');
     
@@ -234,11 +240,15 @@ class FlightProvider with ChangeNotifier {
     if (flight.notams.isNotEmpty) {
       final sampleNotam = flight.notams.first;
       debugPrint('DEBUG: Sample converted NOTAM - ID: ${sampleNotam.id}, Type: ${sampleNotam.type}, ICAO: ${sampleNotam.icao}');
+    } else {
+      debugPrint('DEBUG: No NOTAMs found after conversion');
     }
     if (flight.weather.isNotEmpty) {
       final sampleWeather = flight.weather.first;
       final preview = sampleWeather.rawText.length > 30 ? '${sampleWeather.rawText.substring(0, 30)}...' : sampleWeather.rawText;
       debugPrint('DEBUG: Sample converted Weather - Type: ${sampleWeather.type}, ICAO: ${sampleWeather.icao}, Raw: $preview');
+    } else {
+      debugPrint('DEBUG: No weather found after conversion');
     }
     
     // Clear any UI-level caches that might interfere with loaded briefing data
@@ -257,34 +267,142 @@ class FlightProvider with ChangeNotifier {
     debugPrint('DEBUG: FlightProvider - Loaded briefing ${briefing.id} as current flight');
   }
 
-  /// Refresh the current briefing with fresh data
-  Future<bool> refreshCurrentBriefing() async {
+  /// Unified refresh method that can refresh any briefing by ID
+  /// This method fetches fresh data from APIs and replaces the entire briefing
+  /// Used by card refresh when the briefing is not currently loaded
+  Future<bool> refreshBriefingByIdUnified(String briefingId) async {
+    debugPrint('DEBUG: 🚀 refreshBriefingByIdUnified called for briefing $briefingId');
+    
+    try {
+      // Load the briefing from storage first
+      final briefing = await BriefingStorageService.loadBriefing(briefingId);
+      if (briefing == null) {
+        debugPrint('DEBUG: Briefing $briefingId not found in storage');
+        return false;
+      }
+      
+      // Use the working BriefingRefreshService instead of the broken BriefingReplaceService
+      final success = await BriefingRefreshService.refreshBriefing(briefing);
+      
+      if (success) {
+        // Always load the refreshed briefing into the UI
+        final refreshedBriefing = await BriefingStorageService.loadBriefing(briefingId);
+        if (refreshedBriefing != null) {
+          _currentBriefing = refreshedBriefing;
+          await loadBriefing(refreshedBriefing);
+          debugPrint('DEBUG: Successfully loaded refreshed briefing $briefingId into UI');
+        } else {
+          debugPrint('DEBUG: Failed to load refreshed briefing $briefingId from storage');
+        }
+        
+        debugPrint('DEBUG: Successfully completed unified refresh for briefing $briefingId');
+        return true;
+      } else {
+        debugPrint('DEBUG: Unified refresh failed - refresh operation returned false');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Unified refresh failed with error: $e');
+      return false;
+    }
+  }
+
+  /// Bulk refresh method that refreshes a briefing without loading it into the UI
+  /// This is used for "Refresh All" functionality to avoid UI conflicts
+  Future<bool> refreshBriefingByIdForBulk(String briefingId) async {
+    debugPrint('DEBUG: 🚀 refreshBriefingByIdForBulk called for briefing $briefingId');
+    
+    try {
+      // Load the briefing from storage first
+      final briefing = await BriefingStorageService.loadBriefing(briefingId);
+      if (briefing == null) {
+        debugPrint('DEBUG: Briefing $briefingId not found in storage');
+        return false;
+      }
+      
+      // Use the working BriefingRefreshService instead of the broken BriefingReplaceService
+      final success = await BriefingRefreshService.refreshBriefing(briefing);
+      
+      if (success) {
+        // Debug: Check what data was stored after refresh
+        final refreshedBriefing = await BriefingStorageService.loadBriefing(briefingId);
+        if (refreshedBriefing != null) {
+          debugPrint('DEBUG: Bulk refresh - Stored briefing has ${refreshedBriefing.notams.length} NOTAM entries');
+          debugPrint('DEBUG: Bulk refresh - Stored briefing has ${refreshedBriefing.weather.length} weather entries');
+          
+          // Check if NOTAMs are actually stored
+          if (refreshedBriefing.notams.isNotEmpty) {
+            final sampleNotamKey = refreshedBriefing.notams.keys.first;
+            final sampleNotam = refreshedBriefing.notams[sampleNotamKey];
+            debugPrint('DEBUG: Bulk refresh - Sample NOTAM stored: Key=$sampleNotamKey, Type=${sampleNotam['type']}, ICAO=${sampleNotam['icao']}');
+          }
+        }
+        
+        // Clear caches to ensure fresh data is loaded when viewing the briefing
+        debugPrint('DEBUG: Clearing caches after bulk refresh');
+        try {
+          // Clear TAF state manager cache
+          final tafStateManager = TafStateManager();
+          tafStateManager.clearCache();
+          debugPrint('DEBUG: Cleared TAF state manager cache');
+          
+          // Clear NOTAM cache by invalidating the cache manager
+          // This will force the raw data screen to reload NOTAMs from fresh data
+          final cacheManager = CacheManager();
+          cacheManager.clear(); // Clear all caches to be safe
+          debugPrint('DEBUG: Cleared all caches');
+        } catch (e) {
+          debugPrint('DEBUG: Failed to clear caches: $e');
+        }
+        
+        debugPrint('DEBUG: Successfully completed bulk refresh for briefing $briefingId');
+        return true;
+      } else {
+        debugPrint('DEBUG: Bulk refresh failed - refresh operation returned false');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Bulk refresh failed with error: $e');
+      return false;
+    }
+  }
+
+  /// Unified refresh method that replaces the current briefing with fresh data
+  /// This method fetches fresh data from APIs and replaces the entire briefing
+  /// Used by all refresh triggers (card refresh, pull-to-refresh, "Refresh All")
+  Future<bool> refreshCurrentBriefingUnified() async {
     if (_currentBriefing == null) {
       debugPrint('DEBUG: No current briefing to refresh');
       return false;
     }
-    
-    debugPrint('DEBUG: Starting refresh of current briefing ${_currentBriefing!.id}');
+
+    debugPrint('DEBUG: Starting unified refresh for briefing ${_currentBriefing!.id}');
     
     try {
+      // Use the working BriefingRefreshService instead of the broken BriefingReplaceService
       final success = await BriefingRefreshService.refreshBriefing(_currentBriefing!);
       
       if (success) {
-        // Reload the briefing from storage to get the updated data
+        // Load the refreshed briefing from storage
         final refreshedBriefing = await BriefingStorageService.loadBriefing(_currentBriefing!.id);
+        
         if (refreshedBriefing != null) {
+          // Update the current briefing and convert to flight
           _currentBriefing = refreshedBriefing;
-          loadBriefing(refreshedBriefing);
-          debugPrint('DEBUG: Successfully refreshed briefing and updated flight data');
+          await loadBriefing(refreshedBriefing);
+          
+          debugPrint('DEBUG: Successfully completed unified refresh');
+          return true;
         } else {
-          debugPrint('DEBUG: Failed to reload refreshed briefing from storage');
+          debugPrint('DEBUG: Unified refresh failed - no refreshed briefing returned');
           return false;
         }
+      } else {
+        debugPrint('DEBUG: Unified refresh failed - refresh operation returned false');
+        return false;
       }
-      
-      return success;
     } catch (e) {
-      debugPrint('DEBUG: Failed to refresh briefing: $e');
+      debugPrint('DEBUG: Unified refresh failed with error: $e');
       return false;
     }
   }
