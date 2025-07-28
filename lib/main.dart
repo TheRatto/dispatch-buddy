@@ -10,6 +10,7 @@ import 'screens/airport_detail_screen.dart';
 import 'screens/raw_data_screen.dart';
 import 'screens/decoded_screen.dart';
 import 'providers/flight_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/briefing_tabs_screen.dart';
 
 Future<void> main() async {
@@ -21,6 +22,9 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(
           create: (context) => FlightProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => SettingsProvider()..initialize(),
         ),
       ],
       child: const MyApp(),

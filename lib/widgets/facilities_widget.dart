@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/notam.dart';
 import '../services/airport_cache_manager.dart';
 import '../providers/flight_provider.dart';
+import '../providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/airport_infrastructure.dart';
 
@@ -227,12 +228,30 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   }
   
   /// Get the opposite runway end (e.g., 17 -> 35, 12 -> 30)
+  /// Also handles L/R designations (e.g., 18R -> 36L, 18L -> 36R)
   String _getOppositeRunwayEnd(String runwayEnd) {
-    final number = int.tryParse(runwayEnd) ?? 0;
+    // Extract the number and L/R designation
+    final match = RegExp(r'(\d+)([LR]?)').firstMatch(runwayEnd);
+    if (match == null) return runwayEnd;
+    
+    final number = int.tryParse(match.group(1) ?? '0') ?? 0;
+    final designation = match.group(2) ?? '';
+    
     if (number == 0) return runwayEnd;
     
+    // Calculate opposite direction
     final opposite = (number + 18) % 36;
-    return opposite == 0 ? '36' : opposite.toString().padLeft(2, '0');
+    final oppositeNumber = opposite == 0 ? '36' : opposite.toString().padLeft(2, '0');
+    
+    // For L/R designations, flip the designation (L becomes R, R becomes L)
+    String oppositeDesignation = '';
+    if (designation == 'L') {
+      oppositeDesignation = 'R';
+    } else if (designation == 'R') {
+      oppositeDesignation = 'L';
+    }
+    
+    return '$oppositeNumber$oppositeDesignation';
   }
 
   /// Create a runway pair object that combines two runway objects
@@ -244,6 +263,11 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     final length2 = runway2.length;
     final avgLength = (length1 + length2) / 2;
     
+    // Use the wider runway's width, or average if they're close
+    final width1 = runway1.width;
+    final width2 = runway2.width;
+    final avgWidth = (width1 + width2) / 2;
+    
     // Create a combined runway object
     return Runway(
       identifier: '${runway1.identifier}/${runway2.identifier}',
@@ -251,7 +275,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
       surface: runway1.surface,
       approaches: runway1.approaches,
       hasLighting: runway1.hasLighting || runway2.hasLighting,
-      width: runway1.width,
+      width: avgWidth,
       status: 'OPERATIONAL',
     );
   }
@@ -308,123 +332,174 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   
   /// Build a facility item with enhanced runway formatting
   Widget _buildEnhancedRunwayItem(dynamic runway) {
-    if (runway is! Runway) {
-      return _buildFacilityItem(
-        name: 'Rwy ${runway.toString()}',
-        details: '',
-        status: 'Operational',
-        statusColor: Colors.green,
-      );
-    }
-    
-    final identifier = runway.identifier;
-    final length = runway.length;
-    final surface = runway.surface;
-    
-    List<InlineSpan> textSpans = [];
-    
-    // Runway identifier (bold, fixed width)
-    textSpans.add(
-      TextSpan(
-        text: 'Rwy $identifier'.padRight(12), // Fixed width for runway identifier
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
-    );
-    
-    if (length > 0) {
-      // Convert meters to feet
-      final lengthFeet = (length * 3.28084).round();
-      final formattedLength = lengthFeet.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]},'
-      );
-      
-      // Length (medium weight, fixed width)
-      textSpans.add(
-        TextSpan(
-          text: '$formattedLength ft'.padRight(15), // Fixed width for length
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-            color: Colors.black87,
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        if (runway is! Runway) {
+          return _buildFacilityItem(
+            name: 'Rwy ${runway.toString()}',
+            details: '',
+            status: 'Operational',
+            statusColor: Colors.green,
+          );
+        }
+        
+        final identifier = runway.identifier;
+        final length = runway.length;
+        final width = runway.width;
+        final surface = runway.surface;
+        
+        // Use settings provider to format length and width
+        final formattedLength = settingsProvider.formatLength(length);
+        final formattedWidth = settingsProvider.formatWidth(width);
+        final unitSymbol = settingsProvider.unitSymbol;
+        
+        return _buildFacilityItem(
+          name: Row(
+            children: [
+              // Runway identifier - fixed width
+              SizedBox(
+                width: 80,
+                child: Text(
+                  identifier,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              // Length - fixed width
+              SizedBox(
+                width: 70,
+                child: Text(
+                  formattedLength.isNotEmpty ? '$formattedLength $unitSymbol' : '',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              // Width - fixed width
+              SizedBox(
+                width: 50,
+                child: Text(
+                  formattedWidth.isNotEmpty ? '$formattedWidth $unitSymbol' : '',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              // Surface - fixed width
+              SizedBox(
+                width: 75,
+                child: Text(
+                  surface != null && surface != 'Unknown' ? surface : '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      );
-      
-      // Surface (normal weight, fixed width)
-      if (surface != null && surface != 'Unknown') {
-        textSpans.add(
-          TextSpan(
-            text: surface.padRight(12), // Fixed width for surface
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          details: '',
+          status: 'Operational',
+          statusColor: Colors.green,
         );
-      } else {
-        textSpans.add(
-          TextSpan(
-            text: ''.padRight(12), // Empty space to maintain alignment
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        );
-      }
-    } else {
-      textSpans.add(
-        TextSpan(
-          text: ' (length data not available)',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[500],
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-      );
-    }
-    
-    return _buildFacilityItem(
-      name: RichText(
-        text: TextSpan(
-          children: textSpans,
-          style: const TextStyle(color: Colors.black),
-        ),
-      ),
-      details: '',
-      status: 'Operational',
-      statusColor: Colors.green,
+      },
     );
   }
 
   Widget _buildNavAidsSection(dynamic airportData) {
-    // For now, we'll show a placeholder since OpenAIP data structure
-    // may not include detailed navaid information
+    if (airportData == null) {
+      return _buildFacilitySection(
+        title: 'NAVAIDs',
+        icon: Icons.radar,
+        color: Colors.blue,
+        facilities: [
+          _buildFacilityItem(
+            name: 'Loading navaid data...',
+            details: '',
+            status: 'Loading',
+            statusColor: Colors.orange,
+          ),
+        ],
+        emptyMessage: 'No navaid data available',
+      );
+    }
+
+    // Extract navaids from airport infrastructure data
+    List<Navaid> navaids = [];
+    
+    if (airportData is AirportInfrastructure) {
+      navaids = airportData.navaids;
+    }
+    
+    // Convert navaids to facility items
+    final facilities = navaids.map((navaid) {
+      // Get full name for navaid type
+      String fullName = _getNavaidFullName(navaid.type);
+      
+      // For now, show all navaids as Operational until we implement NOTAM integration
+      // This matches the runway behavior
+      return _buildFacilityItem(
+        name: '${navaid.identifier} (${navaid.type})',
+        details: '${fullName} - ${navaid.frequency}',
+        status: 'Operational',
+        statusColor: Colors.green,
+      );
+    }).toList();
+    
     return _buildFacilitySection(
       title: 'NAVAIDs',
       icon: Icons.radar,
       color: Colors.blue,
-      facilities: [
-        _buildFacilityItem(
-          name: 'ILS',
-          details: 'Instrument Landing System',
-          status: 'Operational',
-          statusColor: Colors.green,
-        ),
-        _buildFacilityItem(
-          name: 'VOR',
-          details: 'VHF Omnidirectional Range',
-          status: 'Operational',
-          statusColor: Colors.green,
-        ),
-      ],
+      facilities: facilities,
       emptyMessage: 'No navaid data available',
     );
+  }
+  
+  String _getNavaidFullName(String type) {
+    switch (type.toUpperCase()) {
+      case 'ILS':
+        return 'Instrument Landing System';
+      case 'VOR':
+        return 'VHF Omnidirectional Range';
+      case 'NDB':
+        return 'Non-Directional Beacon';
+      case 'DME':
+        return 'Distance Measuring Equipment';
+      case 'TACAN':
+        return 'Tactical Air Navigation';
+      case 'LOC':
+        return 'Localizer';
+      case 'GLS':
+        return 'Ground-Based Augmentation System';
+      case 'MLS':
+        return 'Microwave Landing System';
+      case 'VORTAC':
+        return 'VOR/TACAN';
+      case 'VOR/DME':
+        return 'VOR with Distance Measuring Equipment';
+      default:
+        return type;
+    }
+  }
+  
+  Color _getNavaidStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'OPERATIONAL':
+        return Colors.green;
+      case 'U/S':
+      case 'UNSERVICEABLE':
+        return Colors.red;
+      case 'MAINTENANCE':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildLightingSection(dynamic airportData) {

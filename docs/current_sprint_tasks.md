@@ -167,6 +167,54 @@ class MetarCompactDetails extends StatefulWidget {
 - ✅ METAR age updates continuously with smart formatting
 - ✅ All existing functionality preserved
 
+### Task 21: Runway Units Toggle Implementation ✅ COMPLETED
+**Goal**: Add units toggle to settings for runway display (feet/meters)
+
+**Files Created:**
+- ✅ `lib/providers/settings_provider.dart` - Settings management with units preference
+- ✅ `lib/screens/settings_screen.dart` - Added units toggle to settings page
+
+**Files Modified:**
+- ✅ `lib/main.dart` - Added SettingsProvider to MultiProvider
+- ✅ `lib/widgets/facilities_widget.dart` - Updated runway display to use settings provider
+
+**Features Implemented:**
+- ✅ **Units Toggle**: Switch between feet and meters in settings
+- ✅ **Persistent Storage**: Units preference saved using SharedPreferences
+- ✅ **Dynamic Formatting**: Runway lengths and widths update based on selected units
+- ✅ **Settings Integration**: Clean integration with existing settings page
+- ✅ **Real-time Updates**: UI updates immediately when units are changed
+- ✅ **Proper Formatting**: Comma-separated numbers with appropriate unit symbols
+
+**Technical Implementation:**
+- ✅ Created `SettingsProvider` with `Units` enum (feet, meters)
+- ✅ Added `formatLength()` and `formatWidth()` methods for unit conversion
+- ✅ Integrated with `FacilitiesWidget` using `Consumer<SettingsProvider>`
+- ✅ Added units section to settings page with toggle switch
+- ✅ Implemented proper initialization and state management
+
+**User Experience:**
+- ✅ **Easy Toggle**: Simple switch in settings to change units
+- ✅ **Immediate Updates**: Runway display updates instantly when units change
+- ✅ **Consistent Formatting**: Proper number formatting with unit symbols
+- ✅ **Persistent Preference**: Units choice remembered across app sessions
+- ✅ **Professional Display**: Clean, readable runway information
+
+**Benefits:**
+- ✅ **International Support**: Accommodates pilots from different regions
+- ✅ **User Preference**: Personal choice for unit display
+- ✅ **Professional Appearance**: Proper unit formatting and symbols
+- ✅ **Consistent Experience**: Units preference applied across all runway displays
+- ✅ **Future-Ready**: Framework for additional unit preferences
+
+**Testing Results:**
+- ✅ Units toggle works correctly in settings
+- ✅ Runway display updates immediately when units change
+- ✅ Preference persists across app restarts
+- ✅ Proper formatting for both feet and meters
+- ✅ No performance impact on runway display
+- ✅ Integration with existing settings page works seamlessly
+
 ## 🔄 In Progress
 
 ### Task 4: Create Base SystemDetailScreen ✅ COMPLETED
@@ -648,6 +696,36 @@ Airport Status Page → Select Airport → View System Status → Navigate to Sy
 - [ ] Fix unnecessary null comparisons
 - [ ] Clean up remaining print statements
 - [ ] Final code quality review
+
+### Task 22: Airport Facilities Enhancement 🎯 **NEXT PRIORITY**
+**Goal**: Enhance airport facilities display with comprehensive runway and navaid information
+
+**Current State:**
+- ✅ **Runway Display**: Basic runway information with length, width, surface
+- ✅ **Units Toggle**: Feet/meters preference implemented
+- ✅ **Column Alignment**: Fixed-width columns for consistent display
+- ✅ **Custom Icons**: Professional runway and navaid icons
+
+**Next Enhancements:**
+- [ ] **Enhanced Runway Information**: Add runway lighting, ILS equipment, approach types
+- [ ] **Navaid Integration**: Display actual navaid data from OpenAIP
+- [ ] **Operational Status**: Show operational status for each facility
+- [ ] **Interactive Elements**: Tap to view detailed facility information
+- [ ] **Visual Improvements**: Better spacing, typography, and layout
+- [ ] **Performance Optimization**: Efficient data loading and caching
+
+**Files to Enhance:**
+- [ ] `lib/widgets/facilities_widget.dart` - Enhanced runway and navaid display
+- [ ] `lib/services/openaip_service.dart` - Improved navaid data fetching
+- [ ] `lib/models/airport_infrastructure.dart` - Enhanced data models
+- [ ] `lib/screens/airport_detail_screen.dart` - Better facilities integration
+
+**Benefits:**
+- [ ] **Comprehensive Information**: Complete runway and navaid details
+- [ ] **Operational Focus**: Information relevant to flight planning
+- [ ] **Professional Display**: Clean, readable facility information
+- [ ] **Interactive Experience**: Tap for detailed facility information
+- [ ] **International Standards**: Proper aviation terminology and formatting
 
 ### Task 18: Airport Analysis and Database Infrastructure ✅ **PHASE 1 COMPLETED**
 **Goal**: Build comprehensive airport-specific database and analysis tools

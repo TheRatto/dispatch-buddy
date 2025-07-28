@@ -50,7 +50,7 @@ class AirportCacheManager {
         debugPrint('DEBUG: AirportCacheManager - Runways count: ${airport.runways.length}');
         
         // Convert to infrastructure format
-        final infrastructure = _convertAirportToInfrastructure(airport);
+        final infrastructure = await _convertAirportToInfrastructure(airport);
         
         debugPrint('DEBUG: AirportCacheManager - Converted to infrastructure with ${infrastructure.runways.length} runways');
         
@@ -69,7 +69,7 @@ class AirportCacheManager {
   }
   
   /// Convert Airport model to AirportInfrastructure
-  static AirportInfrastructure _convertAirportToInfrastructure(dynamic airport) {
+  static Future<AirportInfrastructure> _convertAirportToInfrastructure(dynamic airport) async {
     // Convert OpenAIP runway data to AirportInfrastructure format
     final List<Runway> runways = [];
     
@@ -116,11 +116,15 @@ class AirportCacheManager {
     
     debugPrint('DEBUG: AirportCacheManager - Final runways list length: ${runways.length}');
     
+    // Fetch navaids from OpenAIP
+    final navaids = await OpenAIPService.getNavaidsByICAO(airport.icao);
+    debugPrint('DEBUG: AirportCacheManager - Fetched ${navaids.length} navaids from OpenAIP for ${airport.icao}');
+    
     return AirportInfrastructure(
       icao: airport.icao,
       runways: runways,
       taxiways: [], // Will be populated from API data
-      navaids: [], // Will be populated from API data
+      navaids: navaids, // Populated from OpenAIP
       approaches: [], // Will be populated from API data
       routes: [], // Will be populated from API data
       facilityStatus: {}, // Will be populated from API data

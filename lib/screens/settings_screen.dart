@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -73,6 +75,11 @@ class SettingsScreen extends StatelessWidget {
                     // Privacy Settings Section
                     _buildSectionHeader('Privacy & Data'),
                     _buildPrivacySettings(),
+                    const SizedBox(height: 32),
+                    
+                    // Units Settings Section
+                    _buildSectionHeader('Units'),
+                    _buildUnitsSettings(),
                     const SizedBox(height: 32),
                     
                     // About Section
@@ -225,6 +232,32 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUnitsSettings() {
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        return Card(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.straighten),
+                title: const Text('Runway Units'),
+                subtitle: Text(settingsProvider.runwayUnits == Units.feet ? 'Feet' : 'Meters'),
+                trailing: Switch(
+                  value: settingsProvider.runwayUnits == Units.meters,
+                  onChanged: (value) {
+                    settingsProvider.setRunwayUnits(
+                      value ? Units.meters : Units.feet,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

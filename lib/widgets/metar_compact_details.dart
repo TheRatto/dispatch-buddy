@@ -115,8 +115,8 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
         // Age indicator in top left
         Row(
           children: [
@@ -131,12 +131,12 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
                 ),
               ),
             const Spacer(),
-          ],
-        ),
+            ],
+          ),
         const SizedBox(height: 8),
         // Weather grid
         Row(
-          children: [
+            children: [
             Expanded(
               child: GridItem(
                 label: 'Wind',
@@ -150,11 +150,11 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
                 value: decoded.visibilityDescription,
               ),
             ),
-          ],
-        ),
+            ],
+          ),
         const SizedBox(height: 8),
         Row(
-          children: [
+            children: [
             Expanded(
               child: GridItem(
                 label: 'Weather',
@@ -169,11 +169,11 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
                 value: decoded.cloudDescription,
               ),
             ),
-          ],
-        ),
+            ],
+          ),
         const SizedBox(height: 8),
-        Row(
-          children: [
+            Row(
+              children: [
             Expanded(
               child: GridItem(
                 label: 'Temp / Dew Point',
@@ -188,9 +188,9 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
                 isPhenomenaOrRemark: true,
               ),
             ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
     );
   }
 } 

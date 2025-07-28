@@ -301,35 +301,35 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
           ),
         // Briefings list
         Expanded(
-          child: ListView.builder(
+            child: ListView.builder(
             key: ValueKey('briefings_list_${_briefings.length}_${_briefings.map((b) => b.id).join('_')}'),
-            padding: EdgeInsets.zero,
-            itemCount: _briefings.length,
-            itemBuilder: (context, index) {
-              final briefing = _briefings[index];
-              return SwipeableBriefingCard(
-                briefing: briefing,
-                onTap: () async {
+              padding: EdgeInsets.zero,
+              itemCount: _briefings.length,
+              itemBuilder: (context, index) {
+                final briefing = _briefings[index];
+                return SwipeableBriefingCard(
+                  briefing: briefing,
+                  onTap: () async {
                   debugPrint('DEBUG: 🎯 BRIEFING CARD TAPPED for briefing ${briefing.id}');
-                  // Load the briefing into FlightProvider
-                  await Provider.of<FlightProvider>(context, listen: false).loadBriefing(briefing);
+                    // Load the briefing into FlightProvider
+                    await Provider.of<FlightProvider>(context, listen: false).loadBriefing(briefing);
                   debugPrint('DEBUG: 🎯 loadBriefing completed for briefing ${briefing.id}');
-                  // Navigate to the briefing tabs screen (with bottom navigation)
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const BriefingTabsScreen(),
-                    ),
-                  );
+                    // Navigate to the briefing tabs screen (with bottom navigation)
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const BriefingTabsScreen(),
+                      ),
+                    );
                   debugPrint('DEBUG: 🎯 Navigation completed for briefing ${briefing.id}');
-                  widget.onBriefingSelected?.call();
-                },
-                onRefresh: _loadBriefings,
-                onSwipeStart: () => _onBriefingSwipeStart(briefing.id),
-                onSwipeEnd: _onBriefingSwipeEnd,
-                shouldClose: _currentlySwipedBriefingId != null && 
-                            _currentlySwipedBriefingId != briefing.id,
-              );
-            },
+                    widget.onBriefingSelected?.call();
+                  },
+                  onRefresh: _loadBriefings,
+                  onSwipeStart: () => _onBriefingSwipeStart(briefing.id),
+                  onSwipeEnd: _onBriefingSwipeEnd,
+                  shouldClose: _currentlySwipedBriefingId != null && 
+                              _currentlySwipedBriefingId != briefing.id,
+                );
+              },
           ),
         ),
       ],

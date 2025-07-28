@@ -124,6 +124,118 @@ class OpenAIPService {
     }
   }
   
+  /// Get navaids for a specific airport by ICAO code
+  static Future<List<Navaid>> getNavaidsByICAO(String icaoCode) async {
+    if (_apiKey == null) {
+      throw Exception('OpenAIP API key not found in environment variables');
+    }
+    
+    try {
+      // First, get the airport's coordinates
+      final airports = await getAirportsByICAOCodes([icaoCode]);
+      if (airports.isEmpty) {
+        print('DEBUG: Airport $icaoCode not found');
+        return [];
+      }
+      
+      final airport = airports.first;
+      final lat = airport.latitude;
+      final lon = airport.longitude;
+      
+      if (lat == 0.0 && lon == 0.0) {
+        print('DEBUG: Airport $icaoCode has no valid coordinates');
+        return [];
+      }
+      
+      print('DEBUG: Searching navaids near $icaoCode at coordinates ($lat, $lon)');
+      
+      // Search for navaids within 10km of the airport (10000 meters)
+      final response = await http.get(
+        Uri.parse('$_baseUrl/navaids?pos=$lat,$lon&dist=10000&limit=50'),
+        headers: {
+          'x-openaip-api-key': _apiKey!,
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final navaids = _parseNavaids(data['items'] ?? []);
+        
+        print('DEBUG: Found ${navaids.length} navaids within 10km of $icaoCode');
+        navaids.take(5).forEach((navaid) {
+          print('DEBUG: - ${navaid.identifier} (${navaid.type}) - ${navaid.frequency}');
+        });
+        
+        return navaids;
+      } else {
+        print('DEBUG: Failed to get navaids for $icaoCode: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('DEBUG: Error fetching navaids for $icaoCode: $e');
+      return [];
+    }
+  }
+  
+  /// Get navaids by geographic bounds
+  static Future<List<Navaid>> getNavaidsByBounds({
+    required double north,
+    required double south,
+    required double east,
+    required double west,
+    int limit = 100,
+  }) async {
+    if (_apiKey == null) {
+      throw Exception('OpenAIP API key not found in environment variables');
+    }
+    
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/navaids?north=$north&south=$south&east=$east&west=$west&limit=$limit'),
+        headers: {
+          'x-openaip-api-key': _apiKey!,
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return _parseNavaids(data['items'] ?? []);
+      } else {
+        throw Exception('Failed to get navaids by bounds: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error getting navaids by bounds: $e');
+    }
+  }
+  
+  /// Search navaids by type (VOR, ILS, TACAN, NDB, LOC, GLS)
+  static Future<List<Navaid>> searchNavaidsByType(String type, {int limit = 50}) async {
+    if (_apiKey == null) {
+      throw Exception('OpenAIP API key not found in environment variables');
+    }
+    
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/navaids?type=$type&limit=$limit'),
+        headers: {
+          'x-openaip-api-key': _apiKey!,
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return _parseNavaids(data['items'] ?? []);
+      } else {
+        throw Exception('Failed to search navaids by type: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error searching navaids by type: $e');
+    }
+  }
+  
   /// Parse airport data from OpenAIP API response
   static List<Airport> _parseAirports(List<dynamic> items) {
     return items.map((item) {
@@ -146,6 +258,20 @@ class OpenAIPService {
         );
       }).toList() ?? [];
       
+      // Parse navaids if available in the airport response
+      final navaids = (item['navaids'] as List<dynamic>?)?.map((navaid) {
+        return Navaid(
+          identifier: navaid['identifier'] ?? navaid['name'] ?? '',
+          frequency: parseNavaidFrequency(navaid['frequency']),
+          runway: navaid['runway']?.toString() ?? '',
+          type: parseNavaidType(navaid['type']),
+          isPrimary: navaid['isPrimary'] ?? false,
+          isBackup: navaid['isBackup'] ?? false,
+          status: parseNavaidStatus(navaid['status']),
+          notes: navaid['notes'] ?? navaid['description'] ?? '',
+        );
+      }).toList() ?? [];
+      
       final coordinates = item['geometry']?['coordinates'] as List<dynamic>?;
       final latitude = coordinates?.isNotEmpty == true ? coordinates![1].toDouble() : 0.0;
       final longitude = coordinates?.isNotEmpty == true ? coordinates![0].toDouble() : 0.0;
@@ -158,9 +284,112 @@ class OpenAIPService {
         longitude: longitude,
         systems: {}, // OpenAIP doesn't provide system status
         runways: runways, // Keep runway objects with length data
-        navaids: [], // OpenAIP doesn't provide navaid list in basic response
+        navaids: navaids, // Include navaid data if available
       );
     }).toList();
+  }
+  
+  /// Parse navaid data from OpenAIP API response
+  static List<Navaid> _parseNavaids(List<dynamic> items) {
+    return items.map((item) {
+      final originalType = parseNavaidType(item['type']);
+      final frequency = parseNavaidFrequency(item['frequency']);
+      final identifier = item['identifier'] ?? item['name'] ?? '';
+      final runway = item['runway']?.toString() ?? '';
+      
+      // Apply corrections based on frequency and known issues
+      final correctedType = correctNavaidType(originalType, frequency, identifier);
+      
+              return Navaid(
+          identifier: identifier,
+          frequency: frequency,
+          runway: runway,
+          type: correctedType,
+          isPrimary: item['isPrimary'] ?? false,
+          isBackup: item['isBackup'] ?? false,
+          status: parseNavaidStatus(item['status']),
+          notes: item['notes'] ?? item['description'] ?? '',
+        );
+    }).toList();
+  }
+  
+  /// Parse navaid type from OpenAIP format
+  static String parseNavaidType(dynamic type) {
+    if (type == null) return '(Unknown)';
+    
+    // Convert to int if it's a string
+    int typeInt;
+    if (type is String) {
+      typeInt = int.tryParse(type) ?? -1;
+    } else if (type is int) {
+      typeInt = type;
+    } else {
+      return '(Unknown)';
+    }
+    
+    // Map integer types to readable names based on OpenAIP documentation
+    switch (typeInt) {
+      case 0: return 'NDB';
+      case 1: return 'VOR';
+      case 2: return 'DME';
+      case 3: return 'TACAN';
+      case 4: return 'ILS';
+      case 5: return 'LOC';
+      case 6: return 'GLS';
+      case 7: return 'MLS';
+      case 8: return 'VORTAC';
+      default: return '(Unknown)';
+    }
+  }
+  
+  /// Correct navaid type based on known OpenAIP misclassifications
+  static String correctNavaidType(String originalType, String frequency, String identifier) {
+    // Known corrections for specific navaids where OpenAIP has wrong type codes
+    if (identifier == 'SY' && frequency.contains('112.100')) {
+      return 'DME'; // SY is actually a DME, not NDB
+    }
+
+    if (identifier == 'CB' && frequency.contains('116.700')) {
+      return 'VOR/DME'; // CB 116.7 is VOR/DME, not ILS
+    }
+
+    if (identifier == 'CB' && frequency.contains('263.000')) {
+      return 'NDB'; // CB 263.0 is NDB, not DME
+    }
+
+    return originalType;
+  }
+
+  static String parseNavaidStatus(dynamic status) {
+    if (status == null) return 'UNKNOWN';
+    
+    if (status is String) {
+      return status.toUpperCase();
+    }
+    
+    return 'UNKNOWN';
+  }
+
+  static String parseNavaidFrequency(dynamic frequency) {
+    if (frequency == null) return '';
+    
+    // Handle frequency object format from OpenAIP
+    if (frequency is Map<String, dynamic>) {
+      final value = frequency['value']?.toString() ?? '';
+      final unit = frequency['unit'];
+      
+      // Unit 1 = MHz, Unit 2 = kHz, etc.
+      if (unit == 1) {
+        return '${value} MHz';
+      } else if (unit == 2) {
+        return '${value} kHz';
+      } else {
+        return value;
+      }
+    }
+    
+    // Fallback for string format
+    return frequency.toString();
   }
   
   /// Parse surface type from OpenAIP format

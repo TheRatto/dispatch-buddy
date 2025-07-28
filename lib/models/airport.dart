@@ -11,7 +11,7 @@ class Airport {
   final double longitude;
   final Map<String, SystemStatus> systems;
   final List<Runway> runways;
-  final List<String> navaids;
+  final List<Navaid> navaids;
 
   Airport({
     required this.icao,
@@ -35,7 +35,7 @@ class Airport {
         json['systems'].map((key, value) => MapEntry(key, SystemStatus.values.firstWhere((e) => e.toString() == 'SystemStatus.$value'))),
       ),
       runways: (json['runways'] as List<dynamic>?)?.map((r) => Runway.fromJson(r)).toList() ?? [],
-      navaids: List<String>.from(json['navaids']),
+      navaids: (json['navaids'] as List<dynamic>?)?.map((n) => Navaid.fromJson(n)).toList() ?? [],
     );
   }
 
@@ -48,7 +48,7 @@ class Airport {
       'longitude': longitude,
       'systems': systems.map((key, value) => MapEntry(key, value.toString().split('.').last)),
       'runways': runways.map((r) => r.toJson()).toList(),
-      'navaids': navaids,
+      'navaids': navaids.map((n) => n.toJson()).toList(),
     };
   }
 
