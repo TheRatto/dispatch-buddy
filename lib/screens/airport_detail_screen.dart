@@ -72,6 +72,12 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
         _systemTabController.animateTo(flightProvider.lastViewedSystemPage!);
       }
     });
+
+    // Refresh airport names to ensure proper names are displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final flightProvider = context.read<FlightProvider>();
+      flightProvider.refreshAirportNames();
+    });
   }
 
   @override
@@ -132,6 +138,9 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
             (a) => a.icao == flightProvider.selectedAirport,
             orElse: () => flight.airports.first,
           );
+
+          // Debug logging to see what airport data we have
+          debugPrint('DEBUG: AirportDetailScreen - Selected airport: ${selectedAirport.icao}, name: "${selectedAirport.name}", city: "${selectedAirport.city}"');
 
           return Column(
             children: [

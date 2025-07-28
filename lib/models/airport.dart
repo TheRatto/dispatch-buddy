@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'airport_infrastructure.dart';
 
 enum SystemStatus { green, yellow, red }
 
@@ -9,7 +10,7 @@ class Airport {
   final double latitude;
   final double longitude;
   final Map<String, SystemStatus> systems;
-  final List<String> runways;
+  final List<Runway> runways;
   final List<String> navaids;
 
   Airport({
@@ -33,7 +34,7 @@ class Airport {
       systems: Map<String, SystemStatus>.from(
         json['systems'].map((key, value) => MapEntry(key, SystemStatus.values.firstWhere((e) => e.toString() == 'SystemStatus.$value'))),
       ),
-      runways: List<String>.from(json['runways']),
+      runways: (json['runways'] as List<dynamic>?)?.map((r) => Runway.fromJson(r)).toList() ?? [],
       navaids: List<String>.from(json['navaids']),
     );
   }
@@ -46,7 +47,7 @@ class Airport {
       'latitude': latitude,
       'longitude': longitude,
       'systems': systems.map((key, value) => MapEntry(key, value.toString().split('.').last)),
-      'runways': runways,
+      'runways': runways.map((r) => r.toJson()).toList(),
       'navaids': navaids,
     };
   }

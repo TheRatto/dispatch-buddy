@@ -12,6 +12,7 @@ import '../services/taf_state_manager.dart';
 import '../services/briefing_refresh_service.dart'; // Added for refreshCurrentBriefing
 import '../services/briefing_storage_service.dart'; // Added for loadBriefing
 import '../services/cache_manager.dart'; // Added for cache clearing
+import '../services/airport_database.dart'; // Added for airport lookup
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -539,7 +540,7 @@ class FlightProvider with ChangeNotifier {
     }
   }
 
-  // Add a new airport to the current flight and fetch its data
+  // Add an airport to the current flight
   Future<bool> addAirportToFlight(String icao) async {
     if (_currentFlight == null) {
       return false;
@@ -555,16 +556,21 @@ class FlightProvider with ChangeNotifier {
     try {
       final apiService = ApiService();
       
-      // Create a new airport object with placeholder systems (will be updated after NOTAM fetch)
+      // Get proper airport data from database
+      final airportData = await AirportDatabase.getAirportWithFallback(icao);
+      final airportName = airportData?.name ?? '$icao Airport';
+      final airportCity = airportData?.city ?? 'Unknown City';
+      
+      // Create a new airport object with proper data
       final newAirport = Airport(
         icao: icao.toUpperCase(),
-        name: 'Unknown Airport', // We could fetch this from an airport database later
-        city: 'Unknown City', // Placeholder value
-        latitude: 0.0, // Placeholder values
-        longitude: 0.0,
+        name: airportName,
+        city: airportCity,
+        latitude: airportData?.latitude ?? 0.0,
+        longitude: airportData?.longitude ?? 0.0,
         systems: {}, // Will be updated with real status after NOTAM fetch
-        runways: [], // Empty runways list
-        navaids: [], // Empty navaids list
+        runways: airportData?.runways ?? [],
+        navaids: airportData?.navaids ?? [],
       );
 
       // Add the airport to the current flight
@@ -638,16 +644,21 @@ class FlightProvider with ChangeNotifier {
         return false; // Airport not found
       }
 
-      // Update the airport ICAO
+      // Get proper airport data for the new ICAO
+      final airportData = await AirportDatabase.getAirportWithFallback(newIcao);
+      final airportName = airportData?.name ?? '$newIcao Airport';
+      final airportCity = airportData?.city ?? 'Unknown City';
+
+      // Update the airport ICAO with proper data
       _currentFlight!.airports[airportIndex] = Airport(
         icao: newIcao.toUpperCase(),
-        name: _currentFlight!.airports[airportIndex].name,
-        city: _currentFlight!.airports[airportIndex].city,
-        latitude: _currentFlight!.airports[airportIndex].latitude,
-        longitude: _currentFlight!.airports[airportIndex].longitude,
+        name: airportName,
+        city: airportCity,
+        latitude: airportData?.latitude ?? 0.0,
+        longitude: airportData?.longitude ?? 0.0,
         systems: _currentFlight!.airports[airportIndex].systems,
-        runways: _currentFlight!.airports[airportIndex].runways,
-        navaids: _currentFlight!.airports[airportIndex].navaids,
+        runways: airportData?.runways ?? [],
+        navaids: airportData?.navaids ?? [],
       );
 
       // Remove old data
@@ -722,5 +733,37 @@ class FlightProvider with ChangeNotifier {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Refresh airport names in the current flight
+  Future<void> refreshAirportNames() async {
+    if (_currentFlight == null) return;
+    
+    for (int i = 0; i < _currentFlight!.airports.length; i++) {
+      final airport = _currentFlight!.airports[i];
+      
+      // Skip if airport already has a proper name (not a placeholder)
+      if (airport.name != '${airport.icao} Airport' && airport.name.isNotEmpty) {
+        continue;
+      }
+      
+      // Get proper airport data from database
+      final airportData = await AirportDatabase.getAirportWithFallback(airport.icao);
+      if (airportData != null) {
+        final updatedAirport = Airport(
+          icao: airport.icao,
+          name: airportData.name,
+          city: airportData.city,
+          latitude: airportData.latitude,
+          longitude: airportData.longitude,
+          systems: airport.systems,
+          runways: airportData.runways,
+          navaids: airportData.navaids,
+        );
+        _currentFlight!.airports[i] = updatedAirport;
+      }
+    }
+    
+    notifyListeners();
   }
 } 

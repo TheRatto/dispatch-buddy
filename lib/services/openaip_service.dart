@@ -157,7 +157,7 @@ class OpenAIPService {
         latitude: latitude,
         longitude: longitude,
         systems: {}, // OpenAIP doesn't provide system status
-        runways: runways.map((r) => r.identifier).toList(), // Convert to string list
+        runways: runways, // Keep runway objects with length data
         navaids: [], // OpenAIP doesn't provide navaid list in basic response
       );
     }).toList();

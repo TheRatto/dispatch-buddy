@@ -71,6 +71,102 @@ Perth, Australia
 Airport Status Page → Tap System → System Detail Page → Back to Airport
 ```
 
+### Task 20: Fix Refresh All Functionality and Improve UX ✅ COMPLETED
+**Goal**: Resolve bulk refresh issues and enhance user experience
+
+**Issues Addressed:**
+- ✅ **NOTAM Display Issue**: NOTAMs not showing after "Refresh All" operations
+- ✅ **List Order Issue**: Briefings reordering after bulk refresh due to timestamp updates
+- ✅ **Cache Management**: Proper cache clearing for fresh data display
+- ✅ **UI Layout**: Remove redundant elements and improve layout
+- ✅ **Progress Tracking**: Better user feedback during bulk operations
+
+**Files Modified:**
+- `lib/providers/flight_provider.dart`
+- `lib/widgets/previous_briefings_list.dart`
+- `lib/widgets/metar_compact_details.dart`
+- `lib/screens/home_screen.dart`
+- `lib/widgets/swipeable_briefing_card.dart`
+
+**Technical Solutions Implemented:**
+
+#### **Bulk Refresh Method Enhancement ✅**
+**File**: `lib/providers/flight_provider.dart`
+```dart
+Future<bool> refreshBriefingByIdForBulk(String briefingId) async {
+  // Refresh data in storage without loading into UI
+  // Clear caches to ensure fresh data when viewing
+  // Add debug logging for troubleshooting
+}
+```
+
+#### **Reverse Order Refresh ✅**
+**File**: `lib/widgets/previous_briefings_list.dart`
+```dart
+// Refresh from bottom to top to maintain list order
+for (int i = _briefings.length - 1; i >= 0; i--) {
+  // Process each briefing with 500ms delay between operations
+}
+```
+
+#### **Cache Management ✅**
+**File**: `lib/providers/flight_provider.dart`
+```dart
+// Clear caches after bulk refresh
+final tafStateManager = TafStateManager();
+tafStateManager.clearCache();
+final cacheManager = CacheManager();
+cacheManager.clear();
+```
+
+#### **UI Improvements ✅**
+- ✅ Removed redundant pull-to-refresh from home screen (kept on Raw Data, Airports, Summary)
+- ✅ Moved "Refresh All" button to same line as "Previous Briefings" heading
+- ✅ Removed briefing count display ("16 briefings")
+- ✅ Added ValueKey for proper list rebuilds after deletion
+- ✅ Enhanced progress tracking with detailed feedback ("Refreshing... (3/11)")
+- ✅ Added debug logging for troubleshooting refresh issues
+
+#### **METAR Age Display Enhancement ✅**
+**File**: `lib/widgets/metar_compact_details.dart`
+```dart
+class MetarCompactDetails extends StatefulWidget {
+  // Timer for continuous updates every minute
+  Timer? _ageUpdateTimer;
+  
+  // Smart age formatting
+  String _formatAge(Duration age) {
+    if (age.inHours > 0) {
+      return '${age.inHours.toString().padLeft(2, '0')}:${age.inMinutes % 60.toString().padLeft(2, '0')} hrs old';
+    } else {
+      return '${age.inMinutes.toString().padLeft(2, '0')} mins old';
+    }
+  }
+}
+```
+
+**Features Implemented:**
+- ✅ **Continuous Age Updates**: Real-time age calculation every minute
+- ✅ **Smart Formatting**: "30 mins old" for <1hr, "01:30 hrs old" for ≥1hr
+- ✅ **Consistent Layout**: Left-aligned age display matching TAF card
+- ✅ **Stateful Widget**: Converted to StatefulWidget for timer updates
+
+**Benefits:**
+- ✅ **Reliable Bulk Refresh**: All briefings refresh correctly with proper NOTAM display
+- ✅ **List Order Preservation**: Briefings maintain their position after bulk refresh
+- ✅ **Fresh Data**: Proper cache clearing ensures latest data is displayed
+- ✅ **Better UX**: Cleaner UI layout and improved user feedback
+- ✅ **Enhanced METAR Display**: Smart age formatting with continuous updates
+- ✅ **Debugging Support**: Comprehensive logging for troubleshooting
+
+**Testing Results:**
+- ✅ Bulk refresh works for all briefings (not just first 2)
+- ✅ NOTAMs display correctly after bulk refresh
+- ✅ List order maintained during bulk operations
+- ✅ UI properly rebuilds after briefing deletion
+- ✅ METAR age updates continuously with smart formatting
+- ✅ All existing functionality preserved
+
 ## 🔄 In Progress
 
 ### Task 4: Create Base SystemDetailScreen ✅ COMPLETED
@@ -661,42 +757,4 @@ Airport Status Page → Select Airport → View System Status → Navigate to Sy
 4. **Consistent Classification**: All pages use same logic
 
 ### **System-Specific Pages (Refactored)**
-1. **Runway System Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-2. **Taxiway System Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-3. **Instrument Procedures Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-4. **Airport Services Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-5. **Hazards System Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-6. **Admin System Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-7. **Other System Page**: Uses `AirportSystemAnalyzer` + detailed component analysis
-
-### **Information Architecture (4-Layer Abstraction)**
-1. **Flight Summary**: High-level route overview
-2. **Airport Status**: System-level status overview
-3. **System-Specific Pages**: Detailed component analysis
-4. **Raw Data**: Full NOTAM details with filtering
-
-## 🎯 **User Experience Requirements:**
-- ✅ Fast page load times
-- ✅ Clear system status at a glance
-- ✅ Intuitive navigation with visual cues
-- ✅ Consistent with existing app design
-- ✅ Smooth transitions between pages
-- ✅ **NEW**: Detailed component information with drill-down capability
-- ✅ **NEW**: Human-readable summaries and operational impacts
-- ✅ **NEW**: Expandable details for comprehensive information access
-- ✅ **NEW**: Consistent NOTAM classification across all pages
-- ✅ **NEW**: Professional splash screen and app icons
-- ✅ **NEW**: Tab state persistence for better UX
-
-### **Technical Requirements:**
-- ✅ Maintain existing system status calculation logic
-- ✅ Preserve color-coded status indicators
-- ✅ Keep existing data flow intact
-- ✅ No breaking changes to existing functionality
-- ✅ Proper navigation infrastructure
-- ✅ **NEW**: Robust analysis service with comprehensive testing
-- ✅ **NEW**: Efficient NOTAM filtering and processing
-- ✅ **NEW**: Scalable architecture for additional system pages
-- ✅ **NEW**: Consistent classification using established parsing tools
-- ✅ **NEW**: Flutter 3.16+ compatibility
-- ✅ **NEW**: Clean, maintainable codebase 
+1. **Runway System Page**: Uses `

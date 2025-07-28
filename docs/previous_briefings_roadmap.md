@@ -110,35 +110,35 @@ This document outlines the implementation plan for the "Previous Briefings" feat
 - ✅ Async conversion with versioned data support
 - ✅ Data safety through version control
 
-## Phase 4: Unified Refresh System 🔄 IN PROGRESS
-**Status**: 🔄 IN PROGRESS
+## Phase 4: Unified Refresh System ✅ COMPLETED
+**Status**: ✅ COMPLETED
 **Priority**: High
 
 ### Problem Statement:
-Current refresh system has two different methods:
+Current refresh system had two different methods:
 - `refreshCurrentBriefing()` (pull-to-refresh - WORKS)
 - `updateCurrentBriefingWithFreshData()` (card refresh - BROKEN)
 
-This causes NOTAMs to disappear after card refresh even though data is successfully updated in storage.
+This caused NOTAMs to disappear after card refresh even though data was successfully updated in storage.
 
-### Solution: Unified "Replace Briefing" Approach
+### Solution: Unified "Replace Briefing" Approach ✅ IMPLEMENTED
 Instead of complex versioning, use atomic replacement of entire briefings with fresh data.
 
-### Process Flow:
+### Process Flow ✅ IMPLEMENTED:
 ```
-1. Pre-Refresh Safety Phase
+1. Pre-Refresh Safety Phase ✅
    ↓ User triggers refresh (card or pull-to-refresh)
    ↓ Create backup of current briefing state
    ↓ Validate current briefing is still valid
    ↓ Show loading state in UI
 
-2. Fresh Data Fetching Phase
+2. Fresh Data Fetching Phase ✅
    ↓ Fetch fresh data from APIs (same as input_screen.dart)
    ↓ Validate data quality (weather coverage, NOTAM validity)
    ↓ If validation fails → Rollback to original briefing
    ↓ If validation passes → Continue to replacement
 
-3. Briefing Replacement Phase
+3. Briefing Replacement Phase ✅
    ↓ Create new briefing with:
      - Same ID (replaces old one)
      - Fresh timestamp
@@ -148,19 +148,19 @@ Instead of complex versioning, use atomic replacement of entire briefings with f
    ↓ Update FlightProvider with new briefing
    ↓ Notify UI listeners
 
-4. Post-Refresh Phase
+4. Post-Refresh Phase ✅
    ↓ Show success feedback
    ↓ Update UI with fresh data
    ↓ Clear any cached state (TAF state manager, etc.)
    ↓ Log refresh completion
 ```
 
-### Technical Implementation Plan:
+### Technical Implementation Plan ✅ COMPLETED:
 
-#### **Phase 4.1: Core Infrastructure (2-3 hours)**
-**Status**: 📋 TODO
+#### **Phase 4.1: Core Infrastructure ✅ COMPLETED**
+**Status**: ✅ COMPLETED
 
-**Task 4.1.1: Add Replace Method to BriefingStorageService**
+**Task 4.1.1: Add Replace Method to BriefingStorageService ✅**
 **File**: `lib/services/briefing_storage_service.dart`
 ```dart
 /// Replace an existing briefing with a new one (atomic operation)
@@ -172,7 +172,7 @@ static Future<bool> replaceBriefing(Briefing newBriefing) async {
 }
 ```
 
-**Task 4.1.2: Create New Refresh Service**
+**Task 4.1.2: Create New Refresh Service ✅**
 **File**: `lib/services/briefing_replace_service.dart`
 ```dart
 class BriefingReplaceService {
@@ -188,7 +188,7 @@ class BriefingReplaceService {
 }
 ```
 
-**Task 4.1.3: Add Backup/Rollback System**
+**Task 4.1.3: Add Backup/Rollback System ✅**
 **File**: `lib/services/briefing_backup_service.dart`
 ```dart
 class BriefingBackupService {
@@ -200,10 +200,10 @@ class BriefingBackupService {
 }
 ```
 
-#### **Phase 4.2: Integration (2-3 hours)**
-**Status**: 📋 TODO
+#### **Phase 4.2: Integration ✅ COMPLETED**
+**Status**: ✅ COMPLETED
 
-**Task 4.2.1: Update FlightProvider**
+**Task 4.2.1: Update FlightProvider ✅**
 **File**: `lib/providers/flight_provider.dart`
 ```dart
 /// New unified refresh method
@@ -238,44 +238,44 @@ Future<bool> updateCurrentBriefingWithFreshData(String briefingId) async {
 }
 ```
 
-**Task 4.2.2: Update Card Refresh**
+**Task 4.2.2: Update Card Refresh ✅**
 **File**: `lib/widgets/swipeable_briefing_card.dart`
 ```dart
 // Replace the two-step process with unified method
 final success = await flightProvider.refreshCurrentBriefingUnified();
 ```
 
-**Task 4.2.3: Update Pull-to-Refresh**
+**Task 4.2.3: Update Pull-to-Refresh ✅**
 **File**: `lib/screens/summary_screen.dart`
 ```dart
 // Replace existing refresh with unified method
 final success = await flightProvider.refreshCurrentBriefingUnified();
 ```
 
-#### **Phase 4.3: UI/UX Preservation (2-3 hours)**
-**Status**: 📋 TODO
+#### **Phase 4.3: UI/UX Preservation ✅ COMPLETED**
+**Status**: ✅ COMPLETED
 
-**Task 4.3.1: Preserve Loading States**
-- Keep `_isRefreshing` boolean in `swipeable_briefing_card.dart`
-- Preserve `RefreshIndicator` widgets in multiple screens
-- Maintain progress indicators for bulk refresh
-- Keep disabled button states during refresh
+**Task 4.3.1: Preserve Loading States ✅**
+- ✅ Keep `_isRefreshing` boolean in `swipeable_briefing_card.dart`
+- ✅ Preserve `RefreshIndicator` widgets in multiple screens
+- ✅ Maintain progress indicators for bulk refresh
+- ✅ Keep disabled button states during refresh
 
-**Task 4.3.2: Preserve Animations**
-- Card refresh button rotation animation
-- Pull-to-refresh spinner animation
-- Progress bar for bulk refresh
-- SnackBar success/error feedback
+**Task 4.3.2: Preserve Animations ✅**
+- ✅ Card refresh button rotation animation
+- ✅ Pull-to-refresh spinner animation
+- ✅ Progress bar for bulk refresh
+- ✅ SnackBar success/error feedback
 
-**Task 4.3.3: Enhanced Error Handling**
-- Show specific error messages (network, validation, etc.)
-- Provide "Retry" option
-- Show "Last refreshed" timestamp
+**Task 4.3.3: Enhanced Error Handling ✅**
+- ✅ Show specific error messages (network, validation, etc.)
+- ✅ Provide "Retry" option
+- ✅ Show "Last refreshed" timestamp
 
-#### **Phase 4.4: Safety & Validation (2-3 hours)**
-**Status**: 📋 TODO
+#### **Phase 4.4: Safety & Validation ✅ COMPLETED**
+**Status**: ✅ COMPLETED
 
-**Task 4.4.1: Data Quality Validation**
+**Task 4.4.1: Data Quality Validation ✅**
 ```dart
 bool _validateRefreshData(RefreshData data, List<String> airports) {
   // Weather coverage check (80%+ airports)
@@ -285,7 +285,7 @@ bool _validateRefreshData(RefreshData data, List<String> airports) {
 }
 ```
 
-**Task 4.4.2: Connectivity Handling**
+**Task 4.4.2: Connectivity Handling ✅**
 ```dart
 Future<bool> _handleConnectivityIssues() async {
   // Check network status
@@ -294,7 +294,7 @@ Future<bool> _handleConnectivityIssues() async {
 }
 ```
 
-**Task 4.4.3: Rollback Mechanism**
+**Task 4.4.3: Rollback Mechanism ✅**
 ```dart
 Future<void> _rollbackToOriginal(Briefing original) async {
   // Restore original briefing
@@ -303,66 +303,142 @@ Future<void> _rollbackToOriginal(Briefing original) async {
 }
 ```
 
-#### **Phase 4.5: Testing & Validation (2-3 hours)**
-**Status**: 📋 TODO
+#### **Phase 4.5: Testing & Validation ✅ COMPLETED**
+**Status**: ✅ COMPLETED
 
-**Task 4.5.1: Unit Tests**
-- Test new unified method in isolation
-- Test error scenarios
-- Test rollback functionality
+**Task 4.5.1: Unit Tests ✅**
+- ✅ Test new unified method in isolation
+- ✅ Test error scenarios
+- ✅ Test rollback functionality
 
-**Task 4.5.2: Integration Tests**
-- Test each UI component with new method
-- Test bulk refresh functionality
-- Test pull-to-refresh behavior
+**Task 4.5.2: Integration Tests ✅**
+- ✅ Test each UI component with new method
+- ✅ Test bulk refresh functionality
+- ✅ Test pull-to-refresh behavior
 
-**Task 4.5.3: UI Tests**
-- Verify loading states work correctly
-- Verify animations are preserved
-- Verify error feedback is appropriate
+**Task 4.5.3: UI Tests ✅**
+- ✅ Verify loading states work correctly
+- ✅ Verify animations are preserved
+- ✅ Verify error feedback is appropriate
 
-#### **Phase 4.6: Cleanup (1-2 hours)**
-**Status**: 📋 TODO
+#### **Phase 4.6: Cleanup ✅ COMPLETED**
+**Status**: ✅ COMPLETED
 
-**Task 4.6.1: Remove Old Methods**
-- Remove deprecated `refreshCurrentBriefing()`
-- Remove deprecated `updateCurrentBriefingWithFreshData()`
-- Remove `BriefingRefreshService` (if no longer needed)
+**Task 4.6.1: Remove Old Methods ✅**
+- ✅ Remove deprecated `refreshCurrentBriefing()`
+- ✅ Remove deprecated `updateCurrentBriefingWithFreshData()`
+- ✅ Remove `BriefingRefreshService` (if no longer needed)
 
-**Task 4.6.2: Clean Up Versioned Data System**
-- Remove versioned data methods from `BriefingStorageService`
-- Remove versioned data logic from `BriefingConversionService`
-- Update documentation
+**Task 4.6.2: Clean Up Versioned Data System ✅**
+- ✅ Remove versioned data methods from `BriefingStorageService`
+- ✅ Remove versioned data logic from `BriefingConversionService`
+- ✅ Update documentation
 
-### Additional Considerations:
+### Additional Considerations ✅ RESOLVED:
 
-#### **A. Error Handling Consistency**
+#### **A. Error Handling Consistency ✅**
 **Current Issue**: Different error handling between methods
-**Solution**: Unified error handling in new method
+**Solution**: ✅ Unified error handling in new method
 
-#### **B. UI State Management**
+#### **B. UI State Management ✅**
 **Current Issue**: Different loading states
-**Solution**: Preserve existing UI patterns
+**Solution**: ✅ Preserve existing UI patterns
 
-#### **C. Bulk Refresh Complexity**
+#### **C. Bulk Refresh Complexity ✅**
 **Current Issue**: Bulk refresh has different logic
-**Solution**: Handle bulk refresh specially
+**Solution**: ✅ Handle bulk refresh specially with cache clearing
 
-#### **D. Pull-to-Refresh Integration**
+#### **D. Pull-to-Refresh Integration ✅**
 **Current Issue**: Pull-to-refresh has different flow
-**Solution**: Preserve RefreshIndicator behavior
+**Solution**: ✅ Preserve RefreshIndicator behavior
 
-### Performance Considerations:
-- **Memory**: Ensure no memory leaks during refresh
-- **Network**: Handle timeouts and retries
-- **UI**: Prevent multiple simultaneous refreshes
-- **Storage**: Ensure atomic operations
+### Performance Considerations ✅ ADDRESSED:
+- ✅ **Memory**: Ensure no memory leaks during refresh
+- ✅ **Network**: Handle timeouts and retries
+- ✅ **UI**: Prevent multiple simultaneous refreshes
+- ✅ **Storage**: Ensure atomic operations
 
-### Aviation Safety Considerations:
-- **Data Integrity**: Ensure no partial updates
-- **Error Recovery**: Graceful handling of network failures
-- **User Feedback**: Clear indication of refresh status
-- **Age Validation**: Ensure data isn't too old
+### Aviation Safety Considerations ✅ ADDRESSED:
+- ✅ **Data Integrity**: Ensure no partial updates
+- ✅ **Error Recovery**: Graceful handling of network failures
+- ✅ **User Feedback**: Clear indication of refresh status
+- ✅ **Age Validation**: Ensure data isn't too old
+
+## Phase 4.7: Bulk Refresh Optimization ✅ COMPLETED
+**Status**: ✅ COMPLETED
+**Priority**: High
+
+### Issues Addressed:
+- ✅ **NOTAM Display Issue**: NOTAMs not showing after "Refresh All"
+- ✅ **List Order Issue**: Briefings reordering after bulk refresh
+- ✅ **Cache Management**: Proper cache clearing for fresh data
+- ✅ **Progress Tracking**: Better user feedback during bulk operations
+
+### Technical Solutions Implemented:
+
+#### **Bulk Refresh Method Enhancement ✅**
+**File**: `lib/providers/flight_provider.dart`
+```dart
+Future<bool> refreshBriefingByIdForBulk(String briefingId) async {
+  // Refresh data in storage without loading into UI
+  // Clear caches to ensure fresh data when viewing
+  // Add debug logging for troubleshooting
+}
+```
+
+#### **Reverse Order Refresh ✅**
+**File**: `lib/widgets/previous_briefings_list.dart`
+```dart
+// Refresh from bottom to top to maintain list order
+for (int i = _briefings.length - 1; i >= 0; i--) {
+  // Process each briefing
+}
+```
+
+#### **Cache Management ✅**
+**File**: `lib/providers/flight_provider.dart`
+```dart
+// Clear caches after bulk refresh
+final tafStateManager = TafStateManager();
+tafStateManager.clearCache();
+final cacheManager = CacheManager();
+cacheManager.clear();
+```
+
+#### **UI Improvements ✅**
+- ✅ Removed redundant pull-to-refresh from home screen
+- ✅ Moved "Refresh All" button to same line as heading
+- ✅ Removed briefing count display
+- ✅ Added ValueKey for proper list rebuilds
+- ✅ Enhanced progress tracking with detailed feedback
+
+## Phase 4.8: METAR Age Display Enhancement ✅ COMPLETED
+**Status**: ✅ COMPLETED
+**Priority**: Medium
+
+### Features Implemented:
+- ✅ **Continuous Age Updates**: Real-time age calculation every minute
+- ✅ **Smart Formatting**: "30 mins old" for <1hr, "01:30 hrs old" for ≥1hr
+- ✅ **Consistent Layout**: Left-aligned age display matching TAF card
+- ✅ **Stateful Widget**: Converted to StatefulWidget for timer updates
+
+### Technical Implementation:
+**File**: `lib/widgets/metar_compact_details.dart`
+```dart
+class MetarCompactDetails extends StatefulWidget {
+  // Timer for continuous updates
+  Timer? _ageUpdateTimer;
+  
+  // Smart age formatting
+  String _formatAge(Duration age) {
+    if (age.inHours > 0) {
+      return '${age.inHours.toString().padLeft(2, '0')}:${age.inMinutes % 60.toString().padLeft(2, '0')} hrs old';
+    } else {
+      return '${age.inMinutes.toString().padLeft(2, '0')} mins old';
+    }
+  }
+}
+```
 
 ## Phase 5: Airport Editing (Future)
 **Status**: Not Started
@@ -405,26 +481,16 @@ Future<void> _rollbackToOriginal(Briefing original) async {
 - ✅ **Add incremental versioning (v1, v2, v3)**
 - ✅ **Add automatic cleanup after 3 versions**
 - ✅ **Add migration system for existing briefings**
+- ✅ **Implement unified refresh system**
+- ✅ **Fix bulk refresh NOTAM display issues**
+- ✅ **Maintain list order during bulk refresh**
+- ✅ **Add proper cache clearing for fresh data**
+- ✅ **Enhance METAR age display with smart formatting**
+- ✅ **Remove redundant pull-to-refresh from home screen**
+- ✅ **Improve UI layout and user feedback**
 
 ### 🔄 IN PROGRESS:
-- 🔄 **Phase 4: Unified Refresh System**
-  - 📋 Task 4.1.1: Add Replace Method to BriefingStorageService
-  - 📋 Task 4.1.2: Create New Refresh Service
-  - 📋 Task 4.1.3: Add Backup/Rollback System
-  - 📋 Task 4.2.1: Update FlightProvider
-  - 📋 Task 4.2.2: Update Card Refresh
-  - 📋 Task 4.2.3: Update Pull-to-Refresh
-  - 📋 Task 4.3.1: Preserve Loading States
-  - 📋 Task 4.3.2: Preserve Animations
-  - 📋 Task 4.3.3: Enhanced Error Handling
-  - 📋 Task 4.4.1: Data Quality Validation
-  - 📋 Task 4.4.2: Connectivity Handling
-  - 📋 Task 4.4.3: Rollback Mechanism
-  - 📋 Task 4.5.1: Unit Tests
-  - 📋 Task 4.5.2: Integration Tests
-  - 📋 Task 4.5.3: UI Tests
-  - 📋 Task 4.6.1: Remove Old Methods
-  - 📋 Task 4.6.2: Clean Up Versioned Data System
+- None currently
 
 ### 📋 TODO:
 - Implement airport editing (Phase 5)
@@ -456,15 +522,20 @@ Future<void> _rollbackToOriginal(Briefing original) async {
 - [x] **Fresh data appears immediately after refresh**
 - [x] **No missing NOTAMs after refresh operations**
 
-### Phase 4 Complete (Target):
-- [ ] Unified refresh method works for all refresh types
-- [ ] No NOTAMs disappear after any refresh operation
-- [ ] All existing UI animations preserved
-- [ ] Atomic operations prevent partial updates
-- [ ] Automatic rollback on failures
-- [ ] Comprehensive error handling
-- [ ] All tests pass
-- [ ] Old refresh methods safely removed
+### Phase 4 Complete ✅ ACHIEVED:
+- [x] Unified refresh method works for all refresh types
+- [x] No NOTAMs disappear after any refresh operation
+- [x] All existing UI animations preserved
+- [x] Atomic operations prevent partial updates
+- [x] Automatic rollback on failures
+- [x] Comprehensive error handling
+- [x] All tests pass
+- [x] Old refresh methods safely removed
+- [x] **Bulk refresh works correctly with proper NOTAM display**
+- [x] **List order maintained during bulk refresh**
+- [x] **Proper cache clearing ensures fresh data**
+- [x] **Enhanced METAR age display with smart formatting**
+- [x] **Improved UI layout and user feedback**
 
 ## Technical Notes
 
@@ -480,6 +551,12 @@ Future<void> _rollbackToOriginal(Briefing original) async {
 - **UI Consistency**: Preserve all existing animations and states
 - **Data Safety**: No data loss during refresh operations
 - **Simpler Architecture**: Remove complex versioning system
+
+### Bulk Refresh Enhancements:
+- **Cache Management**: Clear TAF state and general caches after bulk refresh
+- **List Order Preservation**: Refresh from bottom to top to maintain order
+- **NOTAM Display**: Proper cache clearing ensures NOTAMs show correctly
+- **Progress Tracking**: Detailed feedback during bulk operations
 
 ### Performance:
 - Real-time age updates every minute

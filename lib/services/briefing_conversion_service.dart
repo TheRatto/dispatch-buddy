@@ -6,6 +6,7 @@ import '../models/notam.dart';
 import '../models/weather.dart';
 import '../models/airport.dart';
 import '../services/briefing_storage_service.dart';
+import '../services/airport_database.dart'; // Added for airport lookup
 
 /// Service for converting between Briefing storage format and Flight objects
 /// 
@@ -71,7 +72,7 @@ class BriefingConversionService {
       // Convert stored data back to proper objects
       final notams = _convertNotamsMapToList(notamsMap);
       final weather = _convertWeatherMapToList(weatherMap);
-      final airports = _reconstructAirports(briefing.airports, notams, weather);
+      final airports = await _reconstructAirports(briefing.airports, notams, weather);
       
       debugPrint('DEBUG: Converted ${notams.length} NOTAMs, ${weather.length} weather reports, ${airports.length} airports');
       
@@ -224,11 +225,11 @@ class BriefingConversionService {
   }
   
   /// Reconstruct Airport objects from stored data
-  static List<Airport> _reconstructAirports(
+  static Future<List<Airport>> _reconstructAirports(
     List<String> airportCodes, 
     List<Notam> notams, 
     List<Weather> weather
-  ) {
+  ) async {
     try {
       final List<Airport> airports = [];
       
@@ -239,16 +240,19 @@ class BriefingConversionService {
         // Find weather for this airport
         final airportWeather = weather.where((w) => w.icao == code).toList();
         
+        // Get proper airport data from database
+        final airportData = await AirportDatabase.getAirportWithFallback(code);
+        
         // Create airport object
         final airport = Airport(
           icao: code,
-          name: _getAirportName(code), // We'll need to implement this
-          city: '', // Placeholder
-          latitude: 0.0, // Placeholder
-          longitude: 0.0, // Placeholder
+          name: airportData?.name ?? '$code Airport',
+          city: airportData?.city ?? 'Unknown City',
+          latitude: airportData?.latitude ?? 0.0,
+          longitude: airportData?.longitude ?? 0.0,
           systems: {}, // Placeholder
-          runways: [], // Placeholder
-          navaids: [], // Placeholder
+          runways: airportData?.runways ?? [],
+          navaids: airportData?.navaids ?? [],
         );
         
         airports.add(airport);
@@ -312,13 +316,6 @@ class BriefingConversionService {
     }
     
     return codes;
-  }
-  
-  /// Get airport name from code (placeholder - will need airport database)
-  static String _getAirportName(String code) {
-    // TODO: Implement airport name lookup from database
-    // For now, return the code as a placeholder
-    return code;
   }
   
   /// Validate that a briefing has sufficient data quality

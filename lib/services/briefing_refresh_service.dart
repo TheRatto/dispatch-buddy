@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/briefing_conversion_service.dart';
 import '../services/cache_manager.dart';
 import '../services/taf_state_manager.dart';
+import '../services/airport_database.dart'; // Added for airport lookup
 
 class RefreshException implements Exception {
   final String message;
@@ -69,14 +70,19 @@ class BriefingRefreshService {
         throw RefreshException('New data quality check failed');
       }
       
-      // 5. CREATE NEW VERSION WITH FRESH DATA
+      // 5. UPDATE AIRPORT INFORMATION (names, cities, etc.)
+      debugPrint('DEBUG: Updating airport information');
+      final updatedAirports = await _updateAirportInformation(briefing.airports);
+      
+      // 6. CREATE NEW VERSION WITH FRESH DATA
       debugPrint('DEBUG: Data quality passed, creating new version');
       final newVersionData = _prepareVersionedData(newData);
       final newVersion = await BriefingStorageService.createNewVersion(briefing.id, newVersionData);
       
-      // 6. UPDATE BRIEFING METADATA (but keep versioned data separate)
+      // 7. UPDATE BRIEFING METADATA (including updated airport info)
       final updatedBriefing = briefing.copyWith(
         timestamp: DateTime.now(),
+        airports: updatedAirports, // Update with proper airport names
       );
       await BriefingStorageService.updateBriefing(updatedBriefing);
       
@@ -245,6 +251,32 @@ class BriefingRefreshService {
   /// Get all available versions for a briefing
   static Future<List<int>> getAvailableVersions(String briefingId) async {
     return await BriefingStorageService.getAvailableVersions(briefingId);
+  }
+  
+  /// Update airport information with proper names and cities from database
+  Future<List<String>> _updateAirportInformation(List<String> airports) async {
+    debugPrint('DEBUG: Updating airport information for ${airports.length} airports');
+    final updatedAirports = <String>[];
+    
+    for (final icao in airports) {
+      try {
+        // Get proper airport data from database
+        final airportData = await AirportDatabase.getAirportWithFallback(icao);
+        if (airportData != null) {
+          debugPrint('DEBUG: Updated airport $icao - Name: ${airportData.name}, City: ${airportData.city}');
+        } else {
+          debugPrint('DEBUG: No airport data found for $icao, keeping original');
+        }
+        // Always keep the ICAO code, even if we don't have additional data
+        updatedAirports.add(icao);
+      } catch (e) {
+        debugPrint('DEBUG: Error updating airport $icao: $e, keeping original');
+        updatedAirports.add(icao);
+      }
+    }
+    
+    debugPrint('DEBUG: Updated airport list: $updatedAirports');
+    return updatedAirports;
   }
 }
 

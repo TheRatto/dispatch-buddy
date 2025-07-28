@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/australian_airport_database.dart';
 import '../models/airport_infrastructure.dart';
 import 'openaip_service.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 /// Manages caching of airport infrastructure data
 /// Fetches real data from OpenAIP API and caches it locally
@@ -39,19 +40,29 @@ class AirportCacheManager {
     bool isPriority = false,
   }) async {
     try {
+      debugPrint('DEBUG: AirportCacheManager - Fetching airport $icao from OpenAIP API');
+      
       // Get airport data from OpenAIP API
       final airport = await OpenAIPService.getAirportByICAO(icao);
       if (airport != null) {
+        debugPrint('DEBUG: AirportCacheManager - Received airport data for $icao');
+        debugPrint('DEBUG: AirportCacheManager - Airport name: ${airport.name}');
+        debugPrint('DEBUG: AirportCacheManager - Runways count: ${airport.runways.length}');
+        
         // Convert to infrastructure format
         final infrastructure = _convertAirportToInfrastructure(airport);
+        
+        debugPrint('DEBUG: AirportCacheManager - Converted to infrastructure with ${infrastructure.runways.length} runways');
         
         // Cache the result
         await _cacheAirport(icao, infrastructure, isPriority: isPriority);
         
         return infrastructure;
+      } else {
+        debugPrint('DEBUG: AirportCacheManager - No airport data received for $icao');
       }
     } catch (e) {
-      developer.log('Failed to fetch airport $icao: $e');
+      debugPrint('DEBUG: AirportCacheManager - Failed to fetch airport $icao: $e');
     }
     
     return null;
@@ -59,11 +70,55 @@ class AirportCacheManager {
   
   /// Convert Airport model to AirportInfrastructure
   static AirportInfrastructure _convertAirportToInfrastructure(dynamic airport) {
-    // This will be implemented once we have the infrastructure models
-    // For now, return a basic infrastructure object
+    // Convert OpenAIP runway data to AirportInfrastructure format
+    final List<Runway> runways = [];
+    
+    debugPrint('DEBUG: AirportCacheManager - Converting airport: ${airport.icao}');
+    debugPrint('DEBUG: AirportCacheManager - Airport runways property: ${airport.runways}');
+    debugPrint('DEBUG: AirportCacheManager - Airport runways type: ${airport.runways.runtimeType}');
+    
+    // Handle OpenAIP runway data
+    if (airport.runways != null) {
+      debugPrint('DEBUG: AirportCacheManager - Processing ${airport.runways.length} runways');
+      
+      for (int i = 0; i < airport.runways.length; i++) {
+        final runway = airport.runways[i];
+        debugPrint('DEBUG: AirportCacheManager - Runway $i: $runway');
+        debugPrint('DEBUG: AirportCacheManager - Runway $i type: ${runway.runtimeType}');
+        
+        if (runway is String) {
+          debugPrint('DEBUG: AirportCacheManager - Runway $i is String identifier: $runway');
+          
+          // Create a Runway object from the string identifier
+          runways.add(Runway(
+            identifier: runway,
+            length: 0.0, // OpenAIP doesn't provide length in basic response
+            surface: 'Unknown',
+            approaches: [],
+            hasLighting: false,
+            width: 0.0,
+            status: 'OPERATIONAL', // Default status
+          ));
+          debugPrint('DEBUG: AirportCacheManager - Added runway $i to list');
+        } else if (runway is Runway) {
+          debugPrint('DEBUG: AirportCacheManager - Runway $i is Runway object');
+          debugPrint('DEBUG: AirportCacheManager - Runway $i identifier: ${runway.identifier}');
+          debugPrint('DEBUG: AirportCacheManager - Runway $i length: ${runway.length}');
+          
+          // Use the Runway object directly
+          runways.add(runway);
+          debugPrint('DEBUG: AirportCacheManager - Added runway $i to list');
+        } else {
+          debugPrint('DEBUG: AirportCacheManager - Runway $i is unknown type, skipping');
+        }
+      }
+    }
+    
+    debugPrint('DEBUG: AirportCacheManager - Final runways list length: ${runways.length}');
+    
     return AirportInfrastructure(
       icao: airport.icao,
-      runways: [], // Will be populated from API data
+      runways: runways,
       taxiways: [], // Will be populated from API data
       navaids: [], // Will be populated from API data
       approaches: [], // Will be populated from API data
