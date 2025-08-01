@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:20:01.868699",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSCB",
+    "name": "CANBERRA",
+    "firefighting": {
+      "category": "CAT 7",
+      "availability": "1850-1110 UTC; 1850-1220 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 5500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL"
+        ],
+        "ends": {
+          "12": {},
+          "30": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "17/35",
+        "length": 10800,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL",
+          "RCLL"
+        ],
+        "ends": {
+          "17": {
+            "PAPI": true
+          },
+          "35": {
+            "HIAL": "HIAL-CAT II",
+            "PAPI": true,
+            "RTZL": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "ICB",
+        "freq": 109.5,
+        "runway": "35"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "CB",
+        "freq": 116.7
+      },
+      {
+        "type": "NDB",
+        "ident": "CB",
+        "freq": 263.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "30",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "17",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "35",
+        "type": "HIAL-CAT II",
+        "end": "both"
+      },
+      {
+        "runway": "35",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "35",
+        "type": "RTZL",
+        "end": "both"
+      }
+    ]
+  }
+}

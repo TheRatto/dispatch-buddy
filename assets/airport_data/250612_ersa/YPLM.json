@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-07-31T15:18:58.078912",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPLM",
+    "name": "LEARMONTH",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 10000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PAPI"
+        ],
+        "ends": {
+          "18": {
+            "HIAL": "HIAL-CAT I"
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "LM",
+        "freq": 112.4
+      },
+      {
+        "type": "NDB",
+        "ident": "LM",
+        "freq": 396.0
+      },
+      {
+        "type": "TAC",
+        "ident": "LMO",
+        "freq": 221.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "18",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      }
+    ]
+  }
+}

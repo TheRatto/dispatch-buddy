@@ -49,4 +49,5 @@ flutter:
   assets:
     - .env
     - assets/images/
-    - UI Images from Stitch/ 
+    - UI Images from Stitch/
+    - assets/airport_data/250612_ersa/ 

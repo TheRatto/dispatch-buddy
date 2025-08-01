@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-07-31T15:13:40.125877",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YHSM",
+    "name": "HORSHAM",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 4600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL",
+          "LIRL"
+        ],
+        "ends": {
+          "08": {
+            "PAPI": true
+          },
+          "26": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "14/32",
+        "length": 4100,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 3300,
+        "width": 24,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "HID",
+        "freq": 356.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "26",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

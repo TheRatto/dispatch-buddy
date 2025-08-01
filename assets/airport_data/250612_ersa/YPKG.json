@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-07-31T15:18:43.223316",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPKG",
+    "name": "KALGOORLIE-BOULDER",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 6600,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3900,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "KG",
+        "freq": 114.1
+      },
+      {
+        "type": "NDB",
+        "ident": "KG",
+        "freq": 287.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

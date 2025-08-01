@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:08:32.917187",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBBN",
+    "name": "BRISBANE",
+    "firefighting": {
+      "category": "CAT 9",
+      "availability": "SAT 0300-0800 UTC",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "01L/19R",
+        "length": 10800,
+        "width": 60,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PAPI",
+          "RCLL"
+        ],
+        "ends": {
+          "01L": {
+            "HIAL": "HIAL-CAT I"
+          },
+          "19R": {
+            "HIAL": "HIAL-CAT I"
+          }
+        }
+      },
+      {
+        "designation": "01R/19L",
+        "length": 11700,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL",
+          "PAPI",
+          "RCLL"
+        ],
+        "ends": {
+          "01R": {
+            "HIAL": "HIAL-CAT I",
+            "RTIL": true
+          },
+          "19L": {
+            "HIAL": "HIAL-CAT II",
+            "RTZL": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IBA",
+        "freq": 109.5,
+        "runway": "01R"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IBE",
+        "freq": 109.3,
+        "runway": "19R"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IBN",
+        "freq": 111.5,
+        "runway": "01L"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IBS",
+        "freq": 110.1,
+        "runway": "19L"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "BN",
+        "freq": 113.2
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "01L/19R",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "01L/19R",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "01L/19R",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "01L",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "19R",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "01R/19L",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "01R/19L",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "01R/19L",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "01R/19L",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "01R",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "01R",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "19L",
+        "type": "HIAL-CAT II",
+        "end": "both"
+      },
+      {
+        "runway": "19L",
+        "type": "RTZL",
+        "end": "both"
+      }
+    ]
+  }
+}

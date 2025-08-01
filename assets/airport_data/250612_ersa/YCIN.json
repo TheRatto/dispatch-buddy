@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:10:41.421869",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCIN",
+    "name": "CURTIN",
+    "firefighting": {
+      "category": "CAT 8",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 10000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "HIRL"
+        ],
+        "ends": {
+          "11": {
+            "PAPI": true
+          },
+          "29": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "18/36",
+        "length": 5000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "CIN",
+        "freq": 114.3
+      },
+      {
+        "type": "TAC",
+        "ident": "CTN",
+        "freq": 173.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "29",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

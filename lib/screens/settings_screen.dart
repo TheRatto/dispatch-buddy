@@ -243,8 +243,8 @@ class SettingsScreen extends StatelessWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.straighten),
-                title: const Text('Runway Units'),
-                subtitle: Text(settingsProvider.runwayUnits == Units.feet ? 'Feet' : 'Meters'),
+                title: const Text('Runway Length Units'),
+                subtitle: Text(settingsProvider.runwayUnits == Units.feet ? 'Feet (Width always in meters)' : 'Meters (Width always in meters)'),
                 trailing: Switch(
                   value: settingsProvider.runwayUnits == Units.meters,
                   onChanged: (value) {

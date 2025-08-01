@@ -62,6 +62,10 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         return FutureBuilder<dynamic>(
           future: _loadAirportData(widget.icao),
           builder: (context, snapshot) {
+            debugPrint('DEBUG: FutureBuilder - Connection state: ${snapshot.connectionState}');
+            debugPrint('DEBUG: FutureBuilder - Has data: ${snapshot.hasData}');
+            debugPrint('DEBUG: FutureBuilder - Data type: ${snapshot.data?.runtimeType}');
+            
             // Show content immediately with placeholder data
             final airportData = snapshot.data;
             
@@ -379,11 +383,11 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
                   ),
                 ),
               ),
-              // Width - fixed width
+              // Width - fixed width (always in meters)
               SizedBox(
                 width: 50,
                 child: Text(
-                  formattedWidth.isNotEmpty ? '$formattedWidth $unitSymbol' : '',
+                  formattedWidth.isNotEmpty ? '$formattedWidth m' : '',
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 12,
@@ -413,7 +417,10 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   }
 
   Widget _buildNavAidsSection(dynamic airportData) {
+    debugPrint('DEBUG: _buildNavAidsSection called with airportData: ${airportData?.runtimeType}');
+    
     if (airportData == null) {
+      debugPrint('DEBUG: _buildNavAidsSection - airportData is null, showing loading');
       return _buildFacilitySection(
         title: 'NAVAIDs',
         icon: Icons.radar,
@@ -435,22 +442,54 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     
     if (airportData is AirportInfrastructure) {
       navaids = airportData.navaids;
+      debugPrint('DEBUG: _buildNavAidsSection - Found ${navaids.length} navaids from AirportInfrastructure');
+      for (final navaid in navaids) {
+        debugPrint('DEBUG: _buildNavAidsSection - Navaid: ${navaid.type} ${navaid.identifier} ${navaid.frequency} (runway: ${navaid.runway})');
+      }
+    } else {
+      debugPrint('DEBUG: _buildNavAidsSection - airportData is not AirportInfrastructure: ${airportData.runtimeType}');
+      debugPrint('DEBUG: _buildNavAidsSection - airportData value: $airportData');
     }
     
-    // Convert navaids to facility items
-    final facilities = navaids.map((navaid) {
-      // Get full name for navaid type
-      String fullName = _getNavaidFullName(navaid.type);
+    // Group navaids by runway and type
+    final runwayNavaids = <String, List<Navaid>>{};
+    final generalNavaids = <Navaid>[];
+    
+    for (final navaid in navaids) {
+      if (_isRunwaySpecificNavaid(navaid.type) && navaid.runway.isNotEmpty) {
+        // Group by runway
+        runwayNavaids.putIfAbsent(navaid.runway, () => []).add(navaid);
+        debugPrint('DEBUG: _buildNavAidsSection - Added runway navaid: ${navaid.type} ${navaid.identifier} for runway ${navaid.runway}');
+      } else {
+        // General navaids
+        generalNavaids.add(navaid);
+        debugPrint('DEBUG: _buildNavAidsSection - Added general navaid: ${navaid.type} ${navaid.identifier}');
+      }
+    }
+    
+    // Build facility items
+    final List<Widget> facilities = [];
+    
+    // Add general navaids FIRST (in current font)
+    for (final navaid in generalNavaids) {
+      facilities.add(_buildGeneralNavaidItem(navaid));
+    }
+    
+    // Add runway-specific navaids grouped by runway
+    for (final runway in runwayNavaids.keys) {
+      final runwayNavaidList = runwayNavaids[runway]!;
       
-      // For now, show all navaids as Operational until we implement NOTAM integration
-      // This matches the runway behavior
-      return _buildFacilityItem(
-        name: '${navaid.identifier} (${navaid.type})',
-        details: '${fullName} - ${navaid.frequency}',
-        status: 'Operational',
-        statusColor: Colors.green,
-      );
-    }).toList();
+      // Add runway heading (smaller, grey font, left aligned)
+      facilities.add(_buildRunwayNavaidHeading(runway));
+      
+      // Add navaids for this runway (normal font)
+      for (final navaid in runwayNavaidList) {
+        facilities.add(_buildRunwayNavaidItem(navaid));
+      }
+    }
+    
+    // Calculate actual NAVAID count (excluding runway headings)
+    final actualNavaidCount = generalNavaids.length + runwayNavaids.values.fold(0, (sum, navaids) => sum + navaids.length);
     
     return _buildFacilitySection(
       title: 'NAVAIDs',
@@ -458,48 +497,147 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
       color: Colors.blue,
       facilities: facilities,
       emptyMessage: 'No navaid data available',
+      count: actualNavaidCount.toInt(), // Pass actual count instead of facilities.length
     );
   }
   
-  String _getNavaidFullName(String type) {
-    switch (type.toUpperCase()) {
-      case 'ILS':
-        return 'Instrument Landing System';
-      case 'VOR':
-        return 'VHF Omnidirectional Range';
-      case 'NDB':
-        return 'Non-Directional Beacon';
-      case 'DME':
-        return 'Distance Measuring Equipment';
-      case 'TACAN':
-        return 'Tactical Air Navigation';
-      case 'LOC':
-        return 'Localizer';
-      case 'GLS':
-        return 'Ground-Based Augmentation System';
-      case 'MLS':
-        return 'Microwave Landing System';
-      case 'VORTAC':
-        return 'VOR/TACAN';
-      case 'VOR/DME':
-        return 'VOR with Distance Measuring Equipment';
-      default:
-        return type;
-    }
+  // Removed unused methods _getNavaidFullName and _getNavaidStatusColor
+  
+  /// Check if navaid is runway-specific (ILS, ILS/DME, GBAS, etc.)
+  bool _isRunwaySpecificNavaid(String type) {
+    final upperType = type.toUpperCase();
+    return upperType.contains('ILS') || 
+           upperType.contains('GBAS') || 
+           upperType.contains('GLS') ||
+           upperType.contains('LOC');
   }
   
-  Color _getNavaidStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'OPERATIONAL':
-        return Colors.green;
-      case 'U/S':
-      case 'UNSERVICEABLE':
-        return Colors.red;
-      case 'MAINTENANCE':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+  /// Build runway heading for navaids
+  Widget _buildRunwayNavaidHeading(String runway) {
+    return Container(
+      padding: const EdgeInsets.only(top: 4.0, bottom: 0, left: 0, right: 16.0),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        'RWY $runway',
+        style: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 12,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+  
+  /// Build runway-specific navaid item with column layout and reduced padding
+  Widget _buildRunwayNavaidItem(Navaid navaid) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0), // Reduced padding
+      child: Row(
+        children: [
+          // Type - fixed width
+          SizedBox(
+            width: 80,
+            child: Text(
+              navaid.type,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          // Identifier - fixed width
+          SizedBox(
+            width: 60,
+            child: Text(
+              navaid.identifier,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          // Frequency - fixed width
+          SizedBox(
+            width: 70,
+            child: Text(
+              navaid.frequency,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          const Spacer(),
+          // Status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+            ),
+            child: const Text(
+              'Operational',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build general navaid item with column layout
+  Widget _buildGeneralNavaidItem(Navaid navaid) {
+    return _buildFacilityItem(
+      name: Row(
+        children: [
+          // Type - fixed width
+          SizedBox(
+            width: 80,
+            child: Text(
+              navaid.type,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          // Identifier - fixed width
+          SizedBox(
+            width: 60,
+            child: Text(
+              navaid.identifier,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          // Frequency - fixed width
+          SizedBox(
+            width: 70,
+            child: Text(
+              navaid.frequency,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+        ],
+      ),
+      details: '',
+      status: 'Operational',
+      statusColor: Colors.green,
+    );
   }
 
   Widget _buildLightingSection(dynamic airportData) {
@@ -522,6 +660,54 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         ),
       ],
       emptyMessage: 'No lighting data available',
+    );
+  }
+
+  /// Build runway-specific lighting item with reduced padding
+  Widget _buildRunwayLightingItem(String name, String details) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0), // Reduced padding
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (details.isNotEmpty) ...[
+                  Text(
+                    details,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+            ),
+            child: const Text(
+              'Operational',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -565,6 +751,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     required Color color,
     required List<Widget> facilities,
     required String emptyMessage,
+    int? count, // Optional count parameter
   }) {
     return Card(
       child: Padding(
@@ -592,7 +779,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${facilities.length}',
+                    '${count ?? facilities.length}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,

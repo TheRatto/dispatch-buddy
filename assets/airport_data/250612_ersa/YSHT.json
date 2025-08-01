@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-07-31T15:20:28.198196",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSHT",
+    "name": "SHEPPARTON",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 1400,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 4300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {
+          "18": {
+            "PAPI": true
+          },
+          "36": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "SHT",
+        "freq": 212.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "36",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

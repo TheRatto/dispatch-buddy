@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-07-31T15:15:24.539663",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLTN",
+    "name": "LAVERTON",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "07": {
+            "PAPI": true
+          },
+          "25": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "16/34",
+        "length": 3000,
+        "width": 30,
+        "surface": "Other",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "07",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "25",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

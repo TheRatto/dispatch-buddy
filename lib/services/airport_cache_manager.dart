@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/australian_airport_database.dart';
 import '../models/airport_infrastructure.dart';
 import 'openaip_service.dart';
+import 'ersa_data_service.dart';
 import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 /// Manages caching of airport infrastructure data
@@ -14,24 +15,54 @@ class AirportCacheManager {
   static const int _maxCacheSize = 100; // Maximum cached airports
   
   /// Get airport infrastructure data
-  /// Priority: Initial Australian airports → Cache → API → Fallback
+  /// Clean fork: ERSA for Australian airports (Y), API for international airports
   static Future<AirportInfrastructure?> getAirportInfrastructure(String icao) async {
     final upperIcao = icao.toUpperCase();
     
-    // 1. Check if it's an initial Australian airport
-    if (AustralianAirportDatabase.isInitialAirport(upperIcao)) {
-      // For initial airports, we'll fetch from API but mark as priority
-      return await _fetchAndCacheAirport(upperIcao, isPriority: true);
-    }
+    debugPrint('DEBUG: AirportCacheManager - getAirportInfrastructure called for $upperIcao');
     
-    // 2. Check cache
-    final cached = await _getCachedAirport(upperIcao);
+    // Fork based on ICAO prefix
+    if (upperIcao.startsWith('Y')) {
+      // Australian airports: Use ERSA data only
+      debugPrint('DEBUG: AirportCacheManager - Australian airport detected, using ERSA data for $upperIcao');
+      return await _getERSAData(upperIcao);
+    } else {
+      // International airports: Use API data with cache
+      debugPrint('DEBUG: AirportCacheManager - International airport detected, using API data for $upperIcao');
+      return await _getAPIData(upperIcao);
+    }
+  }
+  
+  /// Get ERSA data for Australian airports
+  static Future<AirportInfrastructure?> _getERSAData(String icao) async {
+    debugPrint('DEBUG: AirportCacheManager - Loading ERSA data for $icao');
+    final ersaData = await ERSADataService.getAirportInfrastructure(icao);
+    
+    if (ersaData != null) {
+      debugPrint('DEBUG: AirportCacheManager - ERSA data loaded successfully for $icao');
+      debugPrint('DEBUG: AirportCacheManager - ERSA navaids count: ${ersaData.navaids.length}');
+      for (final navaid in ersaData.navaids) {
+        debugPrint('DEBUG: AirportCacheManager - ERSA navaid: ${navaid.type} ${navaid.identifier} ${navaid.frequency}');
+      }
+      return ersaData;
+    } else {
+      debugPrint('DEBUG: AirportCacheManager - No ERSA data found for $icao');
+      return null;
+    }
+  }
+  
+  /// Get API data for international airports
+  static Future<AirportInfrastructure?> _getAPIData(String icao) async {
+    // 1. Check cache first
+    final cached = await _getCachedAirport(icao);
     if (cached != null) {
+      debugPrint('DEBUG: AirportCacheManager - Using cached data for $icao');
       return cached;
     }
     
-    // 3. Fetch from API
-    return await _fetchAndCacheAirport(upperIcao);
+    // 2. Fetch from API
+    debugPrint('DEBUG: AirportCacheManager - Fetching from API for $icao');
+    return await _fetchAndCacheAirport(icao);
   }
   
   /// Fetch airport from API and cache it
@@ -273,6 +304,17 @@ class AirportCacheManager {
     } catch (e) {
       developer.log('Failed to get cache stats: $e');
       return {};
+    }
+  }
+  
+  /// Clear all cached airport data
+  static Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKey);
+      debugPrint('DEBUG: AirportCacheManager - Cache cleared');
+    } catch (e) {
+      debugPrint('DEBUG: AirportCacheManager - Error clearing cache: $e');
     }
   }
 }

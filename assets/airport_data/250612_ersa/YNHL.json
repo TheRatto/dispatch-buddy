@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-07-31T15:17:17.407939",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YNHL",
+    "name": "NHILL",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 3300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL",
+          "RTIL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3600,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

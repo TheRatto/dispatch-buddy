@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:23:08.230256",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWLM",
+    "name": "WILLIAMTOWN",
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2000-1200 UTC"
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 10000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {
+          "12": {
+            "HIAL": "HIAL-CAT I"
+          },
+          "30": {
+            "HIAL": "HIAL-CAT I"
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IWM",
+        "freq": 110.5,
+        "runway": "12"
+      },
+      {
+        "type": "NDB",
+        "ident": "WLM",
+        "freq": 365.0
+      },
+      {
+        "type": "TAC",
+        "ident": "WLM",
+        "freq": 112.8
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "12",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "30",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      }
+    ]
+  }
+}

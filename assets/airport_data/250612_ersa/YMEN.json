@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-07-31T15:15:49.109072",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMEN",
+    "name": "MELBOURNE/ESSENDON",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 6300,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 4900,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "PAPI"
+        ],
+        "ends": {
+          "17": {},
+          "35": {}
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IEN",
+        "freq": 109.9,
+        "runway": "26"
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

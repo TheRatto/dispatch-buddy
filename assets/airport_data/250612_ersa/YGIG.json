@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:12:51.635899",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YGIG",
+    "name": "GINGIN",
+    "firefighting": {
+      "category": "CAT 4",
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 6000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "GIG",
+        "freq": 372.0
+      },
+      {
+        "type": "TAC",
+        "ident": "PEA",
+        "freq": 112.8
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

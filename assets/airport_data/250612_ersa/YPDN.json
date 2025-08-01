@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:18:23.295040",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPDN",
+    "name": "DARWIN",
+    "firefighting": {
+      "category": "CAT 8",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 11000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL"
+        ],
+        "ends": {
+          "11": {
+            "PAPI": true
+          },
+          "29": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "18/36",
+        "length": 5000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "BGT",
+        "freq": 308.0,
+        "runway": "11"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IDN",
+        "freq": 109.7,
+        "runway": "29"
+      },
+      {
+        "type": "TAC",
+        "ident": "DAR",
+        "freq": 112.4
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "DN",
+        "freq": 112.6
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "29",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "29",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

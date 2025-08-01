@@ -1,0 +1,197 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:18:03.185078",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YOSB",
+    "name": "OSBORNE MINE",
+    "firefighting": {
+      "category": "CAT 5",
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 6600,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 3700,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "06/24",
+        "length": 7000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "04/22",
+        "length": 5500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 5300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "05/23",
+        "length": 5500,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18L/36R",
+        "length": 9800,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18R/36L",
+        "length": 5700,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "PBO",
+        "freq": 116.9
+      },
+      {
+        "type": "NDB",
+        "ident": "PBO",
+        "freq": 278.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "18L/36R",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18L/36R",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

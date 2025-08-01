@@ -9,6 +9,7 @@ import '../services/airport_system_analyzer.dart';
 import '../services/airport_database.dart';
 import '../services/taf_state_manager.dart';
 import '../services/cache_manager.dart';
+import '../services/airport_cache_manager.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/facilities_widget.dart';
 import '../widgets/system_pages/runway_system_widget.dart';
@@ -50,6 +51,20 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
     tafStateManager.clearCache();
     final cacheManager = CacheManager();
     cacheManager.clearPrefix('notam_');
+  }
+  
+  // Clear airport cache to force ERSA data usage
+  void _clearAirportCache() async {
+    try {
+      await AirportCacheManager.clearCache();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Airport cache cleared - ERSA data will be used')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error clearing cache: $e')),
+      );
+    }
   }
 
   @override
@@ -103,6 +118,12 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
         ),
         centerTitle: true,
         actions: [
+          // Debug button to clear airport cache
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _clearAirportCache,
+            tooltip: 'Clear airport cache (use ERSA data)',
+          ),
           Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),

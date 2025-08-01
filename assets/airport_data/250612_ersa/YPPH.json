@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:19:21.917726",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPPH",
+    "name": "PERTH",
+    "firefighting": {
+      "category": "CAT 9",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 11300,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL",
+          "PAPI",
+          "RCLL"
+        ],
+        "ends": {
+          "03": {
+            "HIAL": "HIAL-CAT I"
+          },
+          "21": {
+            "HIAL": "HIAL-CAT III",
+            "RTZL": true
+          }
+        }
+      },
+      {
+        "designation": "06/24",
+        "length": 7100,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL"
+        ],
+        "ends": {
+          "06": {
+            "PAPI": true
+          },
+          "24": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IGD",
+        "freq": 109.5,
+        "runway": "21"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IPH",
+        "freq": 109.9,
+        "runway": "24"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IPN",
+        "freq": 110.1,
+        "runway": "03"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "PH",
+        "freq": 113.7
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "03",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "21",
+        "type": "HIAL-CAT III",
+        "end": "both"
+      },
+      {
+        "runway": "21",
+        "type": "RTZL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "24",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "24",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

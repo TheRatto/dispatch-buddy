@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:20:37.056015",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSNF",
+    "name": "NORFOLK ISLAND",
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2030-0530 UTC; 0130-0500 UTC; 2100-0530 UTC; 0100-0500 UTC"
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 4700,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "04": {
+            "PAPI": true,
+            "RTIL": true
+          }
+        }
+      },
+      {
+        "designation": "11/29",
+        "length": 6400,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "PTBL",
+          "RTIL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "NF",
+        "freq": 112.4
+      },
+      {
+        "type": "NDB",
+        "ident": "NF",
+        "freq": 260.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "04",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "04",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

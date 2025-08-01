@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-07-31T15:12:43.756116",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YGFN",
+    "name": "GRAFTON",
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 5600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "GV",
+        "freq": 114.1
+      },
+      {
+        "type": "NDB",
+        "ident": "GV",
+        "freq": 380.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

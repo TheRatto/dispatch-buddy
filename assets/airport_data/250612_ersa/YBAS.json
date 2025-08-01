@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:08:30.636349",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBAS",
+    "name": "ALICE SPRINGS",
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "MON - FRI 2220-0915 UTC; SAT 2220-0830 UTC; SUN 2345-0915 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 8000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {
+          "12": {
+            "HIAL": "HIAL-CAT I"
+          }
+        }
+      },
+      {
+        "designation": "17/35",
+        "length": 3700,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IAS",
+        "freq": 109.9,
+        "runway": "12"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "AS",
+        "freq": 115.9
+      },
+      {
+        "type": "NDB",
+        "ident": "AS",
+        "freq": 335.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "12",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

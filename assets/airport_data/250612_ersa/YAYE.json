@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:08:23.955687",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YAYE",
+    "name": "AYERS ROCK/CONNELLAN",
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "MON - FRI 2230-0730 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "13/31",
+        "length": 8500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "AYE",
+        "freq": 117.1
+      },
+      {
+        "type": "NDB",
+        "ident": "AYE",
+        "freq": 233.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "13/31",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "13/31",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

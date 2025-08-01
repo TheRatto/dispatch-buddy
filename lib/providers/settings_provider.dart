@@ -49,18 +49,20 @@ class SettingsProvider extends ChangeNotifier {
   // Get the appropriate unit symbol
   String get unitSymbol => _runwayUnits == Units.feet ? 'ft' : 'm';
 
-  // Convert length from meters to the selected unit
-  String formatLength(double lengthMeters) {
-    if (lengthMeters <= 0) return '';
+  // Convert length from feet to the selected unit
+  String formatLength(double lengthFeet) {
+    if (lengthFeet <= 0) return '';
     
     if (_runwayUnits == Units.feet) {
-      final feet = (lengthMeters * 3.28084).round();
+      // Show feet as-is (from JSON)
+      final feet = lengthFeet.round();
       return feet.toString().replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (Match m) => '${m[1]},'
       );
     } else {
-      final meters = lengthMeters.round();
+      // Convert feet to meters
+      final meters = (lengthFeet * 0.3048).round();
       return meters.toString().replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (Match m) => '${m[1]},'
@@ -72,18 +74,11 @@ class SettingsProvider extends ChangeNotifier {
   String formatWidth(double widthMeters) {
     if (widthMeters <= 0) return '';
     
-    if (_runwayUnits == Units.feet) {
-      final feet = (widthMeters * 3.28084).round();
-      return feet.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]},'
-      );
-    } else {
-      final meters = widthMeters.round();
-      return meters.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]},'
-      );
-    }
+    // Width always stays in meters, regardless of runway length units setting
+    final meters = widthMeters.round();
+    return meters.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},'
+    );
   }
 } 

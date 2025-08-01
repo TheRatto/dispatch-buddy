@@ -1,0 +1,190 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:17:42.936619",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YNYN",
+    "name": "NYNGAN",
+    "firefighting": {
+      "category": "CAT 4",
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "15/33",
+        "length": 4300,
+        "width": 18,
+        "surface": "Sealed",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "05/23",
+        "length": 5400,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3500,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "09/27",
+        "length": 3600,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 5600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 4300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "07/25",
+        "length": 6100,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "03/21",
+        "length": 6200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "04/22",
+        "length": 2700,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "13/31",
+        "length": 4200,
+        "width": 23,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IOK",
+        "freq": 110.5,
+        "runway": "14"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "OK",
+        "freq": 112.9
+      },
+      {
+        "type": "NDB",
+        "ident": "OK",
+        "freq": 254.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "15/33",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "07/25",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}
