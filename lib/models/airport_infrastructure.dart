@@ -293,6 +293,72 @@ class Approach {
   }
 }
 
+/// Represents a lighting system at an airport
+class Lighting {
+  final String type; // "HIRL", "PAPI", "HIAL", "RCLL", etc.
+  final String runway; // Associated runway (e.g., "07/25", "16L")
+  final String end; // "both", "07", "25", etc.
+  final String status; // "OPERATIONAL", "CLOSED", "MAINTENANCE"
+  final String? category; // For HIAL: "CAT I", "CAT II", etc.
+
+  Lighting({
+    required this.type,
+    required this.runway,
+    required this.end,
+    this.status = 'OPERATIONAL',
+    this.category,
+  });
+
+  /// Create a Lighting from JSON data
+  factory Lighting.fromJson(Map<String, dynamic> json) {
+    return Lighting(
+      type: json['type'],
+      runway: json['runway'],
+      end: json['end'],
+      status: json['status'] ?? 'OPERATIONAL',
+      category: json['category'],
+    );
+  }
+
+  /// Convert Lighting to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'runway': runway,
+      'end': end,
+      'status': status,
+      'category': category,
+    };
+  }
+
+  /// Get lighting status emoji
+  String get statusEmoji {
+    switch (status) {
+      case 'OPERATIONAL':
+        return '🟢';
+      case 'CLOSED':
+        return '🔴';
+      case 'MAINTENANCE':
+        return '🟡';
+      default:
+        return '⚪';
+    }
+  }
+
+  /// Get full lighting description
+  String get description {
+    if (category != null) {
+      return '$type $category';
+    }
+    return type;
+  }
+
+  @override
+  String toString() {
+    return 'Lighting(type: $type, runway: $runway, status: $status)';
+  }
+}
+
 /// Represents a taxiway route between facilities
 class TaxiwayRoute {
   final String identifier; // "A-B", "C-D-E"
@@ -363,6 +429,7 @@ class AirportInfrastructure {
   final List<Navaid> navaids;
   final List<Approach> approaches;
   final List<TaxiwayRoute> routes;
+  final List<Lighting> lighting; // Airport lighting systems
   final Map<String, String> facilityStatus; // Current status of facilities
 
   AirportInfrastructure({
@@ -372,6 +439,7 @@ class AirportInfrastructure {
     required this.navaids,
     required this.approaches,
     required this.routes,
+    required this.lighting,
     required this.facilityStatus,
   });
 
@@ -394,6 +462,9 @@ class AirportInfrastructure {
       routes: (json['routes'] as List?)
           ?.map((route) => TaxiwayRoute.fromJson(route))
           .toList() ?? [],
+      lighting: (json['lighting'] as List?)
+          ?.map((lighting) => Lighting.fromJson(lighting))
+          .toList() ?? [],
       facilityStatus: Map<String, String>.from(json['facilityStatus'] ?? {}),
     );
   }
@@ -407,6 +478,7 @@ class AirportInfrastructure {
       'navaids': navaids.map((navaid) => navaid.toJson()).toList(),
       'approaches': approaches.map((approach) => approach.toJson()).toList(),
       'routes': routes.map((route) => route.toJson()).toList(),
+      'lighting': lighting.map((lighting) => lighting.toJson()).toList(),
       'facilityStatus': facilityStatus,
     };
   }

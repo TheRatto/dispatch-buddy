@@ -99,7 +99,7 @@ class _RawTafCardState extends State<RawTafCard> {
     if (hours > 0) {
       ageText = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')} hrs old';
     } else {
-      ageText = '00:${minutes.toString().padLeft(2, '0')} hrs old';
+      ageText = '${minutes.toString().padLeft(2, '0')} mins old';
     }
     
     // Debug logging

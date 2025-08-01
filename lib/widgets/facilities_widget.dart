@@ -60,6 +60,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     return Consumer<FlightProvider>(
       builder: (context, flightProvider, child) {
         return FutureBuilder<dynamic>(
+          key: ValueKey('facilities_${widget.icao}'),
           future: _loadAirportData(widget.icao),
           builder: (context, snapshot) {
             debugPrint('DEBUG: FutureBuilder - Connection state: ${snapshot.connectionState}');
@@ -106,10 +107,18 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
 
   Future<dynamic> _loadAirportData(String icao) async {
     try {
+      debugPrint('DEBUG: _loadAirportData called for $icao');
       // Use the cache manager to get airport infrastructure data
-      return await AirportCacheManager.getAirportInfrastructure(icao);
+      final result = await AirportCacheManager.getAirportInfrastructure(icao);
+      debugPrint('DEBUG: _loadAirportData result for $icao: ${result?.runtimeType}');
+      if (result != null) {
+        debugPrint('DEBUG: _loadAirportData - Found ${result.runtimeType} data for $icao');
+      } else {
+        debugPrint('DEBUG: _loadAirportData - No data found for $icao');
+      }
+      return result;
     } catch (e) {
-      print('Error loading airport data for $icao: $e');
+      debugPrint('Error loading airport data for $icao: $e');
       return null;
     }
   }
@@ -641,74 +650,183 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   }
 
   Widget _buildLightingSection(dynamic airportData) {
+    if (airportData == null || airportData.lighting == null) {
+      return _buildFacilitySection(
+        title: 'Lighting',
+        icon: Icons.lightbulb,
+        color: Colors.orange,
+        facilities: [],
+        emptyMessage: 'No lighting data available',
+      );
+    }
+
+    final lighting = airportData.lighting as List<Lighting>;
+    debugPrint('DEBUG: _buildLightingSection - Found ${lighting.length} lighting systems');
+
+    if (lighting.isEmpty) {
+      return _buildFacilitySection(
+        title: 'Lighting',
+        icon: Icons.lightbulb,
+        color: Colors.orange,
+        facilities: [],
+        emptyMessage: 'No lighting data available',
+      );
+    }
+
+    // Group lighting by runway end
+    final Map<String, List<Lighting>> runwayEndLighting = {};
+
+    for (final light in lighting) {
+      List<String> runwayEnds = [];
+      
+      // Handle different runway naming patterns
+      if (light.runway.contains('/')) {
+        // Full runway designation (e.g., "07/25", "16L/34R")
+        // Split into individual ends
+        final ends = light.runway.split('/');
+        runwayEnds = ends;
+      } else {
+        // Single runway end (e.g., "16L", "34R", "07")
+        runwayEnds = [light.runway];
+      }
+      
+      // Add lighting to each runway end
+      for (final runwayEnd in runwayEnds) {
+        if (!runwayEndLighting.containsKey(runwayEnd)) {
+          runwayEndLighting[runwayEnd] = [];
+        }
+        runwayEndLighting[runwayEnd]!.add(light);
+      }
+    }
+
+    final List<Widget> lightingWidgets = [];
+
+    // Add lighting grouped by runway end
+    for (final runwayEnd in runwayEndLighting.keys) {
+      final runwayLights = runwayEndLighting[runwayEnd]!;
+      lightingWidgets.add(_buildRunwayEndLightingItem(runwayEnd, runwayLights));
+    }
+
     return _buildFacilitySection(
       title: 'Lighting',
       icon: Icons.lightbulb,
       color: Colors.orange,
-      facilities: [
-        _buildFacilityItem(
-          name: 'HIAL',
-          details: 'High Intensity Approach Lighting',
-          status: 'Operational',
-          statusColor: Colors.green,
-        ),
-        _buildFacilityItem(
-          name: 'PAPI',
-          details: 'Precision Approach Path Indicator',
-          status: 'Operational',
-          statusColor: Colors.green,
-        ),
-      ],
+      facilities: lightingWidgets,
+      count: lighting.length,
       emptyMessage: 'No lighting data available',
     );
   }
 
-  /// Build runway-specific lighting item with reduced padding
-  Widget _buildRunwayLightingItem(String name, String details) {
+  /// Build runway end lighting item with horizontal layout
+  Widget _buildRunwayEndLightingItem(String runwayEnd, List<Lighting> lights) {
+    // Determine overall status for this runway end
+    final hasOperational = lights.any((light) => light.status == 'OPERATIONAL');
+    final hasClosed = lights.any((light) => light.status == 'CLOSED');
+    final hasMaintenance = lights.any((light) => light.status == 'MAINTENANCE');
+    
+    String overallStatus;
+    Color statusColor;
+    if (hasClosed) {
+      overallStatus = 'CLOSED';
+      statusColor = Colors.red;
+    } else if (hasMaintenance) {
+      overallStatus = 'MAINTENANCE';
+      statusColor = Colors.orange;
+    } else if (hasOperational) {
+      overallStatus = 'OPERATIONAL';
+      statusColor = Colors.green;
+    } else {
+      overallStatus = 'UNKNOWN';
+      statusColor = Colors.grey;
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0), // Reduced padding
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+          // Runway end heading
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0, bottom: 2.0, left: 0, right: 16.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'RWY $runwayEnd',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
-                if (details.isNotEmpty) ...[
-                  Text(
-                    details,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-            ),
-            child: const Text(
-              'Operational',
-              style: TextStyle(
-                color: Colors.green,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+          // Lighting types row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: lights.map((light) => _buildLightingChip(light)).toList(),
+                  ),
+                ),
+                // Status indicator
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    overallStatus,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Build individual lighting chip
+  Widget _buildLightingChip(Lighting light) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Text(
+        light.description,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// Get status color based on status string
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'OPERATIONAL':
+        return Colors.green;
+      case 'CLOSED':
+        return Colors.red;
+      case 'MAINTENANCE':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildServicesSection(dynamic airportData) {

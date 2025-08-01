@@ -8,6 +8,7 @@ import '../models/airport_infrastructure.dart';
 class ERSADataService {
   static const String _ersaDataPath = 'assets/airport_data/250612_ersa/';
   static Map<String, dynamic>? _ersaCache;
+  static bool _isLoadingCache = false;
   
   /// Get airport infrastructure data from ERSA
   /// Returns null for non-Australian airports or if data not available
@@ -24,12 +25,26 @@ class ERSADataService {
     
     try {
       // Load ERSA data if not already cached
-      if (_ersaCache == null) {
+      if (_ersaCache == null && !_isLoadingCache) {
         print('ERSADataService: Loading ERSA cache...');
+        _isLoadingCache = true;
         await _loadERSACache();
+        _isLoadingCache = false;
+        print('ERSADataService: Cache loading completed, cache size: ${_ersaCache?.length}');
       }
       
-      // Get airport data from cache
+      // Wait if cache is currently loading
+      while (_isLoadingCache) {
+        await Future.delayed(Duration(milliseconds: 10));
+      }
+      
+      // Ensure cache is loaded before checking
+      if (_ersaCache == null) {
+        print('ERSADataService: Cache failed to load');
+        return null;
+      }
+      
+      // Get airport data from cache (after ensuring cache is loaded)
       final airportData = _ersaCache![upperIcao];
       if (airportData == null) {
         print('ERSADataService: No data found for $upperIcao in cache');
@@ -120,8 +135,15 @@ class ERSADataService {
     
     print('ERSADataService: Converted ${navaids.length} navaids');
     
-    // Convert lighting (integrate into runways)
-    _integrateLightingIntoRunways(runways, data['lighting']);
+    // Convert lighting
+    final List<Lighting> lighting = [];
+    if (data['lighting'] != null) {
+      for (final lightingData in data['lighting']) {
+        lighting.add(_convertERSALighting(lightingData));
+      }
+    }
+    
+    print('ERSADataService: Converted ${lighting.length} lighting systems');
     
     return AirportInfrastructure(
       icao: icao,
@@ -130,6 +152,7 @@ class ERSADataService {
       navaids: navaids,
       approaches: [], // Will be derived from navaids
       routes: [], // ERSA doesn't provide route data
+      lighting: lighting,
       facilityStatus: {}, // Will be populated from NOTAMs
     );
   }
@@ -174,6 +197,35 @@ class ERSADataService {
       frequency: freq.toString(),
       runway: runway ?? '',
       status: 'OPERATIONAL', // Default status
+    );
+  }
+
+  /// Convert ERSA lighting data to Lighting model
+  static Lighting _convertERSALighting(Map<String, dynamic> lightingData) {
+    final type = lightingData['type'] ?? 'Unknown';
+    final runway = lightingData['runway'] ?? '';
+    final end = lightingData['end'] ?? 'both';
+    
+    // Extract category from type if it contains a dash (e.g., "HIAL-CAT I")
+    String? category;
+    if (type.contains('-')) {
+      final parts = type.split('-');
+      if (parts.length > 1) {
+        category = parts.sublist(1).join('-'); // "CAT I", "CAT II", etc.
+      }
+    }
+    
+    // Clean up the type (remove category part)
+    final cleanType = type.contains('-') ? type.split('-')[0] : type;
+    
+    print('ERSADataService: Converting lighting - Type: $cleanType, Runway: $runway, Category: $category');
+    
+    return Lighting(
+      type: cleanType,
+      runway: runway,
+      end: end,
+      status: 'OPERATIONAL', // Default status
+      category: category,
     );
   }
   

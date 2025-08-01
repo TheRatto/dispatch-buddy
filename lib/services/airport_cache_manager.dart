@@ -158,6 +158,7 @@ class AirportCacheManager {
       navaids: navaids, // Populated from OpenAIP
       approaches: [], // Will be populated from API data
       routes: [], // Will be populated from API data
+      lighting: [], // Will be populated from API data
       facilityStatus: {}, // Will be populated from API data
     );
   }

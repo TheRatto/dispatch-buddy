@@ -1,251 +1,195 @@
-# ERSA Integration Implementation Guide
+# ERSA Integration Implementation
 
-## 🎯 **Overview**
+## Overview
+This document outlines the implementation of ERSA (En Route Supplement Australia) data integration for Australian airports in the Dispatch Buddy Flutter application.
 
-This document outlines the implementation of ERSA (En Route Supplement Australia) data integration into Dispatch Buddy. Australian airports (ICAO starting with Y) will use ERSA data, while international airports continue to use API data.
+## Architecture
 
-## 📊 **Data Flow Architecture**
+### Data Flow
+1. **Airport Request**: User selects an Australian airport (ICAO starting with 'Y')
+2. **Cache Manager**: `AirportCacheManager` routes to `ERSADataService` for Australian airports
+3. **ERSA Service**: `ERSADataService` loads data from embedded JSON files
+4. **Data Conversion**: ERSA format converted to `AirportInfrastructure` model
+5. **UI Display**: Facilities widget displays runways, NAVAIDs, and lighting
 
-```
-Australian Airports (Y*) → ERSA Data Service → Airport Infrastructure
-International Airports → OpenAIP API → Airport Infrastructure
-```
+### Key Components
 
-### **Priority Order**
-1. **ERSA Data** (Australian airports only)
-2. **Cache** (for previously fetched data)
-3. **API** (for international airports or missing data)
-4. **Fallback** (embedded data)
+#### ERSADataService
+- **Purpose**: Handles loading and caching of ERSA airport data
+- **Location**: `lib/services/ersa_data_service.dart`
+- **Cache**: Static in-memory cache for 339 Australian airports
+- **Data Source**: Embedded JSON files in `assets/airport_data/250612_ersa/`
 
-## 🏗️ **Implementation Components**
+#### AirportCacheManager
+- **Purpose**: Routes airport requests to appropriate data source
+- **Logic**: Australian airports (Y*) → ERSA, International → API
+- **Location**: `lib/services/airport_cache_manager.dart`
 
-### **1. ERSADataService** (`lib/services/ersa_data_service.dart`)
+## Implementation Details
 
-**Purpose**: Load and convert ERSA JSON data to AirportInfrastructure format
+### Race Condition Fix
+**Issue**: Initial calls to `ERSADataService` were returning `null` before the cache was loaded, causing UI to show "Loading" indefinitely.
 
-**Key Features**:
-- Loads ERSA data from `assets/airport_data/250612_ersa/`
-- Converts ERSA format to existing AirportInfrastructure models
-- Provides confidence and validity tracking
-- Handles Australian airports only (ICAO starting with Y)
+**Root Cause**: The cache loading was asynchronous, but the first call would check the cache (which was `null`) and return immediately, while the cache loading happened in the background.
 
-**Data Conversion**:
+**Solution**: Added loading state management to ensure cache is fully loaded before any data lookup:
+
 ```dart
-// ERSA Runway → Runway Model
-{
-  "designation": "07/25",
-  "length": 8300,
-  "width": 45,
-  "surface": "Asphalt",
-  "lighting": ["HIRL", "PAPI"]
+static bool _isLoadingCache = false;
+
+// In getAirportInfrastructure:
+if (_ersaCache == null && !_isLoadingCache) {
+  _isLoadingCache = true;
+  await _loadERSACache();
+  _isLoadingCache = false;
 }
-↓
-Runway(
-  identifier: "07/25",
-  length: 8300.0,
-  width: 45.0,
-  surface: "Asphalt",
-  hasLighting: true
-)
-```
 
-### **2. Updated AirportCacheManager** (`lib/services/airport_cache_manager.dart`)
-
-**Changes**:
-- Added ERSA data as first priority for Australian airports
-- Maintains existing API fallback for international airports
-- Preserves caching mechanism for performance
-
-**New Priority Order**:
-```dart
-static Future<AirportInfrastructure?> getAirportInfrastructure(String icao) async {
-  final upperIcao = icao.toUpperCase();
-  
-  // 1. ERSA data for Australian airports
-  if (upperIcao.startsWith('Y')) {
-    final ersaData = await ERSADataService.getAirportInfrastructure(upperIcao);
-    if (ersaData != null) return ersaData;
-  }
-  
-  // 2. Cache
-  final cached = await _getCachedAirport(upperIcao);
-  if (cached != null) return cached;
-  
-  // 3. API (for international airports)
-  return await _fetchAndCacheAirport(upperIcao);
+// Wait if cache is currently loading
+while (_isLoadingCache) {
+  await Future.delayed(Duration(milliseconds: 10));
 }
 ```
 
-### **3. Asset Configuration** (`pubspec.yaml`)
+**Lesson Learned**: When implementing async cache loading, ensure all calls wait for the initial load to complete before proceeding with data lookups.
 
-**Added**:
-```yaml
-flutter:
-  assets:
-    - assets/airport_data/250612_ersa/
-```
+### Data Structure
 
-## 📋 **Data Mapping**
-
-### **ERSA → AirportInfrastructure**
-
-| ERSA Field | AirportInfrastructure Field | Notes |
-|------------|---------------------------|-------|
-| `data.icao` | `icao` | Direct mapping |
-| `data.runways[].designation` | `runways[].identifier` | "07/25" format |
-| `data.runways[].length` | `runways[].length` | In meters |
-| `data.runways[].width` | `runways[].width` | In meters |
-| `data.runways[].surface` | `runways[].surface` | "Asphalt", "Concrete", etc. |
-| `data.runways[].lighting` | `runways[].hasLighting` | Boolean based on array |
-| `data.navaids[].ident` | `navaids[].identifier` | Navaid identifier |
-| `data.navaids[].type` | `navaids[].type` | "ILS/DME", "VOR/DME", etc. |
-| `data.navaids[].freq` | `navaids[].frequency` | As string |
-| `data.navaids[].runway` | `navaids[].runway` | Associated runway |
-
-### **Lighting Integration**
-
-ERSA provides detailed lighting information per runway end:
+#### ERSA JSON Format
 ```json
 {
-  "runway": "07/25",
-  "type": "HIRL",
-  "end": "both"
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-07-31T15:08:07.686826",
+    "validityPeriod": {
+      "start": "2025-06-12T00:00:00",
+      "end": "2025-09-04T00:00:00"
+    },
+    "validityDate": "12JUN2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSSY",
+    "name": "SYDNEY",
+    "runways": [...],
+    "navaids": [...],
+    "lighting": [...]
+  }
 }
 ```
 
-This is converted to the runway's `hasLighting` boolean field.
+#### AirportInfrastructure Model
+- **Runways**: Length (feet), width (meters), surface, lighting
+- **NAVAIDs**: Type, identifier, frequency, runway association
+- **Lighting**: Runway and taxiway lighting systems
 
-## 🔄 **Update Process**
+## UI Integration
 
-### **90-Day ERSA Cycle**
-1. **ERSA Release**: New PDF every 90 days
-2. **Parser Processing**: Generate individual JSON files
-3. **App Update**: Replace `assets/airport_data/250612_ersa/` folder
-4. **App Deployment**: New version with updated data
+### Facilities Widget
+- **Location**: `lib/widgets/facilities_widget.dart`
+- **Features**: 
+  - Runway display with unit conversion
+  - NAVAID grouping by runway
+  - Lighting system display
+  - Accurate count calculation (excluding UI elements)
 
-### **Data Validity**
-- **Validity Period**: 90 days from ERSA release
-- **Confidence Tracking**: Parsing confidence (50%, 66.7%, 83.3%, 100%)
-- **Grace Period**: 7-day extension if new ERSA delayed
+### NAVAID Display
+- **Grouping**: General NAVAIDs first, then runway-specific grouped by runway
+- **Styling**: Frequency smaller and grey, identifiers prominent
+- **Count**: Shows actual NAVAID count (13) not widget count (19)
 
-## 🧪 **Testing Strategy**
+## Testing
 
-### **Unit Tests** (`test/ersa_integration_test.dart`)
+### Test Coverage
+- **ERSADataService**: Cache loading, data conversion, error handling
+- **AirportCacheManager**: Routing logic, data source selection
+- **UI Components**: Display formatting, count calculations
+- **Integration**: End-to-end data flow from JSON to UI
 
-**Test Coverage**:
-- ✅ ERSA data loading for Australian airports
-- ✅ Null return for non-Australian airports
-- ✅ Data conversion accuracy
-- ✅ Confidence and validity tracking
-- ✅ Integration with AirportCacheManager
-- ✅ API fallback for international airports
+### Debug Logging
+Comprehensive debug logging throughout the data flow:
+- Cache loading progress
+- Data conversion steps
+- UI state changes
+- Error conditions
 
-### **Integration Tests**
-- ✅ End-to-end airport data retrieval
-- ✅ Performance with large datasets
-- ✅ Error handling scenarios
-- ✅ Cache invalidation
+## Future Enhancements
 
-## 📈 **Performance Benefits**
+### Planned Improvements
+1. **Lighting Section**: Implement ERSA lighting data display
+2. **Data Updates**: Automated ERSA data refresh process
+3. **Performance**: Optimize cache loading for faster startup
+4. **Error Handling**: Graceful fallback for missing data
 
-### **Australian Airports**
-- **Instant Loading**: No API calls required
-- **Offline Support**: Data embedded in app
-- **Rich Data**: Comprehensive runway and navaid information
-- **Reliability**: No network dependency
+### Maintenance
+- **Data Updates**: 90-day cycle for ERSA data refresh
+- **Validation**: Ensure JSON format consistency
+- **Testing**: Comprehensive test coverage for all components
 
-### **International Airports**
-- **Unchanged**: Continue using existing API
-- **Caching**: Maintains performance benefits
-- **Fallback**: Robust error handling
+## Lighting Implementation
 
-## 🔧 **Configuration**
+### Overview
+Successfully implemented ERSA lighting data display with runway-end grouping and horizontal layout.
 
-### **Environment Variables**
-No changes required - existing configuration maintained.
+### Key Features
+- **Runway End Grouping**: Lighting split by individual runway ends (07, 25, 16L, 34R, etc.)
+- **Horizontal Layout**: Lighting types displayed as chips in horizontal rows
+- **Status Indicators**: Overall runway end status (OPERATIONAL, CLOSED, MAINTENANCE)
+- **Individual Chips**: Each lighting type as separate chip for potential NOTAM highlighting
 
-### **Asset Management**
-```yaml
-# pubspec.yaml
-flutter:
-  assets:
-    - assets/airport_data/250612_ersa/
+### Layout Structure
+```
+RWY 07
+HIRL    PAPI    RTIL
+
+RWY 25
+HIRL    PAPI
+
+RWY 16L
+HIRL    PAPI    RCLL    HIAL CAT I
+
+RWY 34R
+HIRL    PAPI    RCLL    HIAL CAT II    RTZL
 ```
 
-### **Data Validation**
-- **Confidence Threshold**: 80% minimum for reliable data
-- **Validity Checking**: Automatic expiration handling
-- **Error Recovery**: Graceful fallback to API
+### Technical Implementation
+- **Lighting Model**: Added `Lighting` class with type, runway, end, status, category
+- **AirportInfrastructure**: Updated to include `lighting` field
+- **ERSADataService**: Added `_convertERSALighting()` method with category extraction
+- **UI Components**: Created `_buildRunwayEndLightingItem()` and `_buildLightingChip()` methods
 
-## 🚀 **Deployment Steps**
+### Data Source Lessons Learned
 
-### **Phase 1: Development**
-1. ✅ Create ERSADataService
-2. ✅ Update AirportCacheManager
-3. ✅ Add asset configuration
-4. ✅ Create comprehensive tests
-5. ✅ Validate data conversion
+#### Current Data Flow for Australian Airports (Y*):
+```
+Infrastructure Data → ERSA JSON (runways, NAVAIDs, lighting)
+Airport Name → Embedded Database (not ERSA)
+```
 
-### **Phase 2: Testing**
-1. **Unit Testing**: Verify all components work correctly
-2. **Integration Testing**: Test with real ERSA data
-3. **Performance Testing**: Ensure fast loading
-4. **Error Testing**: Validate fallback mechanisms
+#### Evidence from Debug Logs:
+- **ERSA Data**: `DEBUG: _buildLightingSection - Found 16 lighting systems`
+- **Embedded Name**: `DEBUG: FacilitiesWidget - Airport name: "Sydney Airport", ICAO: "YSSY"`
 
-### **Phase 3: Deployment**
-1. **Data Preparation**: Process ERSA files
-2. **Asset Update**: Replace airport data folder
-3. **App Release**: Deploy updated version
-4. **Monitoring**: Track usage and errors
+#### ERSA JSON Contains:
+```json
+{
+  "data": {
+    "icao": "YSSY",
+    "name": "SYDNEY/KINGSFORD SMITH",
+    "lighting": [...]
+  }
+}
+```
 
-## 📊 **Monitoring & Analytics**
+#### Embedded Database Contains:
+```dart
+'YSSY': ['Sydney Airport', 'Sydney', 'SYD', -33.9399, 151.175]
+```
 
-### **Key Metrics**
-- **ERSA Usage**: Percentage of Australian airports using ERSA data
-- **API Fallback**: International airport API usage
-- **Performance**: Load times for airport data
-- **Errors**: Failed data retrievals
+#### Lesson Learned:
+The app uses a **hybrid approach** where:
+- **Infrastructure data** (runways, NAVAIDs, lighting) comes from ERSA JSON
+- **Display names** come from embedded database for cleaner formatting
+- **ERSA names** (e.g., "SYDNEY/KINGSFORD SMITH") are available but not used for display
 
-### **Data Quality**
-- **Confidence Levels**: Track parsing confidence distribution
-- **Validity Periods**: Monitor data expiration
-- **Coverage**: Percentage of Australian airports covered
-
-## 🔮 **Future Enhancements**
-
-### **Potential Improvements**
-1. **Incremental Updates**: Update only changed airports
-2. **Delta Compression**: Reduce asset size
-3. **Background Updates**: Automatic data refresh
-4. **User Preferences**: Allow API override for Australian airports
-
-### **Advanced Features**
-1. **Offline Maps**: Airport diagrams from ERSA
-2. **Real-time Updates**: Live NOTAM integration
-3. **Custom Data**: User-added airport information
-4. **Export Capability**: Share airport data
-
-## 🎯 **Success Criteria**
-
-### **Functional Requirements**
-- ✅ Australian airports use ERSA data
-- ✅ International airports use API data
-- ✅ Seamless integration with existing app
-- ✅ No performance degradation
-- ✅ Comprehensive error handling
-
-### **Quality Requirements**
-- ✅ 99%+ data accuracy for Australian airports
-- ✅ Sub-second loading times
-- ✅ Zero breaking changes to existing functionality
-- ✅ Complete test coverage
-
-### **User Experience**
-- ✅ Transparent data source switching
-- ✅ Reliable airport information
-- ✅ Fast response times
-- ✅ Offline capability for Australian airports
-
----
-
-**Note**: This implementation provides a robust, scalable solution for integrating ERSA data while maintaining full compatibility with existing international airport functionality. The modular design allows for easy updates and future enhancements. 
+This approach provides the best of both worlds: detailed infrastructure data from ERSA with clean, user-friendly names from the embedded database. 
