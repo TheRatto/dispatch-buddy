@@ -81,16 +81,13 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
     final now = DateTime.now().toUtc();
     DateTime issueTime;
     
-    // Try current month first
+    // Try current day first
     issueTime = DateTime.utc(now.year, now.month, day, hour, minute);
     
-    // If the calculated age is more than 24 hours, the TAF might be from the previous month
-    final age = now.difference(issueTime);
-    if (age.inHours > 24) {
-      // Try previous month
-      final previousMonth = now.month == 1 ? 12 : now.month - 1;
-      final previousYear = now.month == 1 ? now.year - 1 : now.year;
-      issueTime = DateTime.utc(previousYear, previousMonth, day, hour, minute);
+    // If issue time is in the future, it must be from yesterday
+    if (issueTime.isAfter(now)) {
+      final yesterday = now.subtract(const Duration(days: 1));
+      issueTime = DateTime.utc(yesterday.year, yesterday.month, day, hour, minute);
     }
     
     // Recalculate age with the correct date
