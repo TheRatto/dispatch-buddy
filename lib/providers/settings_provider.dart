@@ -5,11 +5,24 @@ enum Units { feet, meters }
 
 class SettingsProvider extends ChangeNotifier {
   static const String _unitsKey = 'runway_units';
+  static const String _naipsEnabledKey = 'naips_enabled';
+  static const String _naipsUsernameKey = 'naips_username';
+  static const String _naipsPasswordKey = 'naips_password';
   
   Units _runwayUnits = Units.feet; // Default to feet
   bool _isInitialized = false;
+  
+  // NAIPS settings
+  bool _naipsEnabled = false;
+  String? _naipsUsername;
+  String? _naipsPassword;
 
   Units get runwayUnits => _runwayUnits;
+  
+  // NAIPS getters
+  bool get naipsEnabled => _naipsEnabled;
+  String? get naipsUsername => _naipsUsername;
+  String? get naipsPassword => _naipsPassword;
 
   // Initialize settings from storage
   Future<void> initialize() async {
@@ -17,6 +30,8 @@ class SettingsProvider extends ChangeNotifier {
     
     try {
       final prefs = await SharedPreferences.getInstance();
+      
+      // Load existing runway units setting
       final unitsString = prefs.getString(_unitsKey);
       if (unitsString != null) {
         _runwayUnits = Units.values.firstWhere(
@@ -24,6 +39,12 @@ class SettingsProvider extends ChangeNotifier {
           orElse: () => Units.feet,
         );
       }
+      
+      // Load NAIPS settings
+      _naipsEnabled = prefs.getBool(_naipsEnabledKey) ?? false;
+      _naipsUsername = prefs.getString(_naipsUsernameKey);
+      _naipsPassword = prefs.getString(_naipsPasswordKey);
+      
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
@@ -43,6 +64,59 @@ class SettingsProvider extends ChangeNotifier {
       await prefs.setString(_unitsKey, units.name);
     } catch (e) {
       debugPrint('Error saving runway units setting: $e');
+    }
+  }
+  
+  // Update NAIPS enabled setting
+  Future<void> setNaipsEnabled(bool enabled) async {
+    if (_naipsEnabled == enabled) return;
+    
+    _naipsEnabled = enabled;
+    notifyListeners();
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_naipsEnabledKey, enabled);
+    } catch (e) {
+      debugPrint('Error saving NAIPS enabled setting: $e');
+    }
+  }
+  
+  // Update NAIPS username
+  Future<void> setNaipsUsername(String? username) async {
+    if (_naipsUsername == username) return;
+    
+    _naipsUsername = username;
+    notifyListeners();
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (username != null) {
+        await prefs.setString(_naipsUsernameKey, username);
+      } else {
+        await prefs.remove(_naipsUsernameKey);
+      }
+    } catch (e) {
+      debugPrint('Error saving NAIPS username: $e');
+    }
+  }
+  
+  // Update NAIPS password
+  Future<void> setNaipsPassword(String? password) async {
+    if (_naipsPassword == password) return;
+    
+    _naipsPassword = password;
+    notifyListeners();
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (password != null) {
+        await prefs.setString(_naipsPasswordKey, password);
+      } else {
+        await prefs.remove(_naipsPasswordKey);
+      }
+    } catch (e) {
+      debugPrint('Error saving NAIPS password: $e');
     }
   }
 

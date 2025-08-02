@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/naips_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -80,6 +81,11 @@ class SettingsScreen extends StatelessWidget {
                     // Units Settings Section
                     _buildSectionHeader('Units'),
                     _buildUnitsSettings(),
+                    const SizedBox(height: 32),
+                    
+                    // NAIPS Settings Section
+                    _buildSectionHeader('NAIPS Integration'),
+                    _buildNaipsSettings(),
                     const SizedBox(height: 32),
                     
                     // About Section
@@ -258,6 +264,221 @@ class SettingsScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildNaipsSettings() {
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        return Card(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.cloud_sync),
+                title: const Text('Enable NAIPS'),
+                subtitle: const Text('Use NAIPS for weather and NOTAM data'),
+                trailing: Switch(
+                  value: settingsProvider.naipsEnabled,
+                  onChanged: (value) {
+                    settingsProvider.setNaipsEnabled(value);
+                  },
+                ),
+              ),
+              if (settingsProvider.naipsEnabled) ...[
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('NAIPS Username'),
+                  subtitle: Text(settingsProvider.naipsUsername ?? 'Not set'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    _showNaipsUsernameDialog(context, settingsProvider);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.lock),
+                  title: const Text('NAIPS Password'),
+                  subtitle: Text(settingsProvider.naipsPassword != null ? '••••••••' : 'Not set'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    _showNaipsPasswordDialog(context, settingsProvider);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.info),
+                  title: const Text('NAIPS Status'),
+                  subtitle: Text(settingsProvider.naipsUsername != null && settingsProvider.naipsPassword != null 
+                    ? 'Ready to use' 
+                    : 'Please enter credentials'),
+                  trailing: Icon(
+                    settingsProvider.naipsUsername != null && settingsProvider.naipsPassword != null 
+                      ? Icons.check_circle 
+                      : Icons.warning,
+                    color: settingsProvider.naipsUsername != null && settingsProvider.naipsPassword != null 
+                      ? Colors.green 
+                      : Colors.orange,
+                  ),
+                ),
+                if (settingsProvider.naipsUsername != null && settingsProvider.naipsPassword != null)
+                  ListTile(
+                    leading: const Icon(Icons.wifi_tethering),
+                    title: const Text('Test Connection'),
+                    subtitle: const Text('Verify NAIPS credentials'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      _testNaipsConnection(context, settingsProvider);
+                    },
+                  ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+  
+  void _showNaipsUsernameDialog(BuildContext context, SettingsProvider settingsProvider) {
+    final controller = TextEditingController(text: settingsProvider.naipsUsername);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('NAIPS Username'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Username',
+            hintText: 'Enter your NAIPS username',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final username = controller.text.trim();
+              settingsProvider.setNaipsUsername(username.isEmpty ? null : username);
+              Navigator.of(context).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showNaipsPasswordDialog(BuildContext context, SettingsProvider settingsProvider) {
+    final controller = TextEditingController(text: settingsProvider.naipsPassword);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('NAIPS Password'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Password',
+            hintText: 'Enter your NAIPS password',
+          ),
+          obscureText: true,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final password = controller.text.trim();
+              settingsProvider.setNaipsPassword(password.isEmpty ? null : password);
+              Navigator.of(context).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _testNaipsConnection(BuildContext context, SettingsProvider settingsProvider) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Testing NAIPS connection...'),
+          ],
+        ),
+      ),
+    );
+    
+    try {
+      final naipsService = NAIPSService();
+      final username = settingsProvider.naipsUsername!;
+      final password = settingsProvider.naipsPassword!;
+      
+      debugPrint('DEBUG: Testing NAIPS connection for user: $username');
+      
+      final isAuthenticated = await naipsService.authenticate(username, password);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      if (isAuthenticated) {
+        // Test a location briefing request
+        try {
+          debugPrint('DEBUG: Testing location briefing request for YSCB');
+          final html = await naipsService.requestLocationBriefing('YSCB');
+          
+          if (html.contains('Location Briefing Results')) {
+            _showTestResult(context, true, 'Connection successful! NAIPS credentials are working.');
+          } else {
+            _showTestResult(context, false, 'Authentication worked but briefing request failed.');
+          }
+        } catch (e) {
+          debugPrint('DEBUG: Location briefing test failed: $e');
+          _showTestResult(context, false, 'Authentication worked but briefing request failed: $e');
+        }
+      } else {
+        _showTestResult(context, false, 'Authentication failed. Please check your username and password.');
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      debugPrint('DEBUG: NAIPS connection test error: $e');
+      _showTestResult(context, false, 'Connection test failed: $e');
+    }
+  }
+  
+  void _showTestResult(BuildContext context, bool success, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: success ? Colors.green : Colors.red,
+            ),
+            const SizedBox(width: 8),
+            Text(success ? 'Success' : 'Error'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
