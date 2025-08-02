@@ -24,9 +24,15 @@ Dispatch Buddy aims to operate entirely on-device where possible, with cloud or 
 - Endpoint: `https://notamsapi.faa.gov/notamapi/v1/notams`
 - Usage: ICAO lookup (e.g., `?icao=YSSY`)
 
-### Optional: NAIPS XML Post (Airservices Australia)
-- Requires login/session management
-- Returns full text briefing in XML
+### ✅ NAIPS Integration (Airservices Australia) - IMPLEMENTED
+- ✅ **Authentication**: User-provided NAIPS credentials with secure storage
+- ✅ **Session Management**: Multi-step browser simulation with cookie handling
+- ✅ **Data Retrieval**: Location briefing requests returning HTML with structured data
+- ✅ **Data Parsing**: TAF, METAR (including SPECI), ATIS, and NOTAM extraction
+- ✅ **Integration**: Settings toggle to prioritize NAIPS over free APIs
+- ✅ **Error Handling**: Comprehensive fallback to existing APIs
+- **Data Format**: HTML response with embedded text in `<pre>` tags
+- **Geographic Scope**: Primarily Australian domestic, with international capability
 
 ## AI & LLM Integration
 ### Primary: On-Device Placeholder

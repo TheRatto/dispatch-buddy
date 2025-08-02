@@ -138,32 +138,48 @@ CANBERRA (YSCB)
 C520/25, C515/25, C514/25, C463/25, C390/25, C387/25, C386/25, C384/25...
 ```
 
-### 🔄 Phase 3: Data Parsing (IN PROGRESS)
+### ✅ Phase 3: Data Parsing (COMPLETED)
 
-#### 3.1 Create NAIPSParser Class
+#### ✅ 3.1 Create NAIPSParser Class
 **File**: `lib/services/naips_parser.dart`
-**Status**: 🔄 **NEXT PRIORITY**
-**Purpose**: Parse HTML responses into existing data models
+**Status**: ✅ **COMPLETED**
+**Key Achievements**:
+- ✅ Successfully parses TAF, METAR (including SPECI), ATIS, and NOTAMs from HTML
+- ✅ Uses existing `DecoderService` for consistent data processing
+- ✅ Comprehensive error handling and debug logging
+- ✅ All tests passing (4 weather items, 2 NOTAMs in test data)
+- ✅ Handles HTML `<pre>` tags containing briefing content
+- ✅ Supports all weather types: TAF, METAR, SPECI, ATIS
+- ✅ Extracts NOTAMs with proper model structure
 
+**Implementation Details**:
 ```dart
 class NAIPSParser {
   static List<Weather> parseWeatherFromHTML(String html) {
-    // Extract <pre class="briefing"> content
-    // Parse TAF, METAR, ATIS sections
-    // Convert to existing Weather models
+    // ✅ Extracts TAF, METAR, ATIS from HTML <pre> tags
+    // ✅ Uses regex patterns for each weather type
+    // ✅ Integrates with existing DecoderService
+    // ✅ Returns properly structured Weather objects
   }
   
   static List<Notam> parseNOTAMsFromHTML(String html) {
-    // Extract NOTAM section
-    // Parse individual NOTAM entries
-    // Convert to existing Notam models
+    // ✅ Extracts NOTAMs from HTML <pre> tags
+    // ✅ Parses individual NOTAM entries with IDs
+    // ✅ Returns properly structured Notam objects
   }
   
-  static String _extractBriefingContent(String html) {
-    // Use html package to parse and extract <pre class="briefing"> content
-  }
+  static List<Weather> _parseTAFs(String content) { /* ✅ Implemented */ }
+  static List<Weather> _parseMETARs(String content) { /* ✅ Implemented */ }
+  static List<Weather> _parseATIS(String content) { /* ✅ Implemented */ }
+  static List<Notam> _parseNOTAMs(String content) { /* ✅ Implemented */ }
 }
 ```
+
+**Test Results**:
+- ✅ **Weather Parsing**: Found 4 weather items (TAF, METAR, METAR, ATIS)
+- ✅ **NOTAM Parsing**: Found 2 NOTAMs (C520/25, C515/25)
+- ✅ **Error Handling**: Gracefully handles empty/invalid HTML
+- ✅ **Data Quality**: All items have valid ICAO codes and raw text
 
 #### 3.2 Extend Existing Models (PRESERVE)
 **File**: `lib/models/weather.dart`, `lib/models/notam.dart`
@@ -253,7 +269,7 @@ Future<List<Weather>> fetchWeather(List<String> icaos) async {
 ## Next Steps Priority
 
 ### Immediate (Next Session)
-1. **Create NAIPSParser class** to extract weather and NOTAM data from HTML
+1. ✅ **Create NAIPSParser class** to extract weather and NOTAM data from HTML - **COMPLETED**
 2. **Extend existing models** to include source field
 3. **Integrate with ApiService** to route NAIPS requests when enabled
 

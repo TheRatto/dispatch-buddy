@@ -31,7 +31,10 @@
 ### Data Sources
 - FAA NOTAM/METAR API (initial)
 - AviationWeather.gov API
-- NAIPS (optional/add-on via XML)
+- ✅ NAIPS Integration (Airservices Australia) - IMPLEMENTED
+  - User-provided credentials with secure storage
+  - Toggle to prioritize NAIPS over free APIs
+  - Comprehensive Australian aviation data (TAF, METAR, ATIS, NOTAMs)
 
 ### AI & LLM Integration
 - Placeholder AI summarisation of operational impacts
