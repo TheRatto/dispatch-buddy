@@ -39,8 +39,9 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
   void _updateAgeText() {
     if (!mounted) return;
     
-    // Extract issue time from METAR raw text
-    final issueTimeMatch = RegExp(r'(\d{2})(\d{2})(\d{2})Z').firstMatch(widget.metar.rawText);
+    // Extract issue time from METAR raw text (handle both regular METARs and SPECI reports)
+    // METAR format is DDHHMMZ, so we need to extract HH and MM from the time part
+    final issueTimeMatch = RegExp(r'(?:SPECI\s+)?\w{4}\s+(\d{2})(\d{2})(\d{2})Z').firstMatch(widget.metar.rawText);
     if (issueTimeMatch == null) {
       setState(() {
         _ageText = '';
@@ -48,6 +49,7 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
       return;
     }
     
+    // Group 1 = Day, Group 2 = Hour, Group 3 = Minute
     final day = int.parse(issueTimeMatch.group(1)!);
     final hour = int.parse(issueTimeMatch.group(2)!);
     final minute = int.parse(issueTimeMatch.group(3)!);
@@ -56,22 +58,34 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
     final now = DateTime.now().toUtc();
     DateTime issueTime;
     
-    // Try current day first
+    // Try current month first
     issueTime = DateTime.utc(now.year, now.month, day, hour, minute);
     
-    // If issue time is in the future, it must be from yesterday
+    // If issue time is in the future, it must be from the previous month
     if (issueTime.isAfter(now)) {
-      final yesterday = now.subtract(const Duration(days: 1));
-      issueTime = DateTime.utc(yesterday.year, yesterday.month, day, hour, minute);
+      // Check if the day difference is large (more than 7 days), indicating it's from previous month
+      if (day > now.day + 7) {
+        // Previous month
+        final previousMonth = now.month == 1 ? 12 : now.month - 1;
+        final previousYear = now.month == 1 ? now.year - 1 : now.year;
+        issueTime = DateTime.utc(previousYear, previousMonth, day, hour, minute);
+      } else {
+        // Previous day in current month
+        final yesterday = now.subtract(const Duration(days: 1));
+        issueTime = DateTime.utc(yesterday.year, yesterday.month, day, hour, minute);
+      }
     }
     
     // Recalculate age with the correct date
     final finalAge = now.difference(issueTime);
-    final hours = finalAge.inHours;
+    final days = finalAge.inDays;
+    final hours = finalAge.inHours % 24;
     final minutes = finalAge.inMinutes % 60;
     
     String ageText;
-    if (hours > 0) {
+    if (days > 0) {
+      ageText = '${days} day${days == 1 ? '' : 's'} old';
+    } else if (hours > 0) {
       ageText = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')} hrs old';
     } else {
       ageText = '${minutes.toString().padLeft(2, '0')} mins old';
@@ -88,6 +102,21 @@ class _MetarCompactDetailsState extends State<MetarCompactDetails> {
     setState(() {
       _ageText = ageText;
     });
+  }
+
+  // Static method to extract issue time string from METAR raw text
+  static String? extractIssueTimeString(String rawText) {
+    // METAR format is DDHHMMZ, so we need to extract HH and MM from the time part
+    final issueTimeMatch = RegExp(r'(?:SPECI\s+)?\w{4}\s+(\d{2})(\d{2})(\d{2})Z').firstMatch(rawText);
+    if (issueTimeMatch == null) {
+      return null;
+    }
+    
+    // Group 1 = Day, Group 2 = Hour, Group 3 = Minute
+    final hour = issueTimeMatch.group(2)!;
+    final minute = issueTimeMatch.group(3)!;
+    
+    return '${hour}${minute}z';
   }
 
   @override

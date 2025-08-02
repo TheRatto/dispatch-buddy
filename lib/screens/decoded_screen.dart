@@ -359,7 +359,7 @@ class DecodedScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'METAR ${metar.icao}',
+                              _buildMetarHeaderText(metar),
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -399,6 +399,8 @@ class DecodedScreen extends StatelessWidget {
                               _buildInfoRow('Visibility', visibilityData),
                               _buildInfoRow('Cloud', cloudData),
                               _buildInfoRow('Conditions', conditionsData),
+                              if (metar.decodedWeather?.remarks != null && metar.decodedWeather!.remarks!.isNotEmpty)
+                                _buildInfoRow('Remarks', metar.decodedWeather!.remarks!),
                             ],
                           );
                         },
@@ -634,5 +636,9 @@ class DecodedScreen extends StatelessWidget {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}Z';
+  }
+
+  String _buildMetarHeaderText(dynamic metar) {
+    return 'METAR ${metar.icao} - ${_formatDateTime(metar.timestamp)}';
   }
 } 

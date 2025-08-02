@@ -13,6 +13,22 @@ class MetarTab extends StatelessWidget {
     required this.metarsByIcao,
   });
 
+  String _buildHeaderText(Weather metar) {
+    // Extract issue time from METAR raw text (handle both regular METARs and SPECI reports)
+    // METAR format is DDHHMMZ, so we need to extract HH and MM from the time part
+    final issueTimeMatch = RegExp(r'(?:SPECI\s+)?\w{4}\s+(\d{2})(\d{2})(\d{2})Z').firstMatch(metar.rawText);
+    if (issueTimeMatch == null) {
+      return metar.icao;
+    }
+    
+    // Group 1 = Day, Group 2 = Hour, Group 3 = Minute
+    final hour = issueTimeMatch.group(2)!;
+    final minute = issueTimeMatch.group(3)!;
+    final issueTimeString = '${hour}${minute}z';
+    
+    return '${metar.icao} - $issueTimeString';
+  }
+
   @override
   Widget build(BuildContext context) {
     final flightProvider = Provider.of<FlightProvider>(context, listen: false);
@@ -94,12 +110,12 @@ class MetarTab extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                                  const Icon(Icons.cloud, color: Color(0xFF3B82F6), size: 24),
-                                  const SizedBox(width: 8),
+                    const Icon(Icons.cloud, color: Color(0xFF3B82F6), size: 24),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                                      metar.icao,
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                        _buildHeaderText(metar),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],

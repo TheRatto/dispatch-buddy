@@ -88,15 +88,22 @@ class Weather {
   factory Weather.fromMetar(Map<String, dynamic> json) {
     final icao = json['icaoId'] ?? '';
     final rawText = json['rawOb'] ?? '';
+    final metarType = json['metarType'] ?? 'METAR';
+    
+    // Add SPECI prefix if it's a SPECI report
+    String processedRawText = rawText;
+    if (metarType == 'SPECI' && !rawText.startsWith('SPECI')) {
+      processedRawText = 'SPECI $rawText';
+    }
     
     // The decoder service is the source of truth for parsed data
     final decoderService = decoder.DecoderService();
-    final decodedWeather = decoderService.decodeMetar(rawText);
+    final decodedWeather = decoderService.decodeMetar(processedRawText);
     
     return Weather(
       icao: icao,
       timestamp: decodedWeather.timestamp,
-      rawText: rawText,
+      rawText: processedRawText,
       decodedText: _generateDecodedText(decodedWeather),
       windDirection: decodedWeather.windDirection ?? 0,
       windSpeed: decodedWeather.windSpeed ?? 0,
