@@ -43,10 +43,13 @@ class MetarTab extends StatelessWidget {
       }
     }
     
-    // Filter METARs by selected airport
+    // Filter METARs by selected airport and show only the latest one
     final filteredMetars = flightProvider.selectedAirport != null 
         ? metarsByIcao[flightProvider.selectedAirport!] ?? []
         : [];
+    
+    // Show only the latest METAR (first in the sorted list)
+    final latestMetars = filteredMetars.isNotEmpty ? [filteredMetars.first] : [];
     
     if (metarsByIcao.isEmpty) {
       return Center(
@@ -76,7 +79,7 @@ class MetarTab extends StatelessWidget {
           
           // METARs list
           Expanded(
-            child: filteredMetars.isEmpty
+            child: latestMetars.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -97,9 +100,9 @@ class MetarTab extends StatelessWidget {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: filteredMetars.length,
+                    itemCount: latestMetars.length,
       itemBuilder: (context, index) {
-                      final metar = filteredMetars[index];
+                      final metar = latestMetars[index];
         final decoded = metar.decodedWeather;
         
         return Card(

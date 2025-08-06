@@ -207,36 +207,36 @@ class _RawTafCardState extends State<RawTafCard> {
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                                    child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: SelectableText.rich(
-                    textSpan,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      height: 1.2,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: SelectableText.rich(
+                        textSpan,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          height: 1.2,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              // Scroll indicator - only appears when content is scrollable
-              if (_isScrollable)
-                Positioned(
-                  right: 4,
-                  bottom: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.keyboard_arrow_up,
-                          color: Colors.white,
-                          size: 12,
+                  // Scroll indicator - only appears when content is scrollable
+                  if (_isScrollable)
+                    Positioned(
+                      right: 4,
+                      bottom: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.keyboard_arrow_up,
+                              color: Colors.white,
+                              size: 12,
                         ),
                         Icon(
                           Icons.keyboard_arrow_down,
@@ -249,6 +249,27 @@ class _RawTafCardState extends State<RawTafCard> {
                 ),
                 ],
               ),
+            ),
+            // Source indicator at the bottom
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  widget.taf.source == 'naips' ? Icons.security : Icons.cloud_sync,
+                  size: 10,
+                  color: widget.taf.source == 'naips' ? Colors.orange : Colors.blue,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  widget.taf.source == 'naips' ? 'NAIPS' : 'aviationweather.gov',
+                  style: TextStyle(
+                    fontSize: 8,
+                    color: widget.taf.source == 'naips' ? Colors.orange : Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

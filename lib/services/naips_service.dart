@@ -75,7 +75,7 @@ class NAIPSService {
   
   /// Request location briefing for a specific airport
   /// Returns HTML response containing weather and NOTAM data
-  Future<String> requestLocationBriefing(String icao, {int validityHours = 6}) async {
+  Future<String> requestLocationBriefing(String icao, {int validityHours = 336}) async {
     if (!_isAuthenticated) {
       throw Exception('NAIPS not authenticated');
     }

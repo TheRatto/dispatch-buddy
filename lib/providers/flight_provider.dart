@@ -476,7 +476,7 @@ class FlightProvider with ChangeNotifier {
   }
 
   // Refresh flight data by refetching from APIs - NO CACHING
-  Future<void> refreshFlightData() async {
+  Future<void> refreshFlightData({bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
     print('DEBUG: 🔄 refreshFlightData() called!');
     if (_currentFlight == null || _currentFlight!.airports.isEmpty) {
       print('DEBUG: ⚠️ No current flight or airports, skipping refresh');
@@ -503,10 +503,30 @@ class FlightProvider with ChangeNotifier {
       final apiService = ApiService();
       final icaos = _currentFlight!.airports.map((airport) => airport.icao).toList();
       
+      // Use provided NAIPS settings or defaults
+      naipsEnabled ??= false;
+      naipsUsername ??= null;
+      naipsPassword ??= null;
+      
       // Fetch all data in parallel using the batch methods
-      final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(icao)));
-      final weatherFuture = apiService.fetchWeather(icaos);
-      final tafsFuture = apiService.fetchTafs(icaos);
+      final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(
+        icao,
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      )));
+      final weatherFuture = apiService.fetchWeather(
+        icaos,
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      );
+      final tafsFuture = apiService.fetchTafs(
+        icaos,
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      );
 
       final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
 
@@ -541,7 +561,7 @@ class FlightProvider with ChangeNotifier {
   }
 
   // Add an airport to the current flight
-  Future<bool> addAirportToFlight(String icao) async {
+  Future<bool> addAirportToFlight(String icao, {bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
     if (_currentFlight == null) {
       return false;
     }
@@ -555,6 +575,11 @@ class FlightProvider with ChangeNotifier {
     
     try {
       final apiService = ApiService();
+      
+      // Use provided NAIPS settings or defaults
+      naipsEnabled ??= false;
+      naipsUsername ??= null;
+      naipsPassword ??= null;
       
       // Get proper airport data from database
       final airportData = await AirportDatabase.getAirportWithFallback(icao);
@@ -577,9 +602,24 @@ class FlightProvider with ChangeNotifier {
       _currentFlight!.airports.add(newAirport);
 
       // Fetch data for the new airport
-      final notamsFuture = apiService.fetchNotams(icao);
-      final weatherFuture = apiService.fetchWeather([icao]);
-      final tafsFuture = apiService.fetchTafs([icao]);
+      final notamsFuture = apiService.fetchNotams(
+        icao,
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      );
+      final weatherFuture = apiService.fetchWeather(
+        [icao],
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      );
+      final tafsFuture = apiService.fetchTafs(
+        [icao],
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      );
 
       final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
 
@@ -765,5 +805,92 @@ class FlightProvider with ChangeNotifier {
     }
     
     notifyListeners();
+  }
+
+    /// Unified refresh method that handles both current and previous briefings
+  /// Uses BriefingRefreshService for consistent behavior with refresh buttons
+  Future<void> refreshCurrentData({
+    bool? naipsEnabled,
+    String? naipsUsername,
+    String? naipsPassword,
+  }) async {
+    if (_currentBriefing != null) {
+      // For previous briefings, use the briefing refresh method
+      await refreshBriefingByIdUnified(_currentBriefing!.id);
+    } else {
+      // For current briefings, first refresh flight data to get fresh data
+      await refreshFlightData(
+        naipsEnabled: naipsEnabled,
+        naipsUsername: naipsUsername,
+        naipsPassword: naipsPassword,
+      );
+      
+      // Then use BriefingRefreshService to properly save and version the data
+      if (_currentFlight != null) {
+        // Create a briefing from the current flight
+        final briefing = Briefing(
+          id: _currentFlight!.id,
+          airports: _currentFlight!.airports.map((a) => a.icao).toList(),
+          timestamp: _currentFlight!.createdAt,
+          notams: _currentFlight!.notams.fold<Map<String, Map<String, dynamic>>>(
+            {},
+            (map, notam) {
+              map[notam.id] = {
+                'id': notam.id,
+                'icao': notam.icao,
+                'type': notam.type.toString(),
+                'validFrom': notam.validFrom.toIso8601String(),
+                'validTo': notam.validTo.toIso8601String(),
+                'rawText': notam.rawText,
+                'decodedText': notam.decodedText,
+                'affectedSystem': notam.affectedSystem,
+                'isCritical': notam.isCritical,
+                'source': notam.source,
+              };
+              return map;
+            },
+          ),
+          weather: _currentFlight!.weather.fold<Map<String, Map<String, dynamic>>>(
+            {},
+            (map, weather) {
+              map['${weather.icao}_${weather.type}_${weather.timestamp.millisecondsSinceEpoch}'] = {
+                'icao': weather.icao,
+                'timestamp': weather.timestamp.toIso8601String(),
+                'rawText': weather.rawText,
+                'decodedText': weather.decodedText,
+                'windDirection': weather.windDirection,
+                'windSpeed': weather.windSpeed,
+                'visibility': weather.visibility,
+                'cloudCover': weather.cloudCover,
+                'temperature': weather.temperature,
+                'dewPoint': weather.dewPoint,
+                'qnh': weather.qnh,
+                'conditions': weather.conditions,
+                'type': weather.type,
+                'source': weather.source,
+              };
+              return map;
+            },
+          ),
+        );
+        
+        // Use BriefingRefreshService to properly refresh and version the briefing
+        debugPrint('DEBUG: Using BriefingRefreshService for current briefing refresh');
+        final success = await BriefingRefreshService.refreshBriefing(briefing);
+        
+        if (success) {
+          debugPrint('DEBUG: Successfully refreshed current briefing using BriefingRefreshService');
+          // Load the refreshed briefing into the UI
+          final refreshedBriefing = await BriefingStorageService.loadBriefing(briefing.id);
+          if (refreshedBriefing != null) {
+            _currentBriefing = refreshedBriefing;
+            await loadBriefing(refreshedBriefing);
+            debugPrint('DEBUG: Loaded refreshed current briefing into UI');
+          }
+        } else {
+          debugPrint('DEBUG: Failed to refresh current briefing using BriefingRefreshService');
+        }
+      }
+    }
   }
 } 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../providers/settings_provider.dart';
 import '../models/notam.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../widgets/taf_tab.dart';
@@ -66,7 +67,12 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                 _buildAlternateNotamsTab(context, flight.notams, flightProvider),
                 RefreshIndicator(
                   onRefresh: () async {
-                    await flightProvider.refreshFlightData();
+                    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                    await flightProvider.refreshCurrentData(
+                      naipsEnabled: settingsProvider.naipsEnabled,
+                      naipsUsername: settingsProvider.naipsUsername,
+                      naipsPassword: settingsProvider.naipsPassword,
+                    );
                   },
                   child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
                 ),
@@ -94,7 +100,12 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
     
     return RefreshIndicator(
       onRefresh: () async {
-        await flightProvider.refreshFlightData();
+        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        await flightProvider.refreshCurrentData(
+          naipsEnabled: settingsProvider.naipsEnabled,
+          naipsUsername: settingsProvider.naipsUsername,
+          naipsPassword: settingsProvider.naipsPassword,
+        );
       },
       child: Column(
         children: [

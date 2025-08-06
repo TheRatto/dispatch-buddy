@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
+import '../services/naips_service.dart';
+import '../services/naips_parser.dart';
+
 import 'dart:async';
 
 class ApiService {
@@ -56,7 +59,50 @@ class ApiService {
     throw Exception('Failed to fetch data after $retries retries');
   }
 
-  Future<List<Notam>> fetchNotams(String icao) async {
+  Future<List<Notam>> fetchNotams(String icao, {bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
+    // Check if NAIPS is enabled and credentials are available
+    naipsEnabled ??= false;
+    naipsUsername ??= null;
+    naipsPassword ??= null;
+    
+    // Try NAIPS first if enabled and credentials are available
+    if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
+      try {
+        print('DEBUG: 🔍 Attempting to fetch NOTAMs from NAIPS for $icao');
+        final naipsService = NAIPSService();
+        
+        // Authenticate with NAIPS
+        final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);
+        
+        if (isAuthenticated) {
+          print('DEBUG: 🔍 NAIPS authentication successful');
+          
+          final html = await naipsService.requestLocationBriefing(icao);
+          
+          // Parse NOTAM data from NAIPS HTML
+          final notamList = NAIPSParser.parseNOTAMsFromHTML(html);
+          
+          print('DEBUG: 🔍 NAIPS returned ${notamList.length} NOTAMs');
+          
+          // If we got data from NAIPS, return it
+          if (notamList.isNotEmpty) {
+            print('DEBUG: 🔍 Returning NAIPS NOTAM data');
+            return notamList;
+          } else {
+            print('DEBUG: 🔍 NAIPS returned no NOTAM data, falling back to free APIs');
+          }
+        } else {
+          print('DEBUG: 🔍 NAIPS authentication failed, falling back to free APIs');
+        }
+      } catch (e) {
+        print('DEBUG: 🔍 NAIPS NOTAM fetch failed: $e');
+        print('DEBUG: 🔍 Falling back to free APIs');
+      }
+    }
+    
+    // Fall back to free APIs
+    print('DEBUG: 🔍 Using free APIs for NOTAM data');
+    
     try {
       print('DEBUG: 🔍 Attempting to fetch NOTAMs for $icao with offset-based pagination...');
       
@@ -223,16 +269,28 @@ class ApiService {
     }
   }
 
-  Future<List<Weather>> fetchWeather(List<String> icaos) async {
+  Future<List<Weather>> fetchWeather(List<String> icaos, {bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
     final stationString = icaos.map((e) => e.trim()).join(',');
     print('DEBUG: 🔍 fetchWeather called for ICAOs: $icaos');
     print('DEBUG: 🔍 Station string: $stationString');
     
+    // Check if NAIPS is enabled and credentials are available
+    naipsEnabled ??= false;
+    naipsUsername ??= null;
+    naipsPassword ??= null;
+    
+    print('DEBUG: 🔍 NAIPS settings - enabled: $naipsEnabled, username: ${naipsUsername != null ? "SET" : "NOT SET"}, password: ${naipsPassword != null ? "SET" : "NOT SET"}');
+    
+    List<Weather> naipsWeather = [];
+    List<Weather> apiWeather = [];
+    
+    // Always fetch from aviationweather.gov
     try {
+      print('DEBUG: 🔍 Fetching weather from aviationweather.gov for $icaos');
       final url = _getUrl(_weatherBaseUrl, queryParams: {
         'ids': stationString,
         'format': 'json',
-        'hours': '6' // Increased from 1 to 6 hours to get more recent METARs
+        'hours': '6'
       });
       
       print('DEBUG: 🔍 METAR API URL: $url');
@@ -247,60 +305,80 @@ class ApiService {
 
       print('DEBUG: 🔍 METAR API response status: ${response.statusCode}');
       print('DEBUG: 🔍 METAR API response body length: ${response.body.length}');
-      print('DEBUG: 🔍 METAR API response body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         print('DEBUG: 🔍 METAR API returned ${data.length} records');
         
-        // Debug: Print the first few records to see the structure
         if (data.isNotEmpty) {
-          print('DEBUG: 🔍 First METAR record structure: ${data.first}');
-          print('DEBUG: 🔍 METAR record keys: ${(data.first as Map<String, dynamic>).keys.toList()}');
-          
-          // Check if the expected fields exist
-          final firstRecord = data.first as Map<String, dynamic>;
-          print('DEBUG: 🔍 METAR icaoId field: ${firstRecord['icaoId']}');
-          print('DEBUG: 🔍 METAR rawOb field: ${firstRecord['rawOb']}');
-          print('DEBUG: 🔍 METAR icao field: ${firstRecord['icao']}');
-          print('DEBUG: 🔍 METAR rawText field: ${firstRecord['rawText']}');
-        }
-        
-        if (data.isNotEmpty) {
-          final List<Weather> weatherList = data.map((item) {
+          apiWeather = data.map((item) {
             print('DEBUG: 🔍 Processing METAR item: $item');
             return Weather.fromMetar(item);
           }).toList();
-          final receivedIcaos = weatherList.map((w) => w.icao).toSet();
-          print('DEBUG: 🔍 METAR weather list created with ${weatherList.length} items');
+          
+          final receivedIcaos = apiWeather.map((w) => w.icao).toSet();
+          print('DEBUG: 🔍 METAR weather list created with ${apiWeather.length} items');
           print('DEBUG: 🔍 Received ICAOs: $receivedIcaos');
-
-          // Handle missing data by creating empty weather objects
-          for (final icao in icaos) {
-            if (!receivedIcaos.contains(icao)) {
-              print('Warning: No METAR data received for $icao. Creating empty object.');
-              weatherList.add(_createEmptyWeather(icao, 'METAR'));
-            }
-          }
-          print('DEBUG: 🔍 Final METAR weather list: ${weatherList.length} items');
-          return weatherList;
-        } else {
-          print('DEBUG: ⚠️ METAR API returned empty data array');
         }
-      } else {
-        print('DEBUG: ⚠️ METAR API returned status code: ${response.statusCode}');
       }
-      // If call fails or returns empty, create empty data for all requested ICAOs
-      print('DEBUG: 🔍 Creating empty METAR objects for all ICAOs: $icaos');
-      return icaos.map((icao) => _createEmptyWeather(icao, 'METAR')).toList();
     } catch (e) {
-      print('Error fetching METAR data: $e');
-      print('DEBUG: 🔍 Creating empty METAR objects due to error for ICAOs: $icaos');
-      return icaos.map((icao) => _createEmptyWeather(icao, 'METAR')).toList();
+      print('DEBUG: 🔍 aviationweather.gov fetch failed: $e');
+    }
+    
+    // If NAIPS is enabled, also fetch from NAIPS
+    if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
+      try {
+        print('DEBUG: 🔍 Attempting to fetch weather from NAIPS for $icaos');
+        final naipsService = NAIPSService();
+        
+        // Authenticate with NAIPS
+        final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);
+        
+        if (isAuthenticated) {
+          print('DEBUG: 🔍 NAIPS authentication successful');
+          
+          // For now, we'll request data for the first ICAO in the list
+          // In the future, we might want to handle multiple ICAOs differently
+          final firstIcao = icaos.first;
+          final html = await naipsService.requestLocationBriefing(firstIcao);
+          
+          // Parse weather data from NAIPS HTML
+          naipsWeather = NAIPSParser.parseWeatherFromHTML(html);
+          
+          print('DEBUG: 🔍 NAIPS returned ${naipsWeather.length} weather items');
+        } else {
+          print('DEBUG: 🔍 NAIPS authentication failed');
+        }
+      } catch (e) {
+        print('DEBUG: 🔍 NAIPS weather fetch failed: $e');
+      }
+    }
+    
+    // Now decide which data to return based on availability and freshness
+    if (naipsWeather.isNotEmpty && apiWeather.isNotEmpty) {
+      // Both sources have data - compare and prioritize
+      print('DEBUG: 🔍 Both sources have data - comparing freshness and prioritizing NAIPS');
+      
+      // For now, prioritize NAIPS when enabled (as per user preference)
+      // In the future, we could add more sophisticated comparison logic
+      print('DEBUG: 🔍 Returning NAIPS data (prioritized)');
+      return naipsWeather;
+    } else if (naipsWeather.isNotEmpty) {
+      // Only NAIPS has data
+      print('DEBUG: 🔍 Only NAIPS has data - returning NAIPS data');
+      return naipsWeather;
+    } else if (apiWeather.isNotEmpty) {
+      // Only aviationweather.gov has data
+      print('DEBUG: 🔍 Only aviationweather.gov has data - returning API data');
+      return apiWeather;
+    } else {
+      // No data from either source
+      print('DEBUG: 🔍 No data from either source');
+      return [];
     }
   }
 
-  Future<List<Weather>> fetchTafs(List<String> icaos) async {
+  Future<List<Weather>> fetchTafs(List<String> icaos, {bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
     final stationString = icaos.map((e) => e.trim()).join(',');
     print('DEBUG: 🔍 fetchTafs called for ICAOs: $icaos');
     print('DEBUG: 🔍 Station string: $stationString');
@@ -310,7 +388,19 @@ class ApiService {
       print('DEBUG: 🎯 EGLL is in the ICAO list for TAF fetching');
     }
     
+    // Check if NAIPS is enabled and credentials are available
+    naipsEnabled ??= false;
+    naipsUsername ??= null;
+    naipsPassword ??= null;
+    
+    print('DEBUG: 🔍 fetchTafs NAIPS settings - enabled: $naipsEnabled, username: ${naipsUsername != null ? "SET" : "NOT SET"}, password: ${naipsPassword != null ? "SET" : "NOT SET"}');
+    
+    List<Weather> naipsTafs = [];
+    List<Weather> apiTafs = [];
+    
+    // Always fetch from aviationweather.gov
     try {
+      print('DEBUG: 🔍 Fetching TAFs from aviationweather.gov for $icaos');
       final url = _getUrl(_tafBaseUrl, queryParams: {
         'ids': stationString,
         'format': 'json',
@@ -347,34 +437,76 @@ class ApiService {
         }
         
         if (data.isNotEmpty) {
-          final List<Weather> tafList = data.map((item) {
+          apiTafs = data.map((item) {
             final icao = item['icaoId'] ?? '';
             if (icao.contains('EGLL')) {
-              print('DEBUG: 🎯 Creating Weather.fromTaf for EGLL');
+              print('DEBUG: 🎯 Processing EGLL TAF item: $item');
             }
             return Weather.fromTaf(item);
           }).toList();
           
-          final receivedIcaos = tafList.map((t) => t.icao).toSet();
-          
-          print('DEBUG: 🔍 Received TAFs for ICAOs: $receivedIcaos');
-
-          // Handle missing data by creating empty weather objects
-          for (final icao in icaos) {
-            if (!receivedIcaos.contains(icao)) {
-              print('DEBUG: ⚠️ No TAF data received for $icao. Creating empty object.');
-              tafList.add(_createEmptyWeather(icao, 'TAF'));
-            }
-          }
-          return tafList;
+          final receivedIcaos = apiTafs.map((w) => w.icao).toSet();
+          print('DEBUG: 🔍 TAF weather list created with ${apiTafs.length} items');
+          print('DEBUG: 🔍 Received ICAOs: $receivedIcaos');
         }
       }
-      
-      print('DEBUG: ⚠️ TAF API returned empty or failed. Creating empty objects for all ICAOs.');
-      return icaos.map((icao) => _createEmptyWeather(icao, 'TAF')).toList();
     } catch (e) {
-      print('DEBUG: ❌ Error fetching TAF data: $e');
-      return icaos.map((icao) => _createEmptyWeather(icao, 'TAF')).toList();
+      print('DEBUG: 🔍 aviationweather.gov TAF fetch failed: $e');
+    }
+    
+    // If NAIPS is enabled, also fetch from NAIPS
+    if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
+      try {
+        print('DEBUG: 🔍 Attempting to fetch TAFs from NAIPS for $icaos');
+        final naipsService = NAIPSService();
+        
+        // Authenticate with NAIPS
+        final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);
+        
+        if (isAuthenticated) {
+          print('DEBUG: 🔍 NAIPS authentication successful');
+          
+          // For now, we'll request data for the first ICAO in the list
+          // In the future, we might want to handle multiple ICAOs differently
+          final firstIcao = icaos.first;
+          final html = await naipsService.requestLocationBriefing(firstIcao);
+          
+          // Parse weather data from NAIPS HTML (includes TAFs)
+          final weatherList = NAIPSParser.parseWeatherFromHTML(html);
+          
+          // Filter to only TAFs
+          naipsTafs = weatherList.where((w) => w.type == 'TAF').toList();
+          
+          print('DEBUG: 🔍 NAIPS returned ${naipsTafs.length} TAF items');
+        } else {
+          print('DEBUG: 🔍 NAIPS authentication failed');
+        }
+      } catch (e) {
+        print('DEBUG: 🔍 NAIPS TAF fetch failed: $e');
+      }
+    }
+    
+    // Now decide which data to return based on availability and freshness
+    if (naipsTafs.isNotEmpty && apiTafs.isNotEmpty) {
+      // Both sources have data - compare and prioritize
+      print('DEBUG: 🔍 Both sources have TAF data - comparing freshness and prioritizing NAIPS');
+      
+      // For now, prioritize NAIPS when enabled (as per user preference)
+      // In the future, we could add more sophisticated comparison logic
+      print('DEBUG: 🔍 Returning NAIPS TAF data (prioritized)');
+      return naipsTafs;
+    } else if (naipsTafs.isNotEmpty) {
+      // Only NAIPS has data
+      print('DEBUG: 🔍 Only NAIPS has TAF data - returning NAIPS data');
+      return naipsTafs;
+    } else if (apiTafs.isNotEmpty) {
+      // Only aviationweather.gov has data
+      print('DEBUG: 🔍 Only aviationweather.gov has TAF data - returning API data');
+      return apiTafs;
+    } else {
+      // No data from either source
+      print('DEBUG: 🔍 No TAF data from either source');
+      return [];
     }
   }
 

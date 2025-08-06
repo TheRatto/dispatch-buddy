@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../providers/settings_provider.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
 import '../models/decoded_weather_models.dart';
@@ -233,7 +234,12 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                       RefreshIndicator(
                         onRefresh: () async {
                           _clearCache();
-                          await flightProvider.refreshFlightData();
+                          final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                          await flightProvider.refreshCurrentData(
+                            naipsEnabled: settingsProvider.naipsEnabled,
+                            naipsUsername: settingsProvider.naipsUsername,
+                            naipsPassword: settingsProvider.naipsPassword,
+                          );
                         },
                         child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
                       ),
@@ -326,7 +332,12 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         }
         
         // Then perform the actual refresh
-        await flightProvider.refreshFlightData();
+        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        await flightProvider.refreshCurrentData(
+          naipsEnabled: settingsProvider.naipsEnabled,
+          naipsUsername: settingsProvider.naipsUsername,
+          naipsPassword: settingsProvider.naipsPassword,
+        );
         
         // Add a small delay after refresh completes for smooth transition
         await Future.delayed(const Duration(milliseconds: 500));
@@ -893,7 +904,12 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh triggered!');
         // Clear all caches for fresh data
         _clearCache();
-        await flightProvider.refreshFlightData();
+        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        await flightProvider.refreshCurrentData(
+          naipsEnabled: settingsProvider.naipsEnabled,
+          naipsUsername: settingsProvider.naipsUsername,
+          naipsPassword: settingsProvider.naipsPassword,
+        );
         debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh completed!');
       },
       child: Padding(

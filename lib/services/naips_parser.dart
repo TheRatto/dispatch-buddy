@@ -82,17 +82,18 @@ class NAIPSParser {
       final tafText = match.group(5) ?? '';
       
       if (icao.isNotEmpty && tafText.isNotEmpty) {
-        final fullTafText = 'TAF $icao ${issueTime}Z ${validityStart}/${validityEnd} $tafText';
+        // Create compact TAF format similar to aviationweather.gov
+        final compactTafText = _createCompactTafText(icao, issueTime, validityStart, validityEnd, tafText);
         
         try {
           // Use existing decoder service
           final decoderService = decoder.DecoderService();
-          final decodedWeather = decoderService.decodeTaf(fullTafText);
+          final decodedWeather = decoderService.decodeTaf(compactTafText);
           
           final weather = Weather(
             icao: icao,
             timestamp: decodedWeather.timestamp,
-            rawText: fullTafText,
+            rawText: compactTafText,
             decodedText: _generateDecodedText(decodedWeather),
             windDirection: 0, // TAFs don't have current wind
             windSpeed: 0,
@@ -104,6 +105,7 @@ class NAIPSParser {
             conditions: decodedWeather.conditions ?? '',
             type: 'TAF',
             decodedWeather: decodedWeather,
+            source: 'naips',
           );
           
           tafs.add(weather);
@@ -115,6 +117,64 @@ class NAIPSParser {
     }
     
     return tafs;
+  }
+  
+  /// Create compact TAF text format similar to aviationweather.gov
+  static String _createCompactTafText(String icao, String issueTime, String validityStart, String validityEnd, String tafText) {
+    // Split the TAF text into lines and process each line
+    final lines = tafText.split('\n');
+    final processedLines = <String>[];
+    
+    // Extract RMK section if present
+    String? rmkSection;
+    String? tafVersion;
+    
+    for (final line in lines) {
+      final trimmedLine = line.trim();
+      if (trimmedLine.isEmpty) continue;
+      
+      if (trimmedLine.startsWith('RMK')) {
+        // Start collecting RMK section
+        rmkSection = trimmedLine;
+      } else if (trimmedLine.startsWith('TAF') && trimmedLine != 'TAF') {
+        // TAF version indicator (like TAF3)
+        tafVersion = trimmedLine;
+      } else if (rmkSection != null) {
+        // Continue RMK section
+        rmkSection += ' $trimmedLine';
+      } else {
+        // Regular TAF line - make it compact
+        final compactLine = trimmedLine.replaceAll(RegExp(r'\s+'), ' ').trim();
+        if (compactLine.isNotEmpty) {
+          processedLines.add(compactLine);
+        }
+      }
+    }
+    
+    // Build the compact TAF text
+    final compactText = processedLines.join(' ');
+    
+    // Create the final TAF text with RMK at the bottom
+    final fullTafText = 'TAF $icao ${issueTime}Z ${validityStart}/${validityEnd} $compactText';
+    
+    // Add RMK section at the bottom if present
+    if (rmkSection != null) {
+      final tafWithRmk = '$fullTafText\n$rmkSection';
+      
+      // Add TAF version if present
+      if (tafVersion != null) {
+        return '$tafWithRmk\n$tafVersion';
+      }
+      
+      return tafWithRmk;
+    }
+    
+    // Add TAF version if present
+    if (tafVersion != null) {
+      return '$fullTafText\n$tafVersion';
+    }
+    
+    return fullTafText;
   }
   
   /// Parse METARs from briefing content
@@ -154,6 +214,7 @@ class NAIPSParser {
             conditions: decodedWeather.conditions ?? '',
             type: 'METAR',
             decodedWeather: decodedWeather,
+            source: 'naips',
           );
           
           metars.add(weather);
@@ -224,6 +285,7 @@ class NAIPSParser {
             conditions: '',
             type: 'ATIS',
             decodedWeather: decodedWeather,
+            source: 'naips',
           );
           
           atis.add(weather);
@@ -261,6 +323,7 @@ class NAIPSParser {
             affectedSystem: 'NAIPS',
             isCritical: false,
             group: NotamGroup.other,
+            source: 'naips',
           );
           
           notams.add(notam);

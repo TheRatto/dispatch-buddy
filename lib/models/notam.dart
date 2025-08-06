@@ -23,6 +23,7 @@ class Notam {
   final bool isCritical;
   final String? qCode; // Q code from NOTAM text
   final NotamGroup group; // New: Group assignment
+  final String source; // 'faa', 'naips'
 
   Notam({
     required this.id,
@@ -36,6 +37,7 @@ class Notam {
     required this.isCritical,
     this.qCode,
     required this.group,
+    this.source = 'faa',
   });
 
   // Extract Q code from NOTAM text using regex
@@ -574,6 +576,7 @@ class Notam {
       group: json['group'] != null 
           ? NotamGroup.values.firstWhere((e) => e.toString() == 'NotamGroup.${json['group']}')
           : determineGroupFromQCode(json['qCode']),
+      source: json['source'] ?? 'faa',
     );
   }
 
@@ -698,6 +701,7 @@ class Notam {
       isCritical: notam['classification'] == 'CRITICAL',
       qCode: qCode,
       group: group,
+      source: 'faa',
     );
   }
 
@@ -716,6 +720,7 @@ class Notam {
       group: json['group'] != null 
           ? NotamGroup.values.firstWhere((e) => e.toString() == 'NotamGroup.${json['group']}')
           : determineGroupFromQCode(json['qCode']),
+      source: json['source'] ?? 'faa',
     );
   }
 
@@ -732,6 +737,7 @@ class Notam {
       'isCritical': isCritical,
       'qCode': qCode,
       'group': group.toString().split('.').last,
+      'source': source,
     };
   }
 
@@ -749,6 +755,7 @@ class Notam {
       'isCritical': isCritical ? 1 : 0,
       'qCode': qCode,
       'group': group.toString().split('.').last,
+      'source': source,
     };
   }
 } 

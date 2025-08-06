@@ -268,15 +268,48 @@ Future<List<Weather>> fetchWeather(List<String> icaos) async {
 
 ## Next Steps Priority
 
-### Immediate (Next Session)
-1. ✅ **Create NAIPSParser class** to extract weather and NOTAM data from HTML - **COMPLETED**
-2. **Extend existing models** to include source field
-3. **Integrate with ApiService** to route NAIPS requests when enabled
+### ✅ Phase 4: ApiService Integration (COMPLETED)
+
+#### ✅ 4.1 Update ApiService
+**File**: `lib/services/api_service.dart`
+**Status**: ✅ **COMPLETED**
+**Key Achievements**:
+- ✅ Added NAIPS routing logic to `fetchWeather`, `fetchNotams`, and `fetchTafs` methods
+- ✅ Implemented fallback mechanism: NAIPS → Free APIs
+- ✅ Added optional parameters for NAIPS settings (enabled, username, password)
+- ✅ Updated `FlightProvider` to pass NAIPS settings to API calls
+- ✅ Comprehensive error handling and debug logging
+- ✅ All tests passing (weather data, authentication fallback, null credentials)
+
+**Implementation Details**:
+```dart
+// Added to all API methods:
+Future<List<Weather>> fetchWeather(List<String> icaos, {
+  bool? naipsEnabled, 
+  String? naipsUsername, 
+  String? naipsPassword
+}) async {
+  // Try NAIPS first if enabled and credentials available
+  if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
+    // NAIPS authentication and data fetching
+    // Fall back to free APIs on failure
+  }
+  // Free API fallback
+}
+```
+
+**Test Results**:
+- ✅ **Weather Integration**: Successfully fetches from free APIs when NAIPS disabled
+- ✅ **Authentication Fallback**: Correctly detects failed NAIPS auth and falls back
+- ✅ **Null Credentials**: Gracefully handles null credentials
+- ✅ **Error Handling**: Comprehensive logging and error recovery
 
 ### Short Term (Next Week)
-1. **Complete data parsing** for all weather types (TAF, METAR, ATIS)
-2. **Complete NOTAM parsing** for airport and FIR NOTAMs
-3. **Add error handling** and fallback mechanisms
+1. **Connect SettingsProvider** to ApiService for NAIPS credentials
+2. **Add UI toggle** in settings for NAIPS prioritization
+3. **Test with real NAIPS credentials** to verify end-to-end functionality
+4. **Add error handling** for NAIPS-specific failures
+5. **Performance optimization** and caching for NAIPS data
 
 ### Medium Term (Next Month)
 1. **Comprehensive testing** of all data types

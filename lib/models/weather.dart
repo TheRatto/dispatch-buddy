@@ -17,6 +17,7 @@ class Weather {
   final String conditions;
   final String type; // 'METAR' or 'TAF'
   final DecodedWeather? decodedWeather; // New field for decoded data
+  final String source; // 'aviationweather', 'naips', 'faa'
 
   Weather({
     required this.icao,
@@ -33,6 +34,7 @@ class Weather {
     required this.conditions,
     this.type = 'METAR',
     this.decodedWeather,
+    this.source = 'aviationweather',
   });
 
   factory Weather.fromJson(Map<String, dynamic> json) {
@@ -82,6 +84,7 @@ class Weather {
       conditions: json['conditions'] ?? '',
       type: type,
       decodedWeather: decodedWeather,
+      source: json['source'] ?? 'aviationweather',
     );
   }
 
@@ -115,6 +118,7 @@ class Weather {
       conditions: decodedWeather.conditions ?? '',
       type: 'METAR',
       decodedWeather: decodedWeather,
+      source: 'aviationweather',
     );
   }
 
@@ -212,6 +216,7 @@ class Weather {
       conditions: conditions,
       type: 'TAF',
       decodedWeather: decodedWeather,
+      source: 'aviationweather',
     );
   }
 
@@ -245,6 +250,7 @@ class Weather {
       'conditions': conditions,
       'type': type,
       'decodedWeather': decodedWeather?.toJson(),
+      'source': source,
     };
   }
 
@@ -265,6 +271,7 @@ class Weather {
       'conditions': conditions,
       'type': type,
       'decodedWeather': decodedWeather?.toJson(),
+      'source': source,
     };
   }
 
@@ -310,6 +317,7 @@ class Weather {
       conditions: json['conditions'] ?? '',
       type: type,
       decodedWeather: decodedWeather,
+      source: json['source'] ?? 'aviationweather',
     );
   }
 

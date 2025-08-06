@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 
@@ -99,7 +100,12 @@ class DecodedScreen extends StatelessWidget {
       builder: (context, flightProvider, child) {
         return RefreshIndicator(
           onRefresh: () async {
-            await flightProvider.refreshFlightData();
+            final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+            await flightProvider.refreshCurrentData(
+              naipsEnabled: settingsProvider.naipsEnabled,
+              naipsUsername: settingsProvider.naipsUsername,
+              naipsPassword: settingsProvider.naipsPassword,
+            );
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -113,8 +119,14 @@ class DecodedScreen extends StatelessWidget {
                     '${notam.id} - ${notam.affectedSystem}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(
-                    '${notam.icao} | ${_formatDateTime(notam.validFrom)} - ${_formatDateTime(notam.validTo)}',
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${notam.icao} | ${_formatDateTime(notam.validFrom)} - ${_formatDateTime(notam.validTo)}',
+                      ),
+
+                    ],
                   ),
                   leading: Icon(
                     notam.isCritical ? Icons.error : Icons.warning,
@@ -339,7 +351,12 @@ class DecodedScreen extends StatelessWidget {
       builder: (context, flightProvider, child) {
         return RefreshIndicator(
           onRefresh: () async {
-            await flightProvider.refreshFlightData();
+            final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+            await flightProvider.refreshCurrentData(
+              naipsEnabled: settingsProvider.naipsEnabled,
+              naipsUsername: settingsProvider.naipsUsername,
+              naipsPassword: settingsProvider.naipsPassword,
+            );
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -358,12 +375,18 @@ class DecodedScreen extends StatelessWidget {
                           const Icon(Icons.cloud, color: Colors.blue),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _buildMetarHeaderText(metar),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _buildMetarHeaderText(metar),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                              ],
                             ),
                           ),
                           Text(
@@ -468,7 +491,12 @@ class DecodedScreen extends StatelessWidget {
       builder: (context, flightProvider, child) {
         return RefreshIndicator(
           onRefresh: () async {
-            await flightProvider.refreshFlightData();
+            final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+            await flightProvider.refreshCurrentData(
+              naipsEnabled: settingsProvider.naipsEnabled,
+              naipsUsername: settingsProvider.naipsUsername,
+              naipsPassword: settingsProvider.naipsPassword,
+            );
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -487,12 +515,18 @@ class DecodedScreen extends StatelessWidget {
                           const Icon(Icons.cloud, color: Colors.green),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              'TAF ${taf.icao}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'TAF ${taf.icao}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                              ],
                             ),
                           ),
                           Text(

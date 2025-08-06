@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../models/airport.dart';
@@ -138,7 +139,12 @@ class SummaryScreen extends StatelessWidget {
                     } else {
                       debugPrint('DEBUG: SummaryScreen - Not viewing a briefing, just refreshing flight data');
                       // Just refresh flight data for new flights
-                      await flightProvider.refreshFlightData();
+                      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                      await flightProvider.refreshCurrentData(
+                        naipsEnabled: settingsProvider.naipsEnabled,
+                        naipsUsername: settingsProvider.naipsUsername,
+                        naipsPassword: settingsProvider.naipsPassword,
+                      );
                     }
                   },
                 child: ListView(
