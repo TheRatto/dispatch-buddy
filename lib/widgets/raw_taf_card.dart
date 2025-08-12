@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import '../models/decoded_weather_models.dart';
 import '../models/weather.dart';
 import '../services/decoder_service.dart';
-import '../models/decoded_weather_models.dart';
 import '../constants/weather_colors.dart';
 
 
@@ -127,10 +128,10 @@ class _RawTafCardState extends State<RawTafCard> {
     // Content is scrollable if maxScrollExtent > 0 OR if content height > viewport height
     final isScrollable = maxScrollExtent > 0 || contentHeight > viewportDimension;
     
-    print('DEBUG: Raw TAF scroll check - maxScrollExtent: $maxScrollExtent, viewportDimension: $viewportDimension, contentHeight: $contentHeight, isScrollable: $isScrollable, current: $_isScrollable');
+    debugPrint('DEBUG: Raw TAF scroll check - maxScrollExtent: $maxScrollExtent, viewportDimension: $viewportDimension, contentHeight: $contentHeight, isScrollable: $isScrollable, current: $_isScrollable');
     
-    if (isScrollable != _isScrollable) {
-      print('DEBUG: Raw TAF scroll state changing from $_isScrollable to $isScrollable');
+    if (_isScrollable != isScrollable) {
+      debugPrint('DEBUG: Raw TAF scroll state changing from $_isScrollable to $isScrollable');
       setState(() {
         _isScrollable = isScrollable;
       });
@@ -140,8 +141,8 @@ class _RawTafCardState extends State<RawTafCard> {
   @override
   Widget build(BuildContext context) {
     debugPrint('DEBUG: RawTafCard build for ${widget.taf.icao}');
-          debugPrint('DEBUG: === RAW HIGHLIGHTING START ===');
-      debugPrint('DEBUG: Raw highlighting - activePeriods: ${widget.activePeriods}');
+    debugPrint('DEBUG: === RAW HIGHLIGHTING START ===');
+    debugPrint('DEBUG: Raw highlighting - activePeriods: ${widget.activePeriods}');
     
     final originalRawText = widget.taf.rawText;
     final decoder = DecoderService();
@@ -154,15 +155,15 @@ class _RawTafCardState extends State<RawTafCard> {
     });
     
     if (widget.activePeriods != null) {
-      print('DEBUG: Raw highlighting - Object ID: ${widget.activePeriods.hashCode}');
+      debugPrint('DEBUG: Raw highlighting - Object ID: ${widget.activePeriods.hashCode}');
       
       // Use the same logic as decoded weather - get all active periods
       final baseline = widget.activePeriods!['baseline'] as DecodedForecastPeriod?;
       final concurrent = widget.activePeriods!['concurrent'] as List<DecodedForecastPeriod>;
       
-      print('DEBUG: Raw highlighting - Baseline: ${baseline?.type}');
-      print('DEBUG: Raw highlighting - Concurrent: ${concurrent.map((p) => p.type).toList()}');
-      print('DEBUG: Raw highlighting - Concurrent length: ${concurrent.length}');
+      debugPrint('DEBUG: Raw highlighting - Baseline: ${baseline?.type}');
+      debugPrint('DEBUG: Raw highlighting - Concurrent: ${concurrent.map((p) => p.type).toList()}');
+      debugPrint('DEBUG: Raw highlighting - Concurrent length: ${concurrent.length}');
       
       // Simple highlighting based on period types
       textSpan = _buildSimpleHighlightedText(formattedRawText, baseline, concurrent);
@@ -262,6 +263,7 @@ class _RawTafCardState extends State<RawTafCard> {
                 ),
                 const SizedBox(width: 2),
                 Text(
+                  // Ensure NAIPS label when source says naips
                   widget.taf.source == 'naips' ? 'NAIPS' : 'aviationweather.gov',
                   style: TextStyle(
                     fontSize: 8,
@@ -280,9 +282,9 @@ class _RawTafCardState extends State<RawTafCard> {
 
   
   TextSpan _buildSimpleHighlightedText(String formattedText, DecodedForecastPeriod? baseline, List<DecodedForecastPeriod> concurrent) {
-    print('DEBUG: Building simple highlighted text');
-    print('DEBUG: Baseline: ${baseline?.type}');
-    print('DEBUG: Concurrent: ${concurrent.map((p) => p.type).toList()}');
+    debugPrint('DEBUG: Building simple highlighted text');
+    debugPrint('DEBUG: Baseline: ${baseline?.type}');
+    debugPrint('DEBUG: Concurrent: ${concurrent.map((p) => p.type).toList()}');
     
     // Simple approach: highlight lines that contain the active period types
     final lines = formattedText.split('\n');
@@ -310,12 +312,12 @@ class _RawTafCardState extends State<RawTafCard> {
         if (baseline.type == 'INITIAL' && i == 0) {
           // First line is INITIAL - it contains the TAF validity range
           highlightColor = WeatherColors.initial;
-          print('DEBUG: Highlighting INITIAL line: "$line"');
+          debugPrint('DEBUG: Highlighting INITIAL line: "$line"');
         } else if (baseline.type == 'FM' && line.startsWith('FM')) {
           // Check if this is the specific FM period that's active
           if (_matchesPeriodTime(line, baseline)) {
             highlightColor = WeatherColors.fm;
-            print('DEBUG: Highlighting specific FM line: "$line" (time: ${baseline.time})');
+            debugPrint('DEBUG: Highlighting specific FM line: "$line" (time: ${baseline.time})');
           }
         } else if (baseline.type == 'POST_BECMG' && line.startsWith('BECMG')) {
           // Highlight the BECMG line that matches the POST_BECMG time window
@@ -324,11 +326,11 @@ class _RawTafCardState extends State<RawTafCard> {
           
           // Strategy 1: Direct replacement
           final postBecmgTime = baseline.time.replaceFirst('POST_BECMG ', 'BECMG ');
-          print('DEBUG: POST_BECMG matching - baseline time: "${baseline.time}", postBecmgTime: "$postBecmgTime", line: "$line"');
+          debugPrint('DEBUG: POST_BECMG matching - baseline time: "${baseline.time}", postBecmgTime: "$postBecmgTime", line: "$line"');
           
           if (line.contains(postBecmgTime)) {
             matched = true;
-            print('DEBUG: POST_BECMG matched with strategy 1');
+            debugPrint('DEBUG: POST_BECMG matched with strategy 1');
           }
           
           // Strategy 2: Extract time from POST_BECMG and match BECMG line
@@ -338,7 +340,7 @@ class _RawTafCardState extends State<RawTafCard> {
               final timeString = timeMatch.group(1)!;
               if (line.contains('BECMG $timeString')) {
                 matched = true;
-                print('DEBUG: POST_BECMG matched with strategy 2 - time: $timeString');
+                debugPrint('DEBUG: POST_BECMG matched with strategy 2 - time: $timeString');
               }
             }
           }
@@ -350,16 +352,16 @@ class _RawTafCardState extends State<RawTafCard> {
               final becmgTime = becmgTimeMatch.group(1)!;
               if (baseline.time.contains(becmgTime)) {
                 matched = true;
-                print('DEBUG: POST_BECMG matched with strategy 3 - BECMG time: $becmgTime');
+                debugPrint('DEBUG: POST_BECMG matched with strategy 3 - BECMG time: $becmgTime');
               }
             }
           }
           
           if (matched) {
             highlightColor = WeatherColors.fm; // Use FM color for established conditions
-            print('DEBUG: Highlighting BECMG line as POST_BECMG (now baseline): "$line" (time: ${baseline.time})');
+            debugPrint('DEBUG: Highlighting BECMG line as POST_BECMG (now baseline): "$line" (time: ${baseline.time})');
           } else {
-            print('DEBUG: POST_BECMG line NOT matched: "$line" does not match "${baseline.time}"');
+            debugPrint('DEBUG: POST_BECMG line NOT matched: "$line" does not match "${baseline.time}"');
           }
         }
       }
@@ -373,35 +375,35 @@ class _RawTafCardState extends State<RawTafCard> {
           if (_matchesBecmgPeriod(line, period)) {
             highlightColor = WeatherColors.becmg; // Purple for transition
             shouldHighlight = true;
-            print('DEBUG: Highlighting BECMG transition line: "$line" (time: ${period.time}) - TRANSITION');
+            debugPrint('DEBUG: Highlighting BECMG transition line: "$line" (time: ${period.time}) - TRANSITION');
           }
         } else if (period.type.contains('TEMPO') && line.startsWith('TEMPO')) {
           // Check if this is the specific TEMPO period that's active
           if (_matchesPeriodTime(line, period)) {
             highlightColor = WeatherColors.getColorForProbCombination(period.type);
             shouldHighlight = true;
-            print('DEBUG: Highlighting specific TEMPO line: "$line" (time: ${period.time})');
+            debugPrint('DEBUG: Highlighting specific TEMPO line: "$line" (time: ${period.time})');
           }
         } else if (period.type.contains('INTER') && line.startsWith('INTER')) {
           // Check if this is the specific INTER period that's active
           if (_matchesPeriodTime(line, period)) {
             highlightColor = WeatherColors.getColorForProbCombination(period.type);
             shouldHighlight = true;
-            print('DEBUG: Highlighting specific INTER line: "$line" (time: ${period.time})');
+            debugPrint('DEBUG: Highlighting specific INTER line: "$line" (time: ${period.time})');
           }
         } else if (period.type.contains('PROB30') && line.startsWith('PROB30')) {
           // Check if this is the specific PROB30 period that's active
           if (_matchesPeriodTime(line, period)) {
             highlightColor = WeatherColors.getColorForProbCombination(period.type);
             shouldHighlight = true;
-            print('DEBUG: Highlighting specific PROB30 line: "$line" (time: ${period.time})');
+            debugPrint('DEBUG: Highlighting specific PROB30 line: "$line" (time: ${period.time})');
           }
         } else if (period.type.contains('PROB40') && line.startsWith('PROB40')) {
           // Check if this is the specific PROB40 period that's active
           if (_matchesPeriodTime(line, period)) {
             highlightColor = WeatherColors.getColorForProbCombination(period.type);
             shouldHighlight = true;
-            print('DEBUG: Highlighting specific PROB40 line: "$line" (time: ${period.time})');
+            debugPrint('DEBUG: Highlighting specific PROB40 line: "$line" (time: ${period.time})');
           }
         }
         
@@ -427,7 +429,7 @@ class _RawTafCardState extends State<RawTafCard> {
   bool _matchesPeriodTime(String line, DecodedForecastPeriod period) {
     if (period.time.isEmpty) return false;
     
-    print('DEBUG: Checking if line "$line" matches period time "${period.time}"');
+    debugPrint('DEBUG: Checking if line "$line" matches period time "${period.time}"');
     
     // Convert period time format to TAF text format
     // Period time might be "2608-2611" but TAF text has "2608/2611"
@@ -435,7 +437,7 @@ class _RawTafCardState extends State<RawTafCard> {
     
     // Check if the line contains the formatted time
     final matches = line.contains(periodTimeFormatted);
-    print('DEBUG: Period time formatted: "$periodTimeFormatted", matches: $matches');
+    debugPrint('DEBUG: Period time formatted: "$periodTimeFormatted", matches: $matches');
     
     return matches;
   }
@@ -443,7 +445,7 @@ class _RawTafCardState extends State<RawTafCard> {
   bool _matchesBecmgPeriod(String line, DecodedForecastPeriod period) {
     if (period.time.isEmpty) return false;
     
-    print('DEBUG: Checking if line "$line" matches BECMG period time "${period.time}"');
+    debugPrint('DEBUG: Checking if line "$line" matches BECMG period time "${period.time}"');
     
     // Convert period time format to TAF text format
     // Period time might be "2608-2611" but TAF text has "2608/2611"
@@ -451,7 +453,7 @@ class _RawTafCardState extends State<RawTafCard> {
     
     // Check if the line contains the formatted time
     final matches = line.contains(periodTimeFormatted);
-    print('DEBUG: BECMG period time formatted: "$periodTimeFormatted", matches: $matches');
+    debugPrint('DEBUG: BECMG period time formatted: "$periodTimeFormatted", matches: $matches');
     
     return matches;
   }

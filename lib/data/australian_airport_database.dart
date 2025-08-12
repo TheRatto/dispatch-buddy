@@ -1,5 +1,3 @@
-import '../models/airport_infrastructure.dart';
-
 /// Australian Airport Database
 /// Contains the list of initial Australian airports to ship with the app
 /// Real airport data will be fetched from OpenAIP API on first use

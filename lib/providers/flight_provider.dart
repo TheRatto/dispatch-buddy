@@ -13,6 +13,7 @@ import '../services/briefing_refresh_service.dart'; // Added for refreshCurrentB
 import '../services/briefing_storage_service.dart'; // Added for loadBriefing
 import '../services/cache_manager.dart'; // Added for cache clearing
 import '../services/airport_database.dart'; // Added for airport lookup
+import '../providers/settings_provider.dart'; // Added for NAIPS settings
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -24,6 +25,7 @@ class FlightProvider with ChangeNotifier {
   Map<String, List<Weather>> _metarsByIcao = {};
   Map<String, List<Weather>> _tafsByIcao = {};
   String? _selectedAirport; // Shared airport selection across all tabs
+  bool _naipsFallbackUsed = false; // One-time snackbar flag for NAIPS fallback
   
   // Navigation state tracking
   int? _lastViewedSystemPage; // Index of last viewed system page (0 = Overview, 1 = Runways, etc.)
@@ -53,6 +55,12 @@ class FlightProvider with ChangeNotifier {
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
   Map<String, List<Weather>> get tafsByIcao => _tafsByIcao;
   String? get selectedAirport => _selectedAirport;
+  // UI can call this after refresh to show a one-time snackbar if true
+  bool consumeNaipsFallbackUsed() {
+    final used = _naipsFallbackUsed;
+    _naipsFallbackUsed = false;
+    return used;
+  }
   
   // Time filter getters
   String get selectedTimeFilter => _selectedTimeFilter;
@@ -105,7 +113,6 @@ class FlightProvider with ChangeNotifier {
     _lastViewedSystemPage = null;
     _lastViewedRawDataTab = null;
     _lastViewedAirport = null;
-    _currentBriefing = null; // Clear current briefing when starting new
     debugPrint('DEBUG: Navigation state cleared for new briefing');
     notifyListeners();
   }
@@ -292,6 +299,21 @@ class FlightProvider with ChangeNotifier {
           _currentBriefing = refreshedBriefing;
           await loadBriefing(refreshedBriefing);
           debugPrint('DEBUG: Successfully loaded refreshed briefing $briefingId into UI');
+          // Evaluate NAIPS fallback on loaded data
+          try {
+            final settingsProvider = SettingsProvider();
+            await settingsProvider.initialize();
+            if (settingsProvider.naipsEnabled) {
+              final weatherList = _currentFlight?.weather ?? [];
+              final usedNaips = weatherList.any((w) => w.source == 'naips');
+              _naipsFallbackUsed = !usedNaips;
+              debugPrint('DEBUG: NAIPS fallback used (post-refresh load): $_naipsFallbackUsed');
+            } else {
+              _naipsFallbackUsed = false;
+            }
+          } catch (e) {
+            debugPrint('DEBUG: Failed to evaluate NAIPS fallback flag after refresh: $e');
+          }
         } else {
           debugPrint('DEBUG: Failed to load refreshed briefing $briefingId from storage');
         }
@@ -427,14 +449,14 @@ class FlightProvider with ChangeNotifier {
     if (_currentFlight != null) {
       if (airports != null) _currentFlight!.airports = airports;
       if (notams != null) {
-        print('DEBUG: 🔍 FlightProvider - Setting ${notams.length} fresh NOTAMs (no cache)');
+        debugPrint('DEBUG: 🔍 FlightProvider - Setting ${notams.length} fresh NOTAMs (no cache)');
         _currentFlight!.notams = notams;
         
         // Recalculate system status for all airports based on new NOTAMs
         _updateAllAirportSystemStatus();
       }
       if (weather != null) {
-        print('DEBUG: 🔍 FlightProvider - Setting ${weather.length} fresh weather items (no cache)');
+        debugPrint('DEBUG: 🔍 FlightProvider - Setting ${weather.length} fresh weather items (no cache)');
         _currentFlight!.weather = weather;
       }
       _groupWeatherData();
@@ -447,6 +469,12 @@ class FlightProvider with ChangeNotifier {
     _metarsByIcao = {};
     _tafsByIcao = {};
     if (_currentFlight != null) {
+      // Debug: Show total weather breakdown
+      final metars = _currentFlight!.weather.where((w) => w.type == 'METAR').toList();
+      final tafs = _currentFlight!.weather.where((w) => w.type == 'TAF').toList();
+      final atis = _currentFlight!.weather.where((w) => w.type == 'ATIS').toList();
+      debugPrint('DEBUG: Total weather breakdown - METARs: ${metars.length}, TAFs: ${tafs.length}, ATIS: ${atis.length}');
+      
       for (final weather in _currentFlight!.weather) {
         debugPrint('DEBUG: Processing weather - Type: ${weather.type}, ICAO: ${weather.icao}, Timestamp: ${weather.timestamp}');
         if (weather.type == 'METAR') {
@@ -463,6 +491,10 @@ class FlightProvider with ChangeNotifier {
             _tafsByIcao[weather.icao] = [];
           }
           _tafsByIcao[weather.icao]!.add(weather);
+        } else if (weather.type == 'ATIS') {
+          final preview = weather.rawText.length > 30 ? '${weather.rawText.substring(0, 30)}...' : weather.rawText;
+          debugPrint('DEBUG: Adding ATIS for ${weather.icao} - Timestamp: ${weather.timestamp}, Code: ${weather.atisCode}, Raw: $preview');
+          // ATIS is stored in the main weather list, no separate grouping needed
         }
       }
       // Sort each list by timestamp descending
@@ -477,13 +509,13 @@ class FlightProvider with ChangeNotifier {
 
   // Refresh flight data by refetching from APIs - NO CACHING
   Future<void> refreshFlightData({bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
-    print('DEBUG: 🔄 refreshFlightData() called!');
+    debugPrint('DEBUG: 🔄 refreshFlightData() called!');
     if (_currentFlight == null || _currentFlight!.airports.isEmpty) {
-      print('DEBUG: ⚠️ No current flight or airports, skipping refresh');
+      debugPrint('DEBUG: ⚠️ No current flight or airports, skipping refresh');
       return;
     }
 
-    print('DEBUG: 🔄 Force refreshing flight data - NO CACHING...');
+    debugPrint('DEBUG: 🔄 Force refreshing flight data - NO CACHING...');
     setLoading(true);
     
     try {
@@ -500,6 +532,10 @@ class FlightProvider with ChangeNotifier {
       final dbService = DatabaseService();
       await dbService.clearAllData();
       
+      // Ensure SettingsProvider is properly initialized before calling API service
+      final settingsProvider = SettingsProvider();
+      await settingsProvider.initialize();
+      
       final apiService = ApiService();
       final icaos = _currentFlight!.airports.map((airport) => airport.icao).toList();
       
@@ -508,40 +544,65 @@ class FlightProvider with ChangeNotifier {
       naipsUsername ??= null;
       naipsPassword ??= null;
       
-      // Fetch all data in parallel using the batch methods
-      final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(
-        icao,
-        naipsEnabled: naipsEnabled,
-        naipsUsername: naipsUsername,
-        naipsPassword: naipsPassword,
-      )));
-      final weatherFuture = apiService.fetchWeather(
-        icaos,
-        naipsEnabled: naipsEnabled,
-        naipsUsername: naipsUsername,
-        naipsPassword: naipsPassword,
-      );
-      final tafsFuture = apiService.fetchTafs(
-        icaos,
-        naipsEnabled: naipsEnabled,
-        naipsUsername: naipsUsername,
-        naipsPassword: naipsPassword,
-      );
+      debugPrint('DEBUG: 🔄 FlightProvider - NAIPS settings being passed to API: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
+      
+      // Fetch all data in parallel using the new separate methods
+      final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(icao)));
+      final metarsFuture = apiService.fetchMetars(icaos);
+      final atisFuture = apiService.fetchAtis(icaos);
+      final tafsFuture = apiService.fetchTafs(icaos);
 
-      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
+      final results = await Future.wait([notamsFuture, metarsFuture, atisFuture, tafsFuture]);
 
       final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
       final List<Weather> metars = results[1] as List<Weather>;
-      final List<Weather> tafs = results[2] as List<Weather>;
+      final List<Weather> atis = results[2] as List<Weather>;
+      final List<Weather> tafs = results[3] as List<Weather>;
 
       // Flatten the list of lists into a single list
       final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
-      final List<Weather> allWeather = [...metars, ...tafs];
+
+      // Deduplicate by ICAO and latest timestamp, per type, to avoid multiple cards per airport
+      final Map<String, Weather> latestMetarByIcao = {};
+      for (final m in metars.where((w) => w.type == 'METAR')) {
+        final existing = latestMetarByIcao[m.icao];
+        if (existing == null || m.timestamp.isAfter(existing.timestamp)) {
+          latestMetarByIcao[m.icao] = m;
+        }
+      }
+
+      final Map<String, Weather> latestAtisByIcao = {};
+      for (final a in atis.where((w) => w.type == 'ATIS')) {
+        final existing = latestAtisByIcao[a.icao];
+        if (existing == null || a.timestamp.isAfter(existing.timestamp)) {
+          latestAtisByIcao[a.icao] = a;
+        }
+      }
+
+      final Map<String, Weather> latestTafByIcao = {};
+      for (final t in tafs.where((w) => w.type == 'TAF')) {
+        final existing = latestTafByIcao[t.icao];
+        if (existing == null || t.timestamp.isAfter(existing.timestamp)) {
+          latestTafByIcao[t.icao] = t;
+        }
+      }
+
+      final List<Weather> allWeather = [
+        ...latestMetarByIcao.values,
+        ...latestAtisByIcao.values,
+        ...latestTafByIcao.values,
+      ];
+
+      debugPrint('DEBUG: 🔍 FlightProvider - Weather breakdown (deduped):');
+      debugPrint('DEBUG: 🔍   - METARs (latest per ICAO): ${latestMetarByIcao.length}');
+      debugPrint('DEBUG: 🔍   - ATIS (latest per ICAO): ${latestAtisByIcao.length}');
+      debugPrint('DEBUG: 🔍   - TAFs (latest per ICAO): ${latestTafByIcao.length}');
+      debugPrint('DEBUG: 🔍   - Total weather: ${allWeather.length}');
       
-      print('DEBUG: 🔍 FlightProvider - Total NOTAMs after flattening: ${allNotams.length}');
-      print('DEBUG: 🔍 FlightProvider - NOTAMs per airport:');
+      debugPrint('DEBUG: 🔍 FlightProvider - Total NOTAMs after flattening: ${allNotams.length}');
+      debugPrint('DEBUG: 🔍 FlightProvider - NOTAMs per airport:');
       for (int i = 0; i < icaos.length; i++) {
-        print('DEBUG: 🔍   ${icaos[i]}: ${notamResults[i].length} NOTAMs');
+        debugPrint('DEBUG: 🔍   ${icaos[i]}: ${notamResults[i].length} NOTAMs');
       }
       
       // Update the current flight with fresh data
@@ -552,8 +613,23 @@ class FlightProvider with ChangeNotifier {
       
       // Ensure system status is recalculated after data refresh
       _updateAllAirportSystemStatus();
+
+      // Evaluate NAIPS fallback: if NAIPS is enabled but no NAIPS weather present
+      try {
+        final settingsProvider = SettingsProvider();
+        await settingsProvider.initialize();
+        if (settingsProvider.naipsEnabled) {
+          final usedNaips = allWeather.any((w) => w.source == 'naips');
+          _naipsFallbackUsed = !usedNaips;
+          debugPrint('DEBUG: NAIPS fallback used flag set to: $_naipsFallbackUsed');
+        } else {
+          _naipsFallbackUsed = false;
+        }
+      } catch (e) {
+        debugPrint('DEBUG: Could not evaluate NAIPS fallback flag: $e');
+      }
     } catch (e) {
-      print('Error refreshing flight data: $e');
+      debugPrint('Error refreshing flight data: $e');
       // Don't throw - let the UI handle the error gracefully
     } finally {
       setLoading(false);
@@ -581,6 +657,12 @@ class FlightProvider with ChangeNotifier {
       naipsUsername ??= null;
       naipsPassword ??= null;
       
+      debugPrint('DEBUG: 🔄 FlightProvider.addAirportToFlight - NAIPS settings: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
+      
+      // Ensure SettingsProvider is properly initialized before calling API service
+      final settingsProvider = SettingsProvider();
+      await settingsProvider.initialize();
+      
       // Get proper airport data from database
       final airportData = await AirportDatabase.getAirportWithFallback(icao);
       final airportName = airportData?.name ?? '$icao Airport';
@@ -602,24 +684,11 @@ class FlightProvider with ChangeNotifier {
       _currentFlight!.airports.add(newAirport);
 
       // Fetch data for the new airport
-      final notamsFuture = apiService.fetchNotams(
-        icao,
-        naipsEnabled: naipsEnabled,
-        naipsUsername: naipsUsername,
-        naipsPassword: naipsPassword,
-      );
-      final weatherFuture = apiService.fetchWeather(
-        [icao],
-        naipsEnabled: naipsEnabled,
-        naipsUsername: naipsUsername,
-        naipsPassword: naipsPassword,
-      );
-      final tafsFuture = apiService.fetchTafs(
-        [icao],
-        naipsEnabled: naipsEnabled,
-        naipsUsername: naipsUsername,
-        naipsPassword: naipsPassword,
-      );
+      debugPrint('DEBUG: 🔄 FlightProvider.addAirportToFlight - Calling API service with NAIPS enabled: $naipsEnabled');
+      
+      final notamsFuture = apiService.fetchNotams(icao);
+      final weatherFuture = apiService.fetchWeather([icao]);
+      final tafsFuture = apiService.fetchTafs([icao]);
 
       final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
 
@@ -653,7 +722,7 @@ class FlightProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Error adding airport $icao: $e');
+      debugPrint('Error adding airport $icao: $e');
       // Remove the airport if data fetching failed
       _currentFlight!.airports.removeWhere((airport) => airport.icao == icao.toUpperCase());
       return false;
@@ -739,7 +808,7 @@ class FlightProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Error updating airport from $oldIcao to $newIcao: $e');
+      debugPrint('Error updating airport from $oldIcao to $newIcao: $e');
       return false;
     } finally {
       setLoading(false);
@@ -768,7 +837,7 @@ class FlightProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Error removing airport $icao: $e');
+      debugPrint('Error removing airport $icao: $e');
       return false;
     } finally {
       setLoading(false);

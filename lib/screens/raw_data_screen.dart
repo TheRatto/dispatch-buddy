@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
 import '../providers/settings_provider.dart';
@@ -16,6 +17,9 @@ import '../widgets/taf_time_slider.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/notam_grouped_list.dart';
 import '../widgets/metar_tab.dart';
+import 'input_screen.dart';
+import 'briefing_tabs_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class RawDataScreen extends StatefulWidget {
   const RawDataScreen({super.key});
@@ -162,11 +166,97 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
           builder: (context, flightProvider, child) {
             final flight = flightProvider.currentFlight;
             if (flight == null) {
-              return const Center(child: Text('No flight data available'));
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.code_outlined,
+                        size: 80,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Raw Weather Data',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No weather data available',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Generate a briefing to view METARs, TAFs, and NOTAMs in raw format.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                                              ElevatedButton.icon(
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const InputScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('Start New Briefing'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E3A8A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'or',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: () {
+                            // Switch to Home tab (index 0) in the parent BriefingTabsScreen
+                            BriefingTabsScreen.switchToTab(context, 0);
+                          },
+                          icon: const Icon(Icons.history, size: 16),
+                          label: const Text(
+                            'Open Previous Briefing',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey[600],
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
             }
-            // Get airports from TAFs (most comprehensive source)
-            final airports = flightProvider.tafsByIcao.keys.toList();
-            // Initialize selected airport if not set
+            // Get airports from the flight data (all airports in the briefing)
+            final airports = flight.airports.map((a) => a.icao).toList();
+            // Initialize selected airport if not set or if current selection is invalid
             if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
               if (airports.isNotEmpty) {
                 flightProvider.setSelectedAirport(airports.first);
@@ -193,7 +283,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                       ),
                       Tab(
                         icon: Icon(Icons.cloud, size: 18), // Smaller icon
-                        text: 'METARs',
+                        text: 'METAR/ATIS',
                       ),
                       Tab(
                         icon: Icon(Icons.access_time, size: 18), // Smaller icon
@@ -235,13 +325,24 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                         onRefresh: () async {
                           _clearCache();
                           final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                          debugPrint('DEBUG: 🔄 RawDataScreen - NAIPS settings from SettingsProvider: enabled=${settingsProvider.naipsEnabled}, username=${settingsProvider.naipsUsername != null ? "SET" : "NOT SET"}, password=${settingsProvider.naipsPassword != null ? "SET" : "NOT SET"}');
                           await flightProvider.refreshCurrentData(
                             naipsEnabled: settingsProvider.naipsEnabled,
                             naipsUsername: settingsProvider.naipsUsername,
                             naipsPassword: settingsProvider.naipsPassword,
                           );
+                          // One-time snackbar if NAIPS fallback was used
+                          if (flightProvider.consumeNaipsFallbackUsed()) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('NAIPS unavailable. Showing API data.'),
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(seconds: 3),
+                              ),
+                            );
+                          }
                         },
-                        child: MetarTab(metarsByIcao: flightProvider.metarsByIcao),
+                        child: MetarTab(),
                       ),
                       // TAFs tab: timeline-based TAF display
                       _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
@@ -256,10 +357,27 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   }
 
   Widget _buildTafs2Tab(BuildContext context, Map<String, List<Weather>> tafsByIcao, FlightProvider flightProvider) {
-    print('DEBUG: TAFs2 tab - METHOD CALLED!');
+    debugPrint('DEBUG: TAFs2 tab - METHOD CALLED!');
     
-    if (tafsByIcao.isEmpty) {
-      print('DEBUG: TAFs2 tab - No TAFs available, showing empty state');
+    // Get TAFs directly from the flight's weather data (like NOTAMs do)
+    final flightWeather = flightProvider.currentFlight?.weather ?? [];
+    final airportsToShow = flightProvider.selectedAirport != null 
+        ? [flightProvider.selectedAirport!]
+        : flightProvider.currentFlight?.airports.map((a) => a.icao).toList() ?? [];
+    
+    final tafsToShow = <String, List<Weather>>{};
+    for (final airport in airportsToShow) {
+      final airportTafs = flightWeather
+          .where((w) => w.type == 'TAF' && w.icao == airport)
+          .toList();
+      if (airportTafs.isNotEmpty) {
+        tafsToShow[airport] = airportTafs;
+      }
+    }
+    
+    // Check if we have any TAFs to show after filtering
+    if (tafsToShow.isEmpty) {
+      debugPrint('DEBUG: TAFs2 tab - No TAFs available after filtering, showing empty state');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -272,7 +390,9 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
             ),
             const SizedBox(height: 8),
             Text(
-              'No terminal area forecasts available',
+              flightProvider.selectedAirport != null 
+                  ? 'No TAFs for ${flightProvider.selectedAirport}'
+                  : 'No terminal area forecasts available',
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],
@@ -280,23 +400,40 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
       );
     }
 
-    // Initialize selected airport if not set
-    if (flightProvider.selectedAirport == null || !tafsByIcao.containsKey(flightProvider.selectedAirport)) {
-      flightProvider.setSelectedAirport(tafsByIcao.keys.first);
-      print('DEBUG: TAFs2 tab - Selected airport: ${flightProvider.selectedAirport}');
+    // Check if we have a selected airport and TAFs for it
+    if (flightProvider.selectedAirport == null || !tafsToShow.containsKey(flightProvider.selectedAirport)) {
+      debugPrint('DEBUG: TAFs2 tab - No valid selected airport, showing empty state');
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.timeline, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              'No Airport Selected',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please select an airport to view TAFs',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
     }
 
-    final selectedTaf = tafsByIcao[flightProvider.selectedAirport!]!.first;
+    final selectedTaf = tafsToShow[flightProvider.selectedAirport!]!.first;
     final decodedTaf = selectedTaf.decodedWeather;
-    print('DEBUG: TAFs2 tab - Selected TAF: ${selectedTaf.icao}');
-    print('DEBUG: TAFs2 tab - Decoded TAF: ${decodedTaf != null}');
+    debugPrint('DEBUG: TAFs2 tab - Selected TAF: ${selectedTaf.icao}');
+    debugPrint('DEBUG: TAFs2 tab - Decoded TAF: ${decodedTaf != null}');
 
     // Get slider position for this airport
     final forecastPeriods = decodedTaf?.forecastPeriods ?? [];
     double sliderValue = _sliderPositions[flightProvider.selectedAirport!] ?? 0.0;
     
-    print('DEBUG: Main build - forecastPeriods length: ${forecastPeriods.length}');
-    print('DEBUG: Main build - forecastPeriods types: ${forecastPeriods.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList()}');
+    debugPrint('DEBUG: Main build - forecastPeriods length: ${forecastPeriods.length}');
+    debugPrint('DEBUG: Main build - forecastPeriods types: ${forecastPeriods.map((p) => '${p.type} (concurrent: ${p.isConcurrent})').toList()}');
 
     if (forecastPeriods.isNotEmpty) {
       // Calculate active periods for the current slider position
@@ -307,21 +444,21 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         final index = (sliderValue * (timeline.length - 1)).round();
         final selectedTime = timeline[index];
         _activePeriods = decoder.findActivePeriodsAtTime(selectedTime, forecastPeriods);
-        print('DEBUG: TAFs2 tab - Active periods: $_activePeriods');
+        debugPrint('DEBUG: TAFs2 tab - Active periods: $_activePeriods');
       }
     }
     
-    print('DEBUG: TAFs2 tab - Building RefreshIndicator with SingleChildScrollView');
+    debugPrint('DEBUG: TAFs2 tab - Building RefreshIndicator with SingleChildScrollView');
     return RefreshIndicator(
       onRefresh: () async {
-        print('DEBUG: TAFs2 tab - Refresh triggered');
+        debugPrint('DEBUG: TAFs2 tab - Refresh triggered');
         
         // Clear all caches for fresh data
         _clearCache();
         
         // Get current scroll position to lock it
         final currentOffset = _tafs2ScrollController.offset;
-        print('DEBUG: TAFs2 tab - Current scroll offset: $currentOffset');
+        debugPrint('DEBUG: TAFs2 tab - Current scroll offset: $currentOffset');
         
         // Keep content locked in pulled-down position for a minimum duration
         await Future.delayed(const Duration(milliseconds: 1500));
@@ -482,6 +619,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                   
                   // Get the FlightProvider and add the airport
                   final flightProvider = context.read<FlightProvider>();
+                  
                   final success = await flightProvider.addAirportToFlight(icao);
                   
                   if (success) {

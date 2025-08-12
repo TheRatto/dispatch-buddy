@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/airport_infrastructure.dart';
 
@@ -53,13 +52,9 @@ class OurAirportsService {
         if (associatedAirport != icaoCode.toUpperCase()) continue;
         
         final identifier = fields[2]; // ident field
-        final name = fields[3]; // name field
         final type = fields[4]; // type field
         final frequencyKhz = fields[5]; // frequency_khz field
-        final latitude = double.tryParse(fields[6]) ?? 0.0; // latitude_deg
-        final longitude = double.tryParse(fields[7]) ?? 0.0; // longitude_deg
         final elevation = fields[8]; // elevation_ft
-        final country = fields[9]; // iso_country
         final usageType = fields[16]; // usageType
         final power = fields[17]; // power
         

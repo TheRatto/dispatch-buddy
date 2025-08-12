@@ -1,19 +1,123 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../models/weather.dart';
 
-class AtisCard extends StatelessWidget {
+class AtisCard extends StatefulWidget {
   final Weather? atis;
   final String icao;
-  
+
   const AtisCard({
     super.key,
     required this.atis,
     required this.icao,
   });
+
+  @override
+  State<AtisCard> createState() => _AtisCardState();
+}
+
+class _AtisCardState extends State<AtisCard> {
+  Timer? _ageUpdateTimer;
+  String _ageText = '';
+  Color _ageColor = Colors.grey;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateAgeText();
+    // Update age every minute
+    _ageUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateAgeText();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ageUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _updateAgeText() {
+    if (!mounted || widget.atis == null) return;
+    
+    // Extract ATIS issue time from raw text (e.g., "ATIS YPPH W 120529 +")
+    final issueTimeMatch = RegExp(r'ATIS\s+\w+\s+[A-Z]\s+(\d{6})').firstMatch(widget.atis!.rawText);
+    if (issueTimeMatch == null) {
+      setState(() {
+        _ageText = '';
+        _ageColor = Colors.grey;
+      });
+      return;
+    }
+    
+    final issueTimeStr = issueTimeMatch.group(1)!;
+    final day = int.parse(issueTimeStr.substring(0, 2));
+    final hour = int.parse(issueTimeStr.substring(2, 4));
+    final minute = int.parse(issueTimeStr.substring(4, 6));
+    
+    // Create issue time with proper date handling
+    final now = DateTime.now().toUtc();
+    DateTime issueTime;
+    
+    // Try current month first
+    issueTime = DateTime.utc(now.year, now.month, day, hour, minute);
+    
+    // If issue time is in the future, it must be from the previous month
+    if (issueTime.isAfter(now)) {
+      // Check if the day difference is large (more than 7 days), indicating it's from previous month
+      if (day > now.day + 7) {
+        // Previous month
+        final previousMonth = now.month == 1 ? 12 : now.month - 1;
+        final previousYear = now.month == 1 ? now.year - 1 : now.year;
+        issueTime = DateTime.utc(previousYear, previousMonth, day, hour, minute);
+      } else {
+        // Previous day in current month
+        final yesterday = now.subtract(const Duration(days: 1));
+        issueTime = DateTime.utc(yesterday.year, yesterday.month, day, hour, minute);
+      }
+    }
+    
+    // Calculate age
+    final difference = now.difference(issueTime);
+    
+    String ageText;
+    if (difference.inMinutes < 1) {
+      ageText = 'Just now';
+    } else if (difference.inMinutes < 60) {
+      ageText = '${difference.inMinutes} mins old';
+    } else if (difference.inHours < 24) {
+      // Match METAR format: "11:37 hrs old" instead of "11 hours old"
+      final hours = difference.inHours;
+      final minutes = difference.inMinutes % 60;
+      if (minutes == 0) {
+        ageText = '$hours hrs old';
+      } else {
+        ageText = '$hours:${minutes.toString().padLeft(2, '0')} hrs old';
+      }
+    } else {
+      ageText = '${difference.inDays} days old';
+    }
+    
+    // Calculate color
+    Color ageColor;
+    if (difference.inMinutes <= 30) {
+      ageColor = const Color(0xFF059669); // Green for fresh (up to 30 minutes)
+    } else if (difference.inMinutes <= 60) {
+      ageColor = const Color(0xFFD97706); // Orange for moderate (30-60 minutes)
+    } else {
+      ageColor = const Color(0xFFDC2626); // Red for old (over 60 minutes)
+    }
+    
+    setState(() {
+      _ageText = ageText;
+      _ageColor = ageColor;
+    });
+  }
   
   @override
   Widget build(BuildContext context) {
-    if (atis == null) {
+    if (widget.atis == null) {
       return Card(
         elevation: 2,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -28,7 +132,7 @@ class AtisCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                "No ATIS available at $icao",
+                "No ATIS available at ${widget.icao}",
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -56,7 +160,7 @@ class AtisCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _buildHeaderText(atis!),
+                    _buildHeaderText(widget.atis!),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -68,10 +172,10 @@ class AtisCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
             child: Text(
-              _formatAge(atis!.timestamp),
+              _ageText,
               style: TextStyle(
                 fontSize: 12,
-                color: _getAgeColor(atis!.timestamp),
+                color: _ageColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -90,15 +194,15 @@ class AtisCard extends StatelessWidget {
               children: [
                 // Single SelectableText widget to fix text selection issues
                 SelectableText(
-                  _formatAtisText(atis!.rawText),
+                  _formatAtisText(widget.atis!.rawText),
                   style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
                   ),
                 ),
                 // NAIPS indication - matching TAF card styling exactly
-                if (atis!.source == 'naips')
-                  Positioned(
+                if (widget.atis!.source == 'naips')
+                  const Positioned(
                     bottom: 0,
                     right: 0,
                     child: Row(
@@ -109,7 +213,7 @@ class AtisCard extends StatelessWidget {
                           size: 10,
                           color: Colors.orange,
                         ),
-                        const SizedBox(width: 2),
+                        SizedBox(width: 2),
                         Text(
                           'NAIPS',
                           style: TextStyle(
@@ -146,46 +250,11 @@ class AtisCard extends StatelessWidget {
       }
     }
     
-    final headerText = '$icao ATIS ${atisCode.isNotEmpty ? atisCode : '?'}';
+    final headerText = '${widget.icao} ATIS ${atisCode.isNotEmpty ? atisCode : '?'}';
     debugPrint('DEBUG: AtisCard - Final header text: "$headerText"');
     return headerText;
   }
   
-  String _formatAge(DateTime timestamp) {
-    final now = DateTime.now().toUtc();
-    final difference = now.difference(timestamp);
-    
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} mins old';
-    } else if (difference.inHours < 24) {
-      // Match METAR format: "11:37 hrs old" instead of "11 hours old"
-      final hours = difference.inHours;
-      final minutes = difference.inMinutes % 60;
-      if (minutes == 0) {
-        return '${hours} hrs old';
-      } else {
-        return '${hours}:${minutes.toString().padLeft(2, '0')} hrs old';
-      }
-    } else {
-      return '${difference.inDays} days old';
-    }
-  }
-  
-  Color _getAgeColor(DateTime timestamp) {
-    final now = DateTime.now().toUtc();
-    final difference = now.difference(timestamp);
-    
-    if (difference.inMinutes <= 30) {
-      return const Color(0xFF059669); // Green for fresh (up to 30 minutes)
-    } else if (difference.inMinutes <= 60) {
-      return const Color(0xFFD97706); // Orange for moderate (30-60 minutes)
-    } else {
-      return const Color(0xFFDC2626); // Red for old (over 60 minutes)
-    }
-  }
-
   String _formatAtisText(String rawText) {
     final lines = rawText.split('\n');
     final formattedLines = <String>[];

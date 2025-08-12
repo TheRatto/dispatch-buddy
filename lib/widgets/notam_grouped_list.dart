@@ -165,10 +165,10 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
       final hiddenCount = _hiddenCounts[group] ?? 0;
       final isExpanded = _expandedGroups[group] ?? false;
       
-      debugPrint('DEBUG: Group ${group}: ${groupNotams.length} visible, ${hiddenCount} hidden, expanded: $isExpanded');
+      debugPrint('DEBUG: Group $group: ${groupNotams.length} visible, $hiddenCount hidden, expanded: $isExpanded');
       
       if (groupNotams.isEmpty && hiddenCount == 0) {
-        debugPrint('DEBUG:   -> Skipping group ${group} (no visible or hidden NOTAMs)');
+        debugPrint('DEBUG:   -> Skipping group $group (no visible or hidden NOTAMs)');
       }
     }
 

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../lib/services/airport_cache_manager.dart';
-import '../lib/services/openaip_service.dart';
-import '../lib/models/airport_infrastructure.dart';
+import 'package:dispatch_buddy/services/airport_cache_manager.dart';
+import 'package:dispatch_buddy/services/openaip_service.dart';
+import 'package:dispatch_buddy/models/airport_infrastructure.dart';
 
 void main() {
   setUpAll(() async {
@@ -88,7 +88,7 @@ void main() {
           print('✅ Runway data parsed correctly');
           print('  - Found ${airport.runways.length} runways');
           for (final runway in airport.runways.take(3)) {
-            print('    - ${runway}');
+            print('    - $runway');
           }
         } else {
           print('⚠️  No runway data available for YSSY');

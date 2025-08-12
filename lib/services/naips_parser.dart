@@ -30,6 +30,7 @@ class NAIPSParser {
         // Parse ATIS
         final atis = _parseATIS(content);
         weatherList.addAll(atis);
+        debugPrint('DEBUG: NAIPSParser - Added ${atis.length} ATIS items to weather list');
       }
       
       debugPrint('DEBUG: NAIPSParser - Parsed ${weatherList.length} weather items');
@@ -72,7 +73,7 @@ class NAIPSParser {
     final List<Weather> tafs = [];
     
     // Find TAF sections
-    final tafMatches = RegExp(r'TAF\s+(\w{4})\s+(\d{6})Z\s+(\d{4})/(\d{4})\s+([^\n]+(?:\n(?!\s*(?:SPECI|ATIS|NOTAM|$))[^\n]+)*)', dotAll: true).allMatches(content);
+    final tafMatches = RegExp(r'TAF\s+(\w{4})\s+(\d{6})\s*Z\s+(\d{4})/(\d{4})\s+([^\n]+(?:\n(?!\s*(?:SPECI|ATIS|NOTAM|$))[^\n]+)*)', dotAll: true).allMatches(content);
     
     for (final match in tafMatches) {
       final icao = match.group(1) ?? '';
@@ -155,7 +156,7 @@ class NAIPSParser {
     final compactText = processedLines.join(' ');
     
     // Create the final TAF text with RMK at the bottom
-    final fullTafText = 'TAF $icao ${issueTime}Z ${validityStart}/${validityEnd} $compactText';
+    final fullTafText = 'TAF $icao ${issueTime}Z $validityStart/$validityEnd $compactText';
     
     // Add RMK section at the bottom if present
     if (rmkSection != null) {
@@ -181,18 +182,18 @@ class NAIPSParser {
   static List<Weather> _parseMETARs(String content) {
     final List<Weather> metars = [];
     
-    // Find METAR sections (including SPECI)
-    final metarMatches = RegExp(r'(?:SPECI\s+)?(\w{4})\s+(\d{6})Z\s+([^\n]+(?:\n(?!\s*(?:TAF|ATIS|NOTAM|$))[^\n]+)*)', dotAll: true).allMatches(content);
+    // Find METAR sections (explicit METAR or SPECI only). Avoid matching inside TAF headers
+    final metarMatches = RegExp(r'(METAR|SPECI)\s+(\w{4})\s+(\d{6})\s*Z\s+([^\n]+(?:\n(?!\s*(?:TAF|ATIS|NOTAM|$))[^\n]+)*)', dotAll: true).allMatches(content);
     
     for (final match in metarMatches) {
-      final icao = match.group(1) ?? '';
-      final issueTime = match.group(2) ?? '';
-      final metarText = match.group(3) ?? '';
+      final label = match.group(1) ?? '';
+      final icao = match.group(2) ?? '';
+      final issueTime = match.group(3) ?? '';
+      final metarText = match.group(4) ?? '';
       
       if (icao.isNotEmpty && metarText.isNotEmpty) {
-        // Check if this is a SPECI
-        final isSpeci = content.contains('SPECI $icao');
-        final fullMetarText = isSpeci ? 'SPECI $icao ${issueTime}Z $metarText' : '$icao ${issueTime}Z $metarText';
+        // Build full METAR/SPECI line preserving the label
+        final fullMetarText = '$label $icao ${issueTime}Z $metarText';
         
         try {
           // Use existing decoder service
@@ -232,10 +233,43 @@ class NAIPSParser {
   static List<Weather> _parseATIS(String content) {
     final List<Weather> atis = [];
     
-    // Find ATIS sections
-    final atisMatches = RegExp(r'ATIS\s+(\w{4})\s+([A-Z])\s+(\d{6})\s+([^\n]+(?:\n(?!\s*(?:TAF|METAR|NOTAM|$))[^\n]+)*)', dotAll: true).allMatches(content);
+    debugPrint('DEBUG: NAIPSParser - Parsing ATIS from content length: ${content.length}');
+    debugPrint('DEBUG: NAIPSParser - Content preview: ${content.substring(0, content.length > 500 ? 500 : content.length)}');
     
-    for (final match in atisMatches) {
+    // Look for ATIS in the content
+    if (content.contains('ATIS')) {
+      debugPrint('DEBUG: NAIPSParser - Found "ATIS" in content');
+      final atisIndex = content.indexOf('ATIS');
+      final atisContext = content.substring(atisIndex, atisIndex + 200);
+      debugPrint('DEBUG: NAIPSParser - ATIS context: $atisContext');
+    } else {
+      debugPrint('DEBUG: NAIPSParser - No "ATIS" found in content');
+    }
+    
+    // Find ATIS sections - try multiple patterns
+    final patterns = [
+      // Pattern 1: ATIS YSSY I 100634 (standard format)
+      RegExp(r'ATIS\s+(\w{4})\s+([A-Z])\s+(\d{6})\s*([^\n]+(?:\n(?!\s*(?:TAF|METAR|NOTAM|$))[^\n]+)*)', dotAll: true),
+      // Pattern 2: ATIS YSSY I100634 (without space before time)
+      RegExp(r'ATIS\s+(\w{4})\s+([A-Z])(\d{6})\s*([^\n]+(?:\n(?!\s*(?:TAF|METAR|NOTAM|$))[^\n]+)*)', dotAll: true),
+      // Pattern 3: ATIS YSSY I   100634 (with multiple spaces)
+      RegExp(r'ATIS\s+(\w{4})\s+([A-Z])\s+(\d{6})\s*([^\n]+(?:\n(?!\s*(?:TAF|METAR|NOTAM|$))[^\n]+)*)', dotAll: true),
+      // Pattern 4: Most flexible - any ATIS with ICAO and code
+      RegExp(r'ATIS\s+(\w{4})\s+([A-Z])\s*(\d{6})\s*([^\n]+(?:\n(?!\s*(?:TAF|METAR|NOTAM|$))[^\n]+)*)', dotAll: true),
+      // Pattern 5: Fallback - just find ATIS with ICAO and any content
+      RegExp(r'ATIS\s+(\w{4})\s+([A-Z])\s*(.*?)(?=\n\s*(?:TAF|METAR|NOTAM|$))', dotAll: true),
+    ];
+    
+    final allMatches = <RegExpMatch>[];
+    for (final pattern in patterns) {
+      final matches = pattern.allMatches(content);
+      allMatches.addAll(matches);
+      debugPrint('DEBUG: NAIPSParser - Pattern found ${matches.length} ATIS matches');
+    }
+    
+    debugPrint('DEBUG: NAIPSParser - Total ATIS matches found: ${allMatches.length}');
+    
+    for (final match in allMatches) {
       final icao = match.group(1) ?? '';
       final atisCode = match.group(2) ?? '';
       final issueTime = match.group(3) ?? '';
@@ -243,6 +277,9 @@ class NAIPSParser {
       
       if (icao.isNotEmpty && atisText.isNotEmpty) {
         final fullAtisText = 'ATIS $icao $atisCode $issueTime $atisText';
+        
+        debugPrint('DEBUG: NAIPSParser - Extracted ATIS: ICAO=$icao, Code=$atisCode, Time=$issueTime');
+        debugPrint('DEBUG: NAIPSParser - Full ATIS text: $fullAtisText');
         
         try {
           // Create a simple decoded weather object for ATIS
@@ -286,6 +323,8 @@ class NAIPSParser {
             type: 'ATIS',
             decodedWeather: decodedWeather,
             source: 'naips',
+            atisCode: atisCode,
+            atisType: 'ATIS',
           );
           
           atis.add(weather);
@@ -303,6 +342,13 @@ class NAIPSParser {
   static List<Notam> _parseNOTAMs(String content) {
     final List<Notam> notams = [];
     
+    // Determine ICAO context from header like "CITY (YSCB)"
+    String currentIcao = '';
+    final headerMatch = RegExp(r'\(([A-Z]{4})\)').firstMatch(content);
+    if (headerMatch != null) {
+      currentIcao = headerMatch.group(1) ?? '';
+    }
+    
     // Find NOTAM sections
     final notamMatches = RegExp(r'([A-Z]\d{3}/\d{2})\s+([^\n]+(?:\n(?!\s*[A-Z]\d{3}/\d{2})[^\n]+)*)', dotAll: true).allMatches(content);
     
@@ -311,13 +357,50 @@ class NAIPSParser {
       final notamText = match.group(2) ?? '';
       
       if (notamId.isNotEmpty && notamText.isNotEmpty) {
+        // Attempt to parse validity window: FROM DD HHMM TO DD HHMM (EST/UTC)
+        DateTime? validFrom;
+        DateTime? validTo;
+        final validMatch = RegExp(r'FROM\s+(\d{2})\s+(\d{4})\s+TO\s+(\d{2})\s+(\d{4})', caseSensitive: false)
+            .firstMatch(notamText);
+        if (validMatch != null) {
+          try {
+            final nowUtc = DateTime.now().toUtc();
+            final fromDay = int.parse(validMatch.group(1)!);
+            final fromHm = validMatch.group(2)!;
+            final toDay = int.parse(validMatch.group(3)!);
+            final toHm = validMatch.group(4)!;
+            final fromHour = int.parse(fromHm.substring(0, 2));
+            final fromMin = int.parse(fromHm.substring(2, 4));
+            final toHour = int.parse(toHm.substring(0, 2));
+            final toMin = int.parse(toHm.substring(2, 4));
+            // Assume current month/year; adjust if day wraps
+            var from = DateTime.utc(nowUtc.year, nowUtc.month, fromDay, fromHour, fromMin);
+            var to = DateTime.utc(nowUtc.year, nowUtc.month, toDay, toHour, toMin);
+            if (to.isBefore(from)) {
+              // likely crosses month boundary
+              to = DateTime.utc(nowUtc.year, nowUtc.month + 1, toDay, toHour, toMin);
+            }
+            validFrom = from;
+            validTo = to;
+          } catch (_) {
+            validFrom = null;
+            validTo = null;
+          }
+        }
+        
+        // Require ICAO context; if missing, skip NAIPS NOTAM to avoid misassignment
+        if (currentIcao.isEmpty) {
+          debugPrint('DEBUG: NAIPSParser - Skipping NOTAM $notamId due to missing ICAO context');
+          continue;
+        }
+        
         try {
           final notam = Notam(
             id: notamId,
-            icao: '', // Extract from text if needed
+            icao: currentIcao,
             type: NotamType.other, // Default type
-            validFrom: DateTime.now(), // Parse from text if needed
-            validTo: DateTime.now().add(const Duration(days: 30)), // Parse from text if needed
+            validFrom: validFrom ?? DateTime.now().toUtc(),
+            validTo: validTo ?? DateTime.now().toUtc().add(const Duration(days: 30)),
             rawText: notamText.trim(),
             decodedText: notamText.trim(),
             affectedSystem: 'NAIPS',

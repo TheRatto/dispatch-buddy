@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/ourairports_service.dart';
+import 'package:dispatch_buddy/services/ourairports_service.dart';
 
 void main() {
   group('OurAirportsService', () {

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/services.dart';
 import '../models/airport_infrastructure.dart';
 
@@ -35,7 +34,7 @@ class ERSADataService {
       
       // Wait if cache is currently loading
       while (_isLoadingCache) {
-        await Future.delayed(Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 10));
       }
       
       // Ensure cache is loaded before checking

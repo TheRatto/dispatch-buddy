@@ -24,7 +24,7 @@ void main() {
           ),
         ];
 
-        final result = periodDetector.findActivePeriodsAtTime(
+        final result = PeriodDetector.findActivePeriodsAtTime(
           periods,
           DateTime(2025, 1, 27, 14, 0), // 14:00Z - should be active
         );
@@ -47,7 +47,7 @@ void main() {
           ),
         ];
 
-        final result = periodDetector.findActivePeriodsAtTime(
+        final result = PeriodDetector.findActivePeriodsAtTime(
           periods,
           DateTime(2025, 1, 27, 13, 0), // 13:00Z - should be active
         );
@@ -79,7 +79,7 @@ void main() {
           ),
         ];
 
-        final result = periodDetector.findActivePeriodsAtTime(
+        final result = PeriodDetector.findActivePeriodsAtTime(
           periods,
           DateTime(2025, 1, 27, 13, 0), // 13:00Z - both should be active
         );
@@ -103,7 +103,7 @@ void main() {
           ),
         ];
 
-        final result = periodDetector.findActivePeriodsAtTime(
+        final result = PeriodDetector.findActivePeriodsAtTime(
           periods,
           DateTime(2025, 1, 27, 20, 0), // 20:00Z - should not be active
         );

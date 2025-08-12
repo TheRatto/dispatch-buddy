@@ -1,6 +1,155 @@
 # Current Sprint Tasks - Hybrid Implementation
 
 ## ✅ Completed Tasks
+### Task 24: Hybrid NAIPS+API Weather Merge ✅ COMPLETED
+**Goal**: Populate mixed briefings with NAIPS for AU/covered ICAOs and API for international.
+
+**Changes Made:**
+- ✅ `ApiService`: Merge NAIPS METARs with API METARs, dedupe by issue time; TAFs prefer NAIPS, fallback to API.
+- ✅ `NAIPSParser`: Require explicit `METAR`/`SPECI` prefix; preserve label; allow optional space before `Z` in TAF header.
+- ✅ `FlightProvider`: Latest-per-ICAO selection to prevent duplicate METAR/TAF cards.
+
+**Results:**
+- ✅ YPPH/YSSY/WSSS show single latest METAR.
+- ✅ EGLL/CYYZ show TAFs via API fallback; METARs decode with correct issue time.
+
+### Task 25: Dynamic Age & ATIS Fixes ✅ COMPLETED
+**Goal**: Ensure METAR/ATIS ages reflect issue time and update every minute.
+
+**Changes Made:**
+- ✅ `MetarTab`: Timer-based rebuild; header `HHMMZ` formatting; age based on parsed issue time.
+- ✅ `AtisCard`: Age computed from ATIS header issue time; timer for dynamic updates; regex robust to spacing.
+
+**Results:**
+- ✅ Age badges align with TAF dynamic behavior; UTC as default.
+
+### Task 26: Decode Parity – SKC Support ✅ COMPLETED
+**Goal**: Show “Sky Clear” when `SKC` present (international formats).
+
+**Changes Made:**
+- ✅ `WeatherParser`: Added `SKC` handling alongside NSC/NCD.
+
+**Results:**
+- ✅ EGLL/CYYZ TAFs show “Sky Clear” when applicable.
+
+### Task 21: Add Home Button to Bottom Navigation ✅ COMPLETED
+**Goal**: Add Home button to bottom navigation bar for consistent navigation
+
+**Files Modified:**
+- `lib/screens/briefing_tabs_screen.dart`
+
+**Changes Made:**
+- ✅ Added HomeScreen import to BriefingTabsScreen
+- ✅ Added HomeScreen to screens list (index 0)
+- ✅ Added Home navigation item with home icon and "Home" label
+- ✅ Updated default tab index from 0 to 1 (Summary tab)
+- ✅ Updated tab switching logic to account for new Home tab
+
+**Navigation Order:**
+- **Index 0**: Home 🏠 (new)
+- **Index 1**: Summary 📊 (was index 0)
+- **Index 2**: Airports ✈️ (was index 1)
+- **Index 3**: Raw Data `<>` (was index 2)
+
+**Benefits:**
+- ✅ Consistent navigation across all screens
+- ✅ Easy access to Home from any briefing tab
+- ✅ Follows iOS design patterns
+- ✅ Maintains existing functionality
+
+### Task 22: Implement Apple-Style Empty States ✅ COMPLETED
+**Goal**: Create educational empty states for tabs when no active briefing
+
+**Files Modified:**
+- `lib/screens/summary_screen.dart`
+- `lib/screens/airport_detail_screen.dart`
+- `lib/screens/raw_data_screen.dart`
+
+**Empty States Implemented:**
+
+#### **Summary Screen Empty State:**
+- 📊 **Flight Summary** icon and title
+- "No active briefing" subtitle
+- Helpful description: "Start a new briefing to see your flight summary, weather conditions, and NOTAMs."
+- **"Start New Briefing"** button that navigates to `/input`
+
+#### **Airport Details Screen Empty State:**
+- ✈️ **Airport Details** icon and title
+- "No airports selected" subtitle
+- Helpful description: "Add airports to your flight plan to view runway information, navaids, and system status."
+- **"Start New Briefing"** button that navigates to `/input`
+
+#### **Raw Data Screen Empty State:**
+- 📡 **Raw Weather Data** icon and title
+- "No weather data available" subtitle
+- Helpful description: "Generate a briefing to view METARs, TAFs, and NOTAMs in raw format."
+- **"Start New Briefing"** button that navigates to `/input`
+
+**Apple Design Principles Applied:**
+- ✅ **Consistent Navigation** - Bottom nav always visible
+- ✅ **Educational Empty States** - Users learn what each tab does
+- ✅ **Clear Next Steps** - Prominent "Start New Briefing" buttons
+- ✅ **Friendly Language** - Helpful, non-technical descriptions
+- ✅ **Visual Hierarchy** - Large icons, clear titles, descriptive text
+- ✅ **iOS Native Styling** - Proper colors, spacing, and typography
+
+### Task 23: Fix Pull-to-Refresh Persistence Issue ✅ COMPLETED
+**Goal**: Ensure pull-to-refresh data persists when navigating away and back
+
+**Root Cause Analysis:**
+- ❌ **Pull-to-refresh** used `refreshFlightData()` which only updated data in memory
+- ❌ **Refresh buttons** used `BriefingRefreshService.refreshBriefing()` which saved to storage
+- ❌ **Inconsistent behavior** between the two refresh methods
+- ❌ **Data loss** when navigating away and back
+
+**Solution Implemented:**
+- ✅ **Unified refresh method** `refreshCurrentData()` in FlightProvider
+- ✅ **Smart routing**: Uses `BriefingRefreshService.refreshBriefing()` for both current and previous briefings
+- ✅ **Consistent behavior**: Both pull-to-refresh and refresh buttons now work identically
+- ✅ **Proper persistence**: Creates versioned backups and updates home screen timestamps
+
+**Files Modified:**
+- `lib/providers/flight_provider.dart` - Added `refreshCurrentData()` method
+- `lib/screens/decoded_screen.dart` - Updated RefreshIndicator callbacks
+- `lib/screens/alternate_data_screen.dart` - Updated RefreshIndicator callbacks
+- `lib/screens/summary_screen.dart` - Updated RefreshIndicator callbacks
+- `lib/screens/airport_detail_screen.dart` - Updated RefreshIndicator callbacks
+- `lib/screens/raw_data_screen.dart` - Updated RefreshIndicator callbacks
+
+**Technical Implementation:**
+```dart
+/// Unified refresh method that handles both current and previous briefings
+Future<void> refreshCurrentData({
+  bool? naipsEnabled,
+  String? naipsUsername,
+  String? naipsPassword,
+}) async {
+  if (_currentBriefing != null) {
+    // For previous briefings, use the briefing refresh method
+    await refreshBriefingByIdUnified(_currentBriefing!.id);
+  } else {
+    // For current briefings, refresh flight data and save to storage
+    await refreshFlightData(
+      naipsEnabled: naipsEnabled,
+      naipsUsername: naipsUsername,
+      naipsPassword: naipsPassword,
+    );
+    
+    // Convert the refreshed flight to a briefing and save it
+    if (_currentFlight != null) {
+      final briefing = Briefing(/* ... */);
+      await BriefingStorageService.saveBriefing(briefing);
+    }
+  }
+}
+```
+
+**Benefits:**
+- ✅ **Consistent UX** - Both refresh methods work identically
+- ✅ **Data persistence** - Refreshed data survives navigation
+- ✅ **Proper versioning** - Creates backups and timestamps
+- ✅ **Home screen updates** - Shows correct "last refreshed" times
+- ✅ **Error handling** - Uses proven BriefingRefreshService workflow
 
 ### Task 1: Remove Embedded NOTAM Details ✅ COMPLETED
 **Goal**: Simplify AirportDetailScreen to show only system status overview

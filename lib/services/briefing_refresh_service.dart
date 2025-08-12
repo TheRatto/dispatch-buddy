@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../models/briefing.dart';
-import '../models/flight.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/api_service.dart';
-import '../services/briefing_conversion_service.dart';
+// import '../services/briefing_conversion_service.dart';
 import '../services/cache_manager.dart';
-import '../services/taf_state_manager.dart';
+// import '../services/taf_state_manager.dart';
 import '../services/airport_database.dart'; // Added for airport lookup
+import '../providers/settings_provider.dart'; // Added for NAIPS settings
 
 class RefreshException implements Exception {
   final String message;
@@ -19,7 +19,7 @@ class RefreshException implements Exception {
 }
 
 class BriefingRefreshService {
-  final ApiService _apiService = ApiService();
+  // final ApiService _apiService = ApiService();
   
   /// Refresh a briefing with fresh data from APIs
   /// Uses safety-first approach: backup → fetch → validate → update
@@ -56,8 +56,8 @@ class BriefingRefreshService {
         cacheManager.clearPrefix('taf_${airport}_');
       }
       // Also clear TAF state manager cache for relevant airports
-      final tafStateManager = TafStateManager();
-      // (Assume TafStateManager can clear per-airport, if not, skip this step)
+      // Keep placeholder for future per-airport clear once implemented
+      // final tafStateManager = TafStateManager();
       // tafStateManager.clearCacheForAirports(briefing.airports);
       
       // 3. FETCH NEW DATA (without touching original)
@@ -91,6 +91,12 @@ class BriefingRefreshService {
       
     } catch (e) {
       debugPrint('DEBUG: Refresh failed: $e, rolling back to original data');
+      debugPrint('DEBUG: Refresh failure details:');
+      debugPrint('DEBUG: - Error type: ${e.runtimeType}');
+      debugPrint('DEBUG: - Error message: $e');
+      if (e is RefreshException) {
+        debugPrint('DEBUG: - This is a RefreshException');
+      }
       throw RefreshException('Refresh failed, original data preserved: $e');
     }
   }
@@ -103,23 +109,50 @@ class BriefingRefreshService {
     try {
       final apiService = ApiService();
       
+      // Get NAIPS settings to pass to API service methods
+      final settingsProvider = SettingsProvider();
+      await settingsProvider.initialize();
+      final naipsEnabled = settingsProvider.naipsEnabled;
+      final naipsUsername = settingsProvider.naipsUsername;
+      final naipsPassword = settingsProvider.naipsPassword;
+      
+      debugPrint('DEBUG: BriefingRefreshService - NAIPS settings: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
+      
       // Use the exact same approach as new briefing flow
-      // Fetch all data in parallel using the new batch methods
-      // Use SATCOM-optimized NOTAM fetching with fallback strategies
+      // Fetch all data in parallel using the new batch methods with NAIPS settings
       final notamsFuture = Future.wait(
-        airports.map((icao) => apiService.fetchNotamsWithSatcomFallback(icao).catchError((e) {
+        airports.map((icao) => apiService.fetchNotams(icao).catchError((e) {
           debugPrint('Warning: All SATCOM NOTAM strategies failed for $icao: $e');
           return <Notam>[]; // Return empty list on error
         }))
       );
-      final weatherFuture = apiService.fetchWeather(airports);
+      
+      // Use the new separate methods for better separation of concerns
+      final metarsFuture = apiService.fetchMetars(airports);
+      final atisFuture = apiService.fetchAtis(airports);
       final tafsFuture = apiService.fetchTafs(airports);
 
-      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
+      final results = await Future.wait([notamsFuture, metarsFuture, atisFuture, tafsFuture]);
 
       final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
       final List<Weather> metars = results[1] as List<Weather>;
-      final List<Weather> tafs = results[2] as List<Weather>;
+      final List<Weather> atis = results[2] as List<Weather>;
+      final List<Weather> tafs = results[3] as List<Weather>;
+
+      // Debug: Show what we received from each API call
+      debugPrint('DEBUG: BriefingRefreshService - Received from API:');
+      debugPrint('DEBUG: - METARs: ${metars.length} items');
+      for (final metar in metars) {
+        debugPrint('DEBUG:   - ${metar.icao}: ${metar.type} (source: ${metar.source})');
+      }
+      debugPrint('DEBUG: - ATIS: ${atis.length} items');
+      for (final atisItem in atis) {
+        debugPrint('DEBUG:   - ${atisItem.icao}: ${atisItem.type} (source: ${atisItem.source})');
+      }
+      debugPrint('DEBUG: - TAFs: ${tafs.length} items');
+      for (final taf in tafs) {
+        debugPrint('DEBUG:   - ${taf.icao}: ${taf.type} (source: ${taf.source})');
+      }
 
       // Flatten the list of lists into a single list (exactly like new briefing)
       final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
@@ -127,6 +160,7 @@ class BriefingRefreshService {
       // For refresh: Select only the latest METAR and TAF for each airport
       final Map<String, Weather> latestMetars = {};
       final Map<String, Weather> latestTafs = {};
+      final Map<String, Weather> latestAtis = {};
       
       // Group METARs by airport and select the latest
       for (final metar in metars) {
@@ -143,25 +177,43 @@ class BriefingRefreshService {
           latestTafs[taf.icao] = taf;
         }
       }
+
+      // Group ATIS by airport and select the latest
+      debugPrint('DEBUG: BriefingRefreshService - Found ${atis.length} ATIS items:');
+      for (final atisItem in atis) {
+        debugPrint('DEBUG:   - ${atisItem.icao}: ${atisItem.rawText.substring(0, atisItem.rawText.length > 50 ? 50 : atisItem.rawText.length)}...');
+      }
+      
+      for (final item in atis) {
+        if (!latestAtis.containsKey(item.icao) ||
+            item.timestamp.isAfter(latestAtis[item.icao]!.timestamp)) {
+          latestAtis[item.icao] = item;
+        }
+      }
       
       // Add only the latest weather for each airport
       weather.addAll(latestMetars.values);
       weather.addAll(latestTafs.values);
+      weather.addAll(latestAtis.values);
       
       notams.addAll(allNotams);
       
       debugPrint('DEBUG: Total fetched: ${notams.length} NOTAMs, ${weather.length} weather items');
-      debugPrint('DEBUG: Latest METARs: ${latestMetars.length}, Latest TAFs: ${latestTafs.length}');
+      debugPrint('DEBUG: Latest METARs: ${latestMetars.length}, Latest TAFs: ${latestTafs.length}, Latest ATIS: ${latestAtis.length}');
       
       // Debug: Show timestamps for each airport
       for (final airport in airports) {
         final metar = latestMetars[airport];
         final taf = latestTafs[airport];
+        final atis = latestAtis[airport];
         if (metar != null) {
-          debugPrint('DEBUG: $airport - Latest METAR: ${metar.timestamp}');
+          debugPrint('DEBUG: $airport - Latest METAR: ${metar.timestamp} (source: ${metar.source})');
         }
         if (taf != null) {
-          debugPrint('DEBUG: $airport - Latest TAF: ${taf.timestamp}');
+          debugPrint('DEBUG: $airport - Latest TAF: ${taf.timestamp} (source: ${taf.source})');
+        }
+        if (atis != null) {
+          debugPrint('DEBUG: $airport - Latest ATIS: ${atis.timestamp} (source: ${atis.source})');
         }
       }
       
@@ -179,7 +231,8 @@ class BriefingRefreshService {
   
   /// Validate that new data is of acceptable quality
   bool _isDataQualityAcceptable(RefreshData newData, List<String> airports) {
-    // Weather coverage check (80%+ of airports should have weather)
+    // Weather coverage check (50%+ of airports should have weather for refresh operations)
+    // This is more lenient than new briefing creation to allow partial updates
     final airportsWithWeather = <String>{};
     for (final weather in newData.weather) {
       airportsWithWeather.add(weather.icao);
@@ -187,8 +240,12 @@ class BriefingRefreshService {
     final weatherCoverage = airportsWithWeather.length / airports.length;
     debugPrint('DEBUG: Weather coverage: ${airportsWithWeather.length}/${airports.length} = ${(weatherCoverage * 100).toStringAsFixed(1)}%');
     
-    if (weatherCoverage < 0.8) {
-      debugPrint('DEBUG: Weather coverage below 80% threshold');
+    if (weatherCoverage < 0.5) {
+      debugPrint('DEBUG: Weather coverage below 50% threshold for refresh');
+      debugPrint('DEBUG: - Required: ${(0.5 * 100).toStringAsFixed(1)}%');
+      debugPrint('DEBUG: - Actual: ${(weatherCoverage * 100).toStringAsFixed(1)}%');
+      debugPrint('DEBUG: - Airports with weather: $airportsWithWeather');
+      debugPrint('DEBUG: - All airports: $airports');
       return false;
     }
     
@@ -200,6 +257,8 @@ class BriefingRefreshService {
       
       if (validNotams == 0) {
         debugPrint('DEBUG: All NOTAMs are invalid');
+        debugPrint('DEBUG: - Total NOTAMs: $totalNotams');
+        debugPrint('DEBUG: - Valid NOTAMs: $validNotams');
         return false;
       }
     }
@@ -207,10 +266,14 @@ class BriefingRefreshService {
     // API error check
     if (newData.hasApiErrors) {
       debugPrint('DEBUG: API errors detected');
+      debugPrint('DEBUG: - hasApiErrors flag is true');
       return false;
     }
     
     debugPrint('DEBUG: Data quality validation passed');
+    debugPrint('DEBUG: - Weather coverage: ${(weatherCoverage * 100).toStringAsFixed(1)}%');
+    debugPrint('DEBUG: - Total NOTAMs: $totalNotams');
+    debugPrint('DEBUG: - Total weather items: ${newData.weather.length}');
     return true;
   }
   

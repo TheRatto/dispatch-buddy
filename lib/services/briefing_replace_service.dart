@@ -2,12 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/briefing.dart';
-import '../models/flight.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/api_service.dart';
-import '../services/briefing_conversion_service.dart';
 import '../services/cache_manager.dart';
 import '../services/taf_state_manager.dart';
 

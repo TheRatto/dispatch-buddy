@@ -5,6 +5,7 @@ class WeatherParser {
   static final _tafVisibilityPattern = RegExp(r'\b(\d{4}|CAVOK)\b');
   static final _tafVisibilitySMPattern = RegExp(r'\b(P?\d+SM)\b');
   static final _cloudLayerPattern = RegExp(r'\b(FEW|SCT|BKN|OVC)(\d{3})(TCU|CB)?\b');
+  static final _skcPattern = RegExp(r'\bSKC\b');
   static final _weatherPattern = RegExp(r'(?<!\w)([+-]?(?:TSRA|SHRA|TS|SH|FZ|MI|BC|DR|BL|DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS|VCTS|VCSH|SHSN|SHGR|SHGS|SHPL|SHIC|SHUP|SHBR|SHFG|SHFU|SHVA|SHDU|SHSA|SHHZ|SHPY|SHPO|SHSQ|SHFC|SHSS|SHDS|SHVCTS|SHFZ|SHMI|SHBC|SHDR|SHBL))\b');
   static final _cavokPattern = RegExp(r'\bCAVOK\b');
 
@@ -138,6 +139,11 @@ class WeatherParser {
       if (isEgll) {
         print('DEBUG: EGLL cloud parsed: ${weather['Cloud']}');
       }
+    } else if (_skcPattern.hasMatch(segment)) {
+      weather['Cloud'] = 'Sky Clear';
+      if (isEgll) {
+        print('DEBUG: EGLL cloud parsed: Sky Clear (SKC detected)');
+      }
     } else if (segment.contains('NSC')) {
       weather['Cloud'] = 'No Significant Cloud';
       if (isEgll) {
@@ -265,6 +271,9 @@ class WeatherParser {
         }
       }
       return cloudDescriptions.join('\n');
+    }
+    if (_skcPattern.hasMatch(segment)) {
+      return 'Sky Clear';
     }
     return null;
   }

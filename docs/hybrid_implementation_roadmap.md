@@ -327,3 +327,20 @@ Implementation roadmap for the new hybrid approach with system-specific pages, p
 - ✅ **Reduced Maintenance**: Single source of truth for NOTAM classification
 - ✅ **Better Coverage**: Catch NOTAMs that custom analyzers might miss
 - ✅ **Future-Ready**: Prepared for airport-specific infrastructure 
+ 
+## ✅ Hybrid NAIPS + API Weather Integration (Update)
+
+### What’s implemented
+- **Hybrid METAR pipeline**: Prefer NAIPS for AU/covered ICAOs; fetch API for remaining; merge and dedupe by true issue time.
+- **TAF pipeline**: Fetch both NAIPS and API; prefer NAIPS where available, otherwise API. Merged output shown per ICAO.
+- **Parser hardening**: METARs must start with `METAR`/`SPECI`; TAF header supports optional space before `Z`; METAR/SPECI label preserved.
+- **UI dedupe**: Provider selects latest METAR/TAF per ICAO to avoid duplicates.
+
+### Validation
+- Mixed briefings (e.g., YSSY, WSSS, EGLL, CYYZ) show data from both sources without duplicates.
+- International METARs from API decode with correct issue time.
+- ATIS age and METAR age update dynamically every minute.
+
+### Next small items
+- Add optional source badges (NAIPS/API) in debug builds.
+- Fine-tune SPECI vs METAR preference when timestamps equal.

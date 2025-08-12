@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum NotamType { runway, navaid, taxiway, lighting, procedure, other, airspace }
 
 // New NOTAM grouping enum based on operational significance
@@ -49,9 +51,9 @@ class Notam {
     final match = qCodeRegex.firstMatch(text.toUpperCase());
     
     if (match != null) {
-      print('DEBUG: 🔍 Q code extracted: ${match.group(0)} from text: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
+      debugPrint('DEBUG: 🔍 Q code extracted: ${match.group(0)} from text: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
     } else {
-      print('DEBUG: 🔍 No Q code found in text: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
+      debugPrint('DEBUG: 🔍 No Q code found in text: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
     }
     
     return match?.group(0);
@@ -535,9 +537,9 @@ class Notam {
     
     // Debug logging for significant changes
     if (sanitized != text) {
-      print('DEBUG: 🔧 Text sanitized for NOTAM - Original length: ${text.length}, Sanitized length: ${sanitized.length}');
-      print('DEBUG: 🔧 Original text preview: "${text.length > 100 ? text.substring(0, 100) + '...' : text}"');
-      print('DEBUG: 🔧 Sanitized text preview: "${sanitized.length > 100 ? sanitized.substring(0, 100) + '...' : sanitized}"');
+      debugPrint('DEBUG: 🔧 Text sanitized for NOTAM - Original length: ${text.length}, Sanitized length: ${sanitized.length}');
+      debugPrint('DEBUG: 🔧 Original text preview: "${text.length > 100 ? text.substring(0, 100) + '...' : text}"');
+      debugPrint('DEBUG: 🔧 Sanitized text preview: "${sanitized.length > 100 ? sanitized.substring(0, 100) + '...' : sanitized}"');
     }
     
     return sanitized;
@@ -598,20 +600,20 @@ class Notam {
     }
 
     // Debug: Log the complete raw NOTAM JSON structure
-    print(' COMPLETE RAW NOTAM JSON for ${notam['number']}:');
-    print('${'=' * 80}');
-    print('NOTAM OBJECT:');
-    print(notam);
-    print('${'=' * 80}');
-    print('CORE NOTAM DATA:');
-    print(coreNotamData);
-    print('${'=' * 80}');
-    print('PROPERTIES:');
-    print(properties);
-    print('${'=' * 80}');
-    print('COMPLETE JSON:');
-    print(json);
-    print('${'=' * 80}');
+    debugPrint(' COMPLETE RAW NOTAM JSON for ${notam['number']}:');
+    debugPrint('${'=' * 80}');
+    debugPrint('NOTAM OBJECT:');
+    debugPrint(notam.toString());
+    debugPrint('${'=' * 80}');
+    debugPrint('CORE NOTAM DATA:');
+    debugPrint(coreNotamData.toString());
+    debugPrint('${'=' * 80}');
+    debugPrint('PROPERTIES:');
+    debugPrint(properties.toString());
+    debugPrint('${'=' * 80}');
+    debugPrint('COMPLETE JSON:');
+    debugPrint(json.toString());
+    debugPrint('${'=' * 80}');
 
     // Safely parse dates, providing defaults if they are null.
     final validFromStr = notam['effectiveStart'];
@@ -623,7 +625,7 @@ class Notam {
     try {
       validFrom = validFromStr != null ? DateTime.parse(validFromStr) : DateTime.now();
     } catch (e) {
-      print('Error parsing effectiveStart date: $validFromStr - $e');
+      debugPrint('Error parsing effectiveStart date: $validFromStr - $e');
       validFrom = DateTime.now();
     }
 
@@ -635,7 +637,7 @@ class Notam {
         validTo = validToStr != null ? DateTime.parse(validToStr) : DateTime.now().add(const Duration(days: 365 * 10));
       }
     } catch (e) {
-      print('Error parsing effectiveEnd date: $validToStr - $e');
+      debugPrint('Error parsing effectiveEnd date: $validToStr - $e');
       validTo = DateTime.now().add(const Duration(days: 365 * 10));
     }
     
@@ -645,15 +647,15 @@ class Notam {
     String? qCode;
     final translations = coreNotamData['notamTranslation'] as List?;
     if (translations != null) {
-      print('DEBUG: 🔍 Found ${translations.length} translations for ${notam['number']}');
+      debugPrint('DEBUG: 🔍 Found ${translations.length} translations for ${notam['number']}');
       for (final translation in translations) {
-        print('DEBUG: 🔍 Translation type: ${translation['type']}');
+        debugPrint('DEBUG: 🔍 Translation type: ${translation['type']}');
         if (translation['type'] == 'ICAO') {
           final formattedText = translation['formattedText'] as String?;
           if (formattedText != null) {
-            print('DEBUG: 🔍 ICAO formatted text: $formattedText');
+            debugPrint('DEBUG: 🔍 ICAO formatted text: $formattedText');
             qCode = extractQCode(formattedText);
-            print('DEBUG: 🔍 Extracted Q code: $qCode');
+            debugPrint('DEBUG: 🔍 Extracted Q code: $qCode');
             if (qCode != null) break;
           }
         }
@@ -662,15 +664,15 @@ class Notam {
     
     // Fallback to text field if no Q code found in translations
     if (qCode == null) {
-      print('DEBUG: 🔍 No Q code found in translations, trying text field');
+      debugPrint('DEBUG: 🔍 No Q code found in translations, trying text field');
       qCode = extractQCode(text);
     }
     
     // Debug: Log the complete raw NOTAM text
-    print(' RAW NOTAM TEXT for ${notam['number']}:');
-    print('${'=' * 80}');
-    print(text);
-    print('${'=' * 80}');
+    debugPrint(' RAW NOTAM TEXT for ${notam['number']}:');
+    debugPrint('${'=' * 80}');
+    debugPrint(text);
+    debugPrint('${'=' * 80}');
     
     // Determine NOTAM type - prefer Q code over text-based classification
     NotamType type = determineTypeFromQCode(qCode);

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import '../lib/models/airport_infrastructure.dart';
+import 'package:dispatch_buddy/models/airport_infrastructure.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +33,7 @@ void main() {
         navaids: navaids,
         approaches: [],
         routes: [],
+        lighting: [], // Add missing lighting parameter
         facilityStatus: {},
       );
       

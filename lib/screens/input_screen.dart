@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/flight_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../widgets/flight_plan_form_card.dart';
@@ -14,7 +16,11 @@ import '../models/briefing.dart';
 import '../services/api_service.dart';
 import '../services/airport_database.dart';
 import '../services/briefing_storage_service.dart';
+import '../services/briefing_conversion_service.dart';
+import '../services/briefing_refresh_service.dart';
+import '../services/data_freshness_service.dart';
 import 'briefing_tabs_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class InputScreen extends StatefulWidget {
   const InputScreen({super.key});
@@ -210,6 +216,19 @@ class _InputScreenState extends State<InputScreen> {
     context.read<FlightProvider>().setLoading(true);
 
     try {
+      // Get NAIPS settings from SettingsProvider
+      final settingsProvider = SettingsProvider();
+      await settingsProvider.initialize();
+      
+      debugPrint('DEBUG: 🔄 InputScreen - NAIPS settings from SettingsProvider: enabled=${settingsProvider.naipsEnabled}, username=${settingsProvider.naipsUsername != null ? "SET" : "NOT SET"}, password=${settingsProvider.naipsPassword != null ? "SET" : "NOT SET"}');
+      
+      // Debug: Check if NAIPS is actually enabled
+      if (settingsProvider.naipsEnabled) {
+        debugPrint('DEBUG: 🔄 InputScreen - NAIPS is ENABLED, will attempt to fetch from NAIPS');
+      } else {
+        debugPrint('DEBUG: 🔄 InputScreen - NAIPS is DISABLED, will only use aviationweather.gov');
+      }
+
       final apiService = ApiService();
 
       final icaos = _routeController.text.toUpperCase().split(' ').where((s) => s.isNotEmpty).toSet().toList();
@@ -217,8 +236,8 @@ class _InputScreenState extends State<InputScreen> {
       // Fetch all data in parallel using the new batch methods
       // Use SATCOM-optimized NOTAM fetching with fallback strategies
       final notamsFuture = Future.wait(
-        icaos.map((icao) => apiService.fetchNotamsWithSatcomFallback(icao).catchError((e) {
-          print('Warning: All SATCOM NOTAM strategies failed for $icao: $e');
+        icaos.map((icao) => apiService.fetchNotams(icao).catchError((e) {
+          debugPrint('Warning: All SATCOM NOTAM strategies failed for $icao: $e');
           return <Notam>[]; // Return empty list on error
         }))
       );

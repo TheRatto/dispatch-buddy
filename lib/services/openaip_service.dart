@@ -380,9 +380,9 @@ class OpenAIPService {
       
       // Unit 1 = MHz, Unit 2 = kHz, etc.
       if (unit == 1) {
-        return '${value} MHz';
+        return '$value MHz';
       } else if (unit == 2) {
-        return '${value} kHz';
+        return '$value kHz';
       } else {
         return value;
       }

@@ -32,6 +32,7 @@ This document consolidates key reference material for decoding METAR and SPECI w
 | SM    | Statute miles (visibility)                  |
 | SN    | Snow                                        |
 | SPECI | Special report due to changes               |
+| SKC   | Sky clear (manual reports)                  |
 | TS    | Thunderstorm                                |
 | VV    | Vertical visibility                         |
 | Z     | Zulu time (UTC)                             |
@@ -72,6 +73,7 @@ METAR YMML 221945Z 14003KT 0600 R16/0600D R27/0550N FG ////// 08/08 Q1026 RMK RF
 | BKN  | 5–7   | Broken                         |
 | OVC  | 8     | Overcast                       |
 | NSC  | -     | Nil significant cloud          |
+| SKC  | -     | Sky clear (no cloud observed) |
 | NCD  | -     | Nil cloud detected (auto only) |
 
 ---

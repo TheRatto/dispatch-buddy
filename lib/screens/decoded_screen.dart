@@ -45,7 +45,7 @@ class DecodedScreen extends StatelessWidget {
             unselectedLabelColor: Colors.white70,
             tabs: [
               Tab(text: 'NOTAMs'),
-              Tab(text: 'METARs'),
+              Tab(text: 'METAR/ATIS'),
               Tab(text: 'TAFs'),
             ],
           ),

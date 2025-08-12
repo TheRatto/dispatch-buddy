@@ -170,7 +170,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
       ),
       child: CustomPaint(
         painter: RunwayIconPainter(),
-        size: const Size(24, 24),
+        size: Size(24, 24),
       ),
     );
   }

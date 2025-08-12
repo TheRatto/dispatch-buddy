@@ -20,6 +20,8 @@ import '../widgets/system_pages/airport_services_system_widget.dart';
 import '../widgets/system_pages/hazards_system_widget.dart';
 import '../widgets/system_pages/admin_system_widget.dart';
 import '../widgets/system_pages/other_system_widget.dart';
+import 'input_screen.dart';
+import 'briefing_tabs_screen.dart';
 
 
 class AirportDetailScreen extends StatefulWidget {
@@ -142,8 +144,92 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
           final flight = flightProvider.currentFlight;
           
           if (flight == null) {
-            return const Center(
-              child: Text('No flight data available'),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.airplanemode_active_outlined,
+                      size: 80,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Airport Details',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No airports selected',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Add airports to your flight plan to view runway information, navaids, and system status.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const InputScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Start New Briefing'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'or',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      onPressed: () {
+                        // Switch to Home tab (index 0) in the parent BriefingTabsScreen
+                        BriefingTabsScreen.switchToTab(context, 0);
+                      },
+                      icon: const Icon(Icons.history, size: 16),
+                      label: const Text(
+                        'Open Previous Briefing',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[600],
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 

@@ -45,6 +45,8 @@ class SettingsProvider extends ChangeNotifier {
       _naipsUsername = prefs.getString(_naipsUsernameKey);
       _naipsPassword = prefs.getString(_naipsPasswordKey);
       
+      debugPrint('DEBUG: 🔧 SettingsProvider.initialize() - Loaded NAIPS settings: enabled=$_naipsEnabled, username=${_naipsUsername != null ? "SET" : "NOT SET"}, password=${_naipsPassword != null ? "SET" : "NOT SET"}');
+      
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
@@ -71,12 +73,15 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setNaipsEnabled(bool enabled) async {
     if (_naipsEnabled == enabled) return;
     
+    debugPrint('DEBUG: 🔧 SettingsProvider.setNaipsEnabled() - Setting NAIPS enabled to: $enabled');
+    
     _naipsEnabled = enabled;
     notifyListeners();
     
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_naipsEnabledKey, enabled);
+      debugPrint('DEBUG: 🔧 SettingsProvider.setNaipsEnabled() - Successfully saved NAIPS enabled setting to storage');
     } catch (e) {
       debugPrint('Error saving NAIPS enabled setting: $e');
     }

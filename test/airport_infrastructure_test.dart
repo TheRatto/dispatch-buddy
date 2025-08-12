@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/models/airport_infrastructure.dart';
-import '../lib/data/airport_infrastructure_data.dart';
+import 'package:dispatch_buddy/models/airport_infrastructure.dart';
+import 'package:dispatch_buddy/data/airport_infrastructure_data.dart';
 
 void main() {
   group('Airport Infrastructure Models', () {
@@ -118,6 +118,7 @@ void main() {
         navaids: [navaid],
         approaches: [],
         routes: [],
+        lighting: [], // Add missing lighting parameter
         facilityStatus: {'RWY 07/25': 'OPERATIONAL'},
       );
 

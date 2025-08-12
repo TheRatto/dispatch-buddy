@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/decoder_service.dart';
-import '../lib/services/period_detector.dart';
+import 'package:dispatch_buddy/services/decoder_service.dart';
+import 'package:dispatch_buddy/services/period_detector.dart';
 
 void main() {
   group('TAF BECMG Logic Tests', () {
@@ -44,7 +44,7 @@ void main() {
       final periodDetector = PeriodDetector();
       
       // At TAF start time (12:00) - should be INITIAL baseline with BECMG concurrent
-      final activeAtStart = periodDetector.findActivePeriodsAtTime(
+      final activeAtStart = PeriodDetector.findActivePeriodsAtTime(
         result.forecastPeriods!,
         DateTime(2025, 7, 6, 12, 0)
       );
@@ -53,7 +53,7 @@ void main() {
       expect(activeAtStart['concurrent']?.first.type, equals('BECMG'));
       
       // During BECMG transition (13:00) - should still be INITIAL baseline with BECMG concurrent
-      final activeDuringTransition = periodDetector.findActivePeriodsAtTime(
+      final activeDuringTransition = PeriodDetector.findActivePeriodsAtTime(
         result.forecastPeriods!,
         DateTime(2025, 7, 6, 13, 0)
       );
@@ -62,7 +62,7 @@ void main() {
       expect(activeDuringTransition['concurrent']?.first.type, equals('BECMG'));
       
       // After BECMG transition (16:00) - should be POST_BECMG baseline
-      final activeAfterTransition = periodDetector.findActivePeriodsAtTime(
+      final activeAfterTransition = PeriodDetector.findActivePeriodsAtTime(
         result.forecastPeriods!,
         DateTime(2025, 7, 6, 16, 0)
       );

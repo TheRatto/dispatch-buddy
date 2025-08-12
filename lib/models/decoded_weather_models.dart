@@ -280,7 +280,7 @@ class TafTextProcessor {
     } else {
       // Fallback: if exact match not found, try to find a partial match
       // This can happen if the section contains special characters or formatting
-      print('DEBUG: Exact formatted section not found, using fallback');
+      debugPrint('DEBUG: Exact formatted section not found, using fallback');
       
       // Find the closest match by looking for the first few characters
       final firstWords = formattedSection.split(' ').take(3).join(' ');
@@ -294,7 +294,7 @@ class TafTextProcessor {
         };
       } else {
         // Last resort: use the original positions (this might not be perfect but prevents crashes)
-        print('DEBUG: Using original positions as fallback');
+        debugPrint('DEBUG: Using original positions as fallback');
         return {
           'start': originalStart,
           'end': originalEnd,
@@ -317,13 +317,13 @@ class TafTextProcessor {
       
       // Validate bounds
       if (start < 0 || end < 0 || start >= originalText.length || end > originalText.length) {
-        print('DEBUG: Invalid section bounds: start=$start, end=$end, textLength=${originalText.length}');
+        debugPrint('DEBUG: Invalid section bounds: start=$start, end=$end, textLength=${originalText.length}');
         continue;
       }
       
       // Ensure start < end
       if (start >= end) {
-        print('DEBUG: Invalid section: start >= end: start=$start, end=$end');
+        debugPrint('DEBUG: Invalid section: start >= end: start=$start, end=$end');
         continue;
       }
       
@@ -333,7 +333,7 @@ class TafTextProcessor {
         final lastEnd = lastSection['end'] as int;
         
         if (start < lastEnd) {
-          print('DEBUG: Overlapping sections detected: lastEnd=$lastEnd, start=$start');
+          debugPrint('DEBUG: Overlapping sections detected: lastEnd=$lastEnd, start=$start');
           // Merge overlapping sections
           lastSection['end'] = end;
           lastSection['text'] = originalText.substring(lastSection['start'] as int, end);

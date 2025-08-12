@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/airport_api_service.dart';
-import '../lib/models/airport.dart';
+import 'package:dispatch_buddy/services/airport_api_service.dart';
 
 void main() {
   group('AirportApiService', () {

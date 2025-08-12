@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/airport_infrastructure.dart';
 import '../models/notam.dart';
 import '../data/airport_infrastructure_data.dart';
@@ -13,14 +14,14 @@ class AirportDatabaseService {
     try {
       final infrastructure = AirportInfrastructureData.getAirportInfrastructure(icao);
       if (infrastructure == null) {
-        print('DEBUG: No infrastructure data found for $icao');
+        debugPrint('DEBUG: No infrastructure data found for $icao');
         return null;
       }
       
-      print('DEBUG: Retrieved infrastructure data for $icao');
+      debugPrint('DEBUG: Retrieved infrastructure data for $icao');
       return infrastructure;
     } catch (e) {
-      print('ERROR: Failed to get airport infrastructure for $icao: $e');
+      debugPrint('ERROR: Failed to get airport infrastructure for $icao: $e');
       return null;
     }
   }

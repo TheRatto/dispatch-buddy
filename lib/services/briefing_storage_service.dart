@@ -56,7 +56,7 @@ class BriefingStorageService {
       
       return briefings;
     } catch (e) {
-      print('Error loading briefings: $e');
+      debugPrint('Error loading briefings: $e');
       return [];
     }
   }
@@ -67,7 +67,7 @@ class BriefingStorageService {
       final briefings = await _loadAllBriefings();
       return briefings.firstWhere((b) => b.id == id);
     } catch (e) {
-      print('Error loading briefing $id: $e');
+      debugPrint('Error loading briefing $id: $e');
       return null;
     }
   }
@@ -80,7 +80,7 @@ class BriefingStorageService {
       
       final index = briefings.indexWhere((b) => b.id == updatedBriefing.id);
       if (index == -1) {
-        print('Briefing ${updatedBriefing.id} not found for update');
+        debugPrint('Briefing ${updatedBriefing.id} not found for update');
         return false;
       }
       
@@ -91,7 +91,7 @@ class BriefingStorageService {
       final jsonList = briefings.map((b) => b.toJson()).toList();
       return await prefs.setString(_storageKey, jsonEncode(jsonList));
     } catch (e) {
-      print('Error updating briefing: $e');
+      debugPrint('Error updating briefing: $e');
       return false;
     }
   }
@@ -138,7 +138,7 @@ class BriefingStorageService {
       // Find and update the briefing
       final index = briefings.indexWhere((b) => b.id == briefingId);
       if (index == -1) {
-        print('Briefing $briefingId not found for flag toggle');
+        debugPrint('Briefing $briefingId not found for flag toggle');
         return false;
       }
       
@@ -153,7 +153,7 @@ class BriefingStorageService {
       final jsonList = briefings.map((b) => b.toJson()).toList();
       return await prefs.setString(_storageKey, jsonEncode(jsonList));
     } catch (e) {
-      print('Error toggling flag: $e');
+      debugPrint('Error toggling flag: $e');
       return false;
     }
   }
@@ -171,7 +171,7 @@ class BriefingStorageService {
       final jsonList = updatedBriefings.map((b) => b.toJson()).toList();
       return await prefs.setString(_storageKey, jsonEncode(jsonList));
     } catch (e) {
-      print('Error deleting briefing: $e');
+      debugPrint('Error deleting briefing: $e');
       return false;
     }
   }
@@ -181,14 +181,14 @@ class BriefingStorageService {
     try {
       final briefing = await loadBriefing(id);
       if (briefing == null) {
-        print('Briefing $id not found for rename');
+        debugPrint('Briefing $id not found for rename');
         return false;
       }
       
       final updatedBriefing = briefing.copyWith(name: newName);
       return await updateBriefing(updatedBriefing);
     } catch (e) {
-      print('Error renaming briefing $id: $e');
+      debugPrint('Error renaming briefing $id: $e');
       return false;
     }
   }
@@ -198,7 +198,7 @@ class BriefingStorageService {
     try {
       final briefing = await loadBriefing(id);
       if (briefing == null) {
-        print('Briefing $id not found for adding notes');
+        debugPrint('Briefing $id not found for adding notes');
         return false;
       }
       
@@ -216,7 +216,7 @@ class BriefingStorageService {
       final briefings = await _loadAllBriefings();
       return briefings.length;
     } catch (e) {
-      print('Error getting briefing count: $e');
+      debugPrint('Error getting briefing count: $e');
       return 0;
     }
   }
@@ -227,7 +227,7 @@ class BriefingStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(_storageKey);
     } catch (e) {
-      print('Error clearing briefings: $e');
+      debugPrint('Error clearing briefings: $e');
       return false;
     }
   }
@@ -246,7 +246,7 @@ class BriefingStorageService {
         'maxBriefings': _maxBriefings,
       };
     } catch (e) {
-      print('Error getting storage stats: $e');
+      debugPrint('Error getting storage stats: $e');
       return {
         'totalBriefings': 0,
         'flaggedBriefings': 0,

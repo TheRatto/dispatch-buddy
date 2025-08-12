@@ -193,42 +193,24 @@ final String source; // 'aviationweather', 'naips', 'faa'
 final String source; // 'faa', 'naips'
 ```
 
-### ⏳ Phase 4: Integration with Existing Services (PENDING)
+### ✅ Phase 4: Integration with Existing Services (UPDATED)
 
 #### 4.1 Update ApiService (PRESERVE existing functionality)
 **File**: `lib/services/api_service.dart`
-**Status**: ⏳ **PENDING**
-**Changes**: Add NAIPS routing logic
-```dart
-// MODIFY existing fetchWeather method (PRESERVE existing logic)
-Future<List<Weather>> fetchWeather(List<String> icaos) async {
-  final settings = context.read<SettingsProvider>();
-  
-  if (settings.naipsEnabled && settings.naipsUsername != null) {
-    try {
-      final naipsService = NAIPSService();
-      final isAuthenticated = await naipsService.authenticate(
-        settings.naipsUsername!,
-        settings.naipsPassword ?? '',
-      );
-      
-      if (isAuthenticated) {
-        final html = await naipsService.requestLocationBriefing(icaos.first);
-        final weather = NAIPSParser.parseWeatherFromHTML(html);
-        return weather.map((w) => w.copyWith(source: 'naips')).toList();
-      }
-    } catch (e) {
-      print('NAIPS weather fetch failed: $e');
-      // Fall back to existing APIs
-    }
-  }
-  
-  // PRESERVE existing API logic
-  return await _fetchWeatherFromFreeAPIs(icaos);
-}
-```
+**Status**: ✅ **UPDATED**
+**Changes**: NAIPS toggle now selects display source; always fetch API data and attempt NAIPS per ICAO. Automatic fallback with banner when NAIPS has no data.
+Key points implemented:
+- Per-airport NAIPS requests (no longer only first ICAO)
+- When NAIPS toggle ON, return NAIPS-only if any data found; otherwise fallback to API
+- API fetch still performed to populate storage for instant toggle switch
+- Refresh retains latest METAR, TAF, and ATIS per ICAO
 
-### ⏳ Phase 5: Testing & Validation (PENDING)
+### ⏳ Phase 5: Testing & Validation (UPDATED)
+Add tests for:
+- ATIS retention on refresh
+- Per-ICAO NAIPS coverage
+- NOTAM ICAO/validity extraction from NAIPS
+- Toggle switching without refetch
 
 ### ⏳ Phase 6: Polish & Documentation (PENDING)
 

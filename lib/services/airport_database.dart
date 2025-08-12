@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/airport.dart';
 import 'airport_api_service.dart';
 
@@ -99,20 +100,20 @@ class AirportDatabase {
 
   /// Get airport information from embedded database, or fetch from API if not found
   static Future<Airport?> getAirportWithFallback(String icao) async {
-    print('DEBUG: getAirportWithFallback called for $icao');
+    debugPrint('DEBUG: getAirportWithFallback called for $icao');
     final embedded = getAirport(icao);
     if (embedded != null) {
-      print('DEBUG: Using embedded airport data for $icao');
+      debugPrint('DEBUG: Using embedded airport data for $icao');
       return embedded;
     }
-    print('DEBUG: No embedded data for $icao, trying API cache');
+    debugPrint('DEBUG: No embedded data for $icao, trying API cache');
     // Try API cache first
     final cached = AirportApiService.getCachedAirport(icao);
     if (cached != null) {
-      print('DEBUG: Using cached API data for $icao');
+      debugPrint('DEBUG: Using cached API data for $icao');
       return cached;
     }
-    print('DEBUG: No cached data for $icao, fetching from API');
+    debugPrint('DEBUG: No cached data for $icao, fetching from API');
     // Fetch from API
     return await AirportApiService.fetchAirportData(icao);
   }

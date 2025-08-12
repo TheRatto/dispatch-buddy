@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/decoder_service.dart';
+import 'package:dispatch_buddy/services/decoder_service.dart';
 
 void main() {
   group('TAF Date Parsing Tests', () {
@@ -82,6 +82,20 @@ void main() {
         expect(timeline.first.hour, equals(15));
         
         // Should span multiple days
+        expect(timeline.length, greaterThan(24)); // More than 24 hours
+      });
+
+      test('should handle TAF format with space before Z (NAIPS format)', () {
+        // This tests the specific format that was failing: "120503 Z" instead of "120503Z"
+        final tafText = 'TAF YPPH 120503 Z 1206/1312 02010KT CAVOK';
+        final timeline = decoderService.createTimelineFromTaf(tafText);
+        
+        // Should now work correctly with the regex fix
+        expect(timeline, isNotEmpty);
+        expect(timeline.first.day, equals(12));
+        expect(timeline.first.hour, equals(6));
+        
+        // Should span multiple days (12th to 13th)
         expect(timeline.length, greaterThan(24)); // More than 24 hours
       });
 

@@ -1,55 +1,74 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/weather.dart';
 import '../providers/flight_provider.dart';
-import 'taf_compact_details.dart';
+import '../models/decoded_weather_models.dart';
+import '../services/decoder_service.dart';
 import 'taf_period_card.dart';
+import 'taf_compact_details.dart';
+import 'taf_empty_states.dart';
 
 
 class TafTab extends StatelessWidget {
-  final Map<String, List<Weather>> tafsByIcao;
-
   const TafTab({
     super.key,
-    required this.tafsByIcao,
   });
 
   @override
   Widget build(BuildContext context) {
     final flightProvider = Provider.of<FlightProvider>(context, listen: false);
     
-    // Get unique airports from TAFs
-    final airports = tafsByIcao.keys.toList();
+    // Get all airports from the current flight
+    final allAirports = flightProvider.currentFlight?.airports.map((a) => a.icao).toList() ?? [];
     
-    // Initialize selected airport if not set
-    if (flightProvider.selectedAirport == null || !airports.contains(flightProvider.selectedAirport)) {
-      if (airports.isNotEmpty) {
-        flightProvider.setSelectedAirport(airports.first);
+    // If an airport is selected, filter to just that airport. Otherwise, show all airports
+    final airportsToShow = flightProvider.selectedAirport != null 
+        ? [flightProvider.selectedAirport!]
+        : allAirports;
+    
+    // Get TAFs directly from the flight's weather data (like NOTAMs do)
+    final flightWeather = flightProvider.currentFlight?.weather ?? [];
+    final tafsToShow = <String, List<Weather>>{};
+    
+    for (final airport in airportsToShow) {
+      final airportTafs = flightWeather
+          .where((w) => w.type == 'TAF' && w.icao == airport)
+          .toList();
+      if (airportTafs.isNotEmpty) {
+        tafsToShow[airport] = airportTafs;
       }
     }
     
-    // Filter TAFs by selected airport
-    final filteredTafs = flightProvider.selectedAirport != null 
-        ? tafsByIcao[flightProvider.selectedAirport!] ?? []
-        : [];
-    
-    if (tafsByIcao.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.access_time, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            const Text(
-              'No TAFs Available',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    // Check if we have any TAFs to show after filtering
+    if (tafsToShow.isEmpty) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height - 200,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cloud_off, size: 20, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                const Text(
+                  'No TAFs Available',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  flightProvider.selectedAirport != null 
+                      ? 'No TAFs for ${flightProvider.selectedAirport}'
+                      : 'No current weather forecasts',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'No terminal area forecasts available',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
+          ),
         ),
       );
     }
@@ -61,7 +80,7 @@ class TafTab extends StatelessWidget {
           
           // TAFs list
           Expanded(
-            child: filteredTafs.isEmpty
+            child: tafsToShow.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -82,45 +101,20 @@ class TafTab extends StatelessWidget {
                   )
                                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: filteredTafs.length,
+                    itemCount: tafsToShow.length,
       itemBuilder: (context, index) {
-                      final taf = filteredTafs[index];
-        final decodedTaf = taf.decodedWeather;
+                      final airport = tafsToShow.keys.elementAt(index);
+        final tafsForAirport = tafsToShow[airport]!;
         
-        if (decodedTaf == null || decodedTaf.forecastPeriods == null || decodedTaf.forecastPeriods!.isEmpty) {
+        if (tafsForAirport.isEmpty) {
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
-              title: Text(taf.icao, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Could not decode TAF.'),
+              title: Text(airport, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('No TAFs available for this airport.'),
             ),
           );
         }
-
-        final initialPeriod = decodedTaf.forecastPeriods!.firstWhere((p) => p.type == 'INITIAL');
-        
-        // Create TimePeriod objects for the old tab display
-        final timePeriods = <TimePeriod>[
-          ...decodedTaf.forecastPeriods!.map((period) => TimePeriod(
-          startTime: period.startTime ?? DateTime.now(),
-            endTime: period.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-          baselinePeriod: period,
-          concurrentPeriods: [],
-          rawTafSection: period.rawSection ?? '',
-          )),
-        ];
-        
-        final timePeriodStrings = _getTafTimePeriods(timePeriods);
-        final initialTimePeriod = timePeriodStrings.isNotEmpty ? timePeriodStrings.first : '';
-
-        // Create TimePeriod for initial period
-        final initialTimePeriodObj = TimePeriod(
-          startTime: initialPeriod.startTime ?? DateTime.now(),
-          endTime: initialPeriod.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-          baselinePeriod: initialPeriod,
-          concurrentPeriods: [],
-          rawTafSection: initialPeriod.rawSection ?? '',
-        );
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -134,7 +128,7 @@ class TafTab extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        taf.icao,
+                        airport,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -142,18 +136,12 @@ class TafTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  initialTimePeriod,
+                  '${tafsForAirport.length} TAF${tafsForAirport.length == 1 ? '' : 's'} available',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
-                ),
-                const SizedBox(height: 8),
-                TafCompactDetails(
-                  baseline: initialTimePeriodObj.baselinePeriod,
-                  completeWeather: initialTimePeriodObj.baselinePeriod.weather,
-                  concurrentPeriods: initialTimePeriodObj.concurrentPeriods,
                 ),
               ],
             ),
@@ -163,51 +151,82 @@ class TafTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Show all forecast periods
-                    ...decodedTaf.forecastPeriods!.map((period) {
-                      // Create a simple TimePeriod for display purposes
-                      final timePeriod = TimePeriod(
-                        startTime: period.startTime ?? DateTime.now(),
-                        endTime: period.endTime ?? DateTime.now().add(const Duration(hours: 1)),
-                        baselinePeriod: period,
-                        concurrentPeriods: [],
-                        rawTafSection: period.rawSection ?? '',
+                    // Show all TAFs for this airport
+                    ...tafsForAirport.map((taf) {
+                      final decodedTaf = taf.decodedWeather;
+                      if (decodedTaf == null || decodedTaf.forecastPeriods == null || decodedTaf.forecastPeriods!.isEmpty) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            title: Text('TAF ${taf.icao}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: const Text('Could not decode TAF.'),
+                          ),
+                        );
+                      }
+
+                      // Find initial period
+                      final initialPeriod = decodedTaf.forecastPeriods!.firstWhere(
+                        (p) => p.type == 'INITIAL',
+                        orElse: () => decodedTaf.forecastPeriods!.first,
                       );
-                      return TafPeriodCard(
-                        period: timePeriod,
-                        timePeriodStrings: timePeriodStrings,
-                        allPeriods: timePeriods,
+
+                      // Create TimePeriod for display
+                      final timePeriod = TimePeriod(
+                        startTime: initialPeriod.startTime ?? DateTime.now(),
+                        endTime: initialPeriod.endTime ?? DateTime.now().add(const Duration(hours: 1)),
+                        baselinePeriod: initialPeriod,
+                        concurrentPeriods: [],
+                        rawTafSection: initialPeriod.rawSection ?? '',
+                      );
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // TAF header
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, color: Color(0xFF3B82F6), size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'TAF ${taf.icao}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          
+                          // TAF compact details
+                          TafCompactDetails(
+                            baseline: timePeriod.baselinePeriod,
+                            completeWeather: timePeriod.baselinePeriod.weather,
+                            concurrentPeriods: timePeriod.concurrentPeriods,
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          
+                          // Raw TAF text
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: SelectableText(
+                              taf.rawText,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                        ],
                       );
                     }).toList(),
-                    
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    
-                    // Raw TAF at bottom
-                    Text(
-                      'Raw TAF:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(
-                        taf.rawText,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),

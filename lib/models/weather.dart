@@ -15,9 +15,13 @@ class Weather {
   final double dewPoint;
   final int qnh;
   final String conditions;
-  final String type; // 'METAR' or 'TAF'
+  final String type; // 'METAR', 'TAF', or 'ATIS'
   final DecodedWeather? decodedWeather; // New field for decoded data
   final String source; // 'aviationweather', 'naips', 'faa'
+  
+  // ATIS-specific fields
+  final String? atisCode; // 'A', 'B', 'C', etc.
+  final String? atisType; // 'ATIS', 'D-ATIS'
 
   Weather({
     required this.icao,
@@ -35,6 +39,8 @@ class Weather {
     this.type = 'METAR',
     this.decodedWeather,
     this.source = 'aviationweather',
+    this.atisCode,
+    this.atisType,
   });
 
   factory Weather.fromJson(Map<String, dynamic> json) {
@@ -69,6 +75,18 @@ class Weather {
       }
     }
     
+    // Coerce sources on load for robustness
+    final incomingSource = json['source'] as String?;
+    String resolvedSource;
+    if (type == 'ATIS') {
+      resolvedSource = 'naips';
+    } else if (type == 'TAF' && (rawText.contains('\nTAF3') || rawText.trim().endsWith('TAF3'))) {
+      // TAF3 marker only appears in NAIPS content
+      resolvedSource = 'naips';
+    } else {
+      resolvedSource = incomingSource ?? 'aviationweather';
+    }
+
     return Weather(
       icao: icao,
       timestamp: DateTime.parse(json['timestamp']),
@@ -84,7 +102,7 @@ class Weather {
       conditions: json['conditions'] ?? '',
       type: type,
       decodedWeather: decodedWeather,
-      source: json['source'] ?? 'aviationweather',
+      source: resolvedSource,
     );
   }
 
@@ -129,15 +147,15 @@ class Weather {
     
     // Debug logging for EGLL
     if (icao.contains('EGLL')) {
-      print('DEBUG: 🎯 Weather.fromTaf called for EGLL');
-      print('DEBUG: 🎯 EGLL rawTAF: "$rawText"');
+      debugPrint('DEBUG: 🎯 Weather.fromTaf called for EGLL');
+      debugPrint('DEBUG: 🎯 EGLL rawTAF: "$rawText"');
     }
     
     // Debug logging for KJFK
     if (icao.contains('KJFK')) {
-      print('DEBUG: 🎯 Weather.fromTaf called for KJFK');
-      print('DEBUG: 🎯 KJFK rawTAF: "$rawText"');
-      print('DEBUG: 🎯 KJFK rawTAF length: ${rawText.length}');
+      debugPrint('DEBUG: 🎯 Weather.fromTaf called for KJFK');
+      debugPrint('DEBUG: 🎯 KJFK rawTAF: "$rawText"');
+      debugPrint('DEBUG: 🎯 KJFK rawTAF length: ${rawText.length}');
     }
     
     // TAFs don't have current wind/visibility like METARs, so use defaults
@@ -183,22 +201,22 @@ class Weather {
     
     // Create decoded weather object
     if (icao.contains('EGLL')) {
-      print('DEBUG: 🎯 About to call decodeTaf for EGLL');
+      debugPrint('DEBUG: 🎯 About to call decodeTaf for EGLL');
     }
     
     if (icao.contains('KJFK')) {
-      print('DEBUG: 🎯 About to call decodeTaf for KJFK');
+      debugPrint('DEBUG: 🎯 About to call decodeTaf for KJFK');
     }
     
     final decoderService = decoder.DecoderService();
     final decodedWeather = decoderService.decodeTaf(rawText);
     
     if (icao.contains('EGLL')) {
-      print('DEBUG: 🎯 decodeTaf completed for EGLL');
+      debugPrint('DEBUG: 🎯 decodeTaf completed for EGLL');
     }
     
     if (icao.contains('KJFK')) {
-      print('DEBUG: 🎯 decodeTaf completed for KJFK');
+      debugPrint('DEBUG: 🎯 decodeTaf completed for KJFK');
     }
     
     return Weather(
@@ -272,11 +290,13 @@ class Weather {
       'type': type,
       'decodedWeather': decodedWeather?.toJson(),
       'source': source,
+      'atisCode': atisCode,
+      'atisType': atisType,
     };
   }
 
   factory Weather.fromDbJson(Map<String, dynamic> json) {
-    print('DEBUG: 🔧 fromDbJson called with type: ${json['type'] ?? 'unknown'}');
+    debugPrint('DEBUG: 🔧 fromDbJson called with type: ${json['type'] ?? 'unknown'}');
     final icao = json['icao'] ?? '';
     final rawText = json['rawText'] ?? '';
     final type = json['type'] ?? 'METAR';
@@ -285,23 +305,34 @@ class Weather {
     DecodedWeather? decodedWeather;
     if (type == 'TAF' && rawText.isNotEmpty) {
       if (json['decodedWeather'] != null) {
-        print('DEBUG: 🔧 fromDbJson - loading decoded weather from JSON');
+        debugPrint('DEBUG: 🔧 fromDbJson - loading decoded weather from JSON');
         try {
           decodedWeather = DecodedWeather.fromJson(json['decodedWeather']);
         } catch (e) {
-          print('DEBUG: 🔧 fromDbJson - failed to load from JSON, re-decoding: $e');
+          debugPrint('DEBUG: 🔧 fromDbJson - failed to load from JSON, re-decoding: $e');
           final decoderService = decoder.DecoderService();
           decodedWeather = decoderService.decodeTaf(rawText);
         }
       } else {
-        print('DEBUG: 🔧 fromDbJson - no decoded weather in JSON, calling decodeTaf');
+        debugPrint('DEBUG: 🔧 fromDbJson - no decoded weather in JSON, calling decodeTaf');
         final decoderService = decoder.DecoderService();
         decodedWeather = decoderService.decodeTaf(rawText);
       }
     } else {
-      print('DEBUG: 🔧 fromDbJson - not calling decodeTaf (type: $type, rawText empty: ${rawText.isEmpty})');
+      debugPrint('DEBUG: 🔧 fromDbJson - not calling decodeTaf (type: $type, rawText empty: ${rawText.isEmpty})');
     }
     
+    // Coerce sources on load for robustness (DB path)
+    final incomingSource = json['source'] as String?;
+    String resolvedSource;
+    if (type == 'ATIS') {
+      resolvedSource = 'naips';
+    } else if (type == 'TAF' && (rawText.contains('\nTAF3') || rawText.trim().endsWith('TAF3'))) {
+      resolvedSource = 'naips';
+    } else {
+      resolvedSource = incomingSource ?? 'aviationweather';
+    }
+
     return Weather(
       icao: icao,
       timestamp: DateTime.parse(json['timestamp']),
@@ -317,7 +348,37 @@ class Weather {
       conditions: json['conditions'] ?? '',
       type: type,
       decodedWeather: decodedWeather,
-      source: json['source'] ?? 'aviationweather',
+      source: resolvedSource,
+    );
+  }
+
+  factory Weather.fromAtis(Map<String, dynamic> json) {
+    final icao = json['icao'] ?? '';
+    final rawText = json['rawText'] ?? '';
+    final atisCode = json['atisCode'] ?? '?';
+    final atisType = json['atisType'] ?? 'ATIS';
+    
+    // Parse timestamp
+    final timestamp = DateTime.parse(json['timestamp']);
+    
+    return Weather(
+      icao: icao,
+      timestamp: timestamp,
+      rawText: rawText,
+      decodedText: rawText, // ATIS uses raw text as decoded text initially
+      windDirection: 0, // ATIS doesn't have current wind
+      windSpeed: 0,
+      visibility: 9999,
+      cloudCover: '',
+      temperature: 0.0,
+      dewPoint: 0.0,
+      qnh: 0,
+      conditions: '',
+      type: 'ATIS',
+      decodedWeather: null, // No decoded weather for ATIS initially
+      source: json['source'] ?? 'naips',
+      atisCode: atisCode,
+      atisType: atisType,
     );
   }
 

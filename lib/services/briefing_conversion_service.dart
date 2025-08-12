@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/briefing.dart';
 import '../models/flight.dart';
@@ -224,9 +223,9 @@ class BriefingConversionService {
     }
   }
   
-  /// Reconstruct Airport objects from stored data
+  /// Reconstruct Airport objects from airport codes
   static Future<List<Airport>> _reconstructAirports(
-    List<String> airportCodes, 
+    List<String> airportCodes,
     List<Notam> notams, 
     List<Weather> weather
   ) async {
@@ -234,12 +233,6 @@ class BriefingConversionService {
       final List<Airport> airports = [];
       
       for (final code in airportCodes) {
-        // Find NOTAMs for this airport
-        final airportNotams = notams.where((n) => n.icao == code).toList();
-        
-        // Find weather for this airport
-        final airportWeather = weather.where((w) => w.icao == code).toList();
-        
         // Get proper airport data from database
         final airportData = await AirportDatabase.getAirportWithFallback(code);
         
@@ -333,12 +326,6 @@ class BriefingConversionService {
       
       // Check data completeness per airport
       for (final airportCode in briefing.airports) {
-        // Check for NOTAMs for this airport (NOTAMs are stored by ID, so we need to check content)
-        final hasNotams = briefing.notams.values.any((notamData) {
-          final notamMap = notamData as Map<String, dynamic>;
-          return notamMap['icao'] == airportCode;
-        });
-        
         // Check for weather for this airport (weather is stored by TYPE_ICAO key)
         final hasWeather = briefing.weather.keys.any((key) => key.endsWith('_$airportCode'));
         

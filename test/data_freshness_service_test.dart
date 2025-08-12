@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/data_freshness_service.dart';
+import 'package:dispatch_buddy/services/data_freshness_service.dart';
 
 void main() {
   group('DataFreshnessService Tests', () {

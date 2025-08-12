@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/airport.dart';
 
@@ -71,38 +72,38 @@ class AirportApiService {
   static Future<Airport?> fetchAirportData(String icaoCode) async {
     // Check cache first
     if (_cache.containsKey(icaoCode)) {
-      print('DEBUG: Using cached airport data for $icaoCode');
+      debugPrint('DEBUG: Using cached airport data for $icaoCode');
       return _cache[icaoCode];
     }
     
-    print('DEBUG: Fetching airport data for $icaoCode from API');
+    debugPrint('DEBUG: Fetching airport data for $icaoCode from API');
     try {
       final url = Uri.parse('$_baseUrl?ids=$icaoCode&format=json');
-      print('DEBUG: API URL: $url');
+      debugPrint('DEBUG: API URL: $url');
       
       final response = await http.get(url);
-      print('DEBUG: API response status: ${response.statusCode}');
-      print('DEBUG: API response body length: ${response.body.length}');
+      debugPrint('DEBUG: API response status: ${response.statusCode}');
+      debugPrint('DEBUG: API response body length: ${response.body.length}');
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        print('DEBUG: API response data length: ${data.length}');
+        debugPrint('DEBUG: API response data length: ${data.length}');
         
         if (data.isNotEmpty) {
           final airport = data.first;
-          print('DEBUG: API response for $icaoCode: $airport');
+          debugPrint('DEBUG: API response for $icaoCode: $airport');
           
           // Extract and clean the data
           final name = airport['name'] as String? ?? '';
           final state = airport['state'] as String?;
           final country = airport['country'] as String?;
           
-          print('DEBUG: Raw data - name: "$name", state: "$state", country: "$country"');
+          debugPrint('DEBUG: Raw data - name: "$name", state: "$state", country: "$country"');
           
           // Convert name to title case and extract city
           final cleanName = _convertToTitleCase(name);
           final city = _extractCityName(name, state, country);
-          print('DEBUG: Extracted city for $icaoCode: "$city" from name: "$name", state: "$state", country: "$country"');
+          debugPrint('DEBUG: Extracted city for $icaoCode: "$city" from name: "$name", state: "$state", country: "$country"');
           
           final latitude = double.tryParse(airport['lat']?.toString() ?? '0') ?? 0.0;
           final longitude = double.tryParse(airport['lon']?.toString() ?? '0') ?? 0.0;
@@ -121,20 +122,20 @@ class AirportApiService {
             runways: [],
             navaids: [],
           );
-          print('DEBUG: Created Airport object for $icaoCode with city: "$city"');
+          debugPrint('DEBUG: Created Airport object for $icaoCode with city: "$city"');
           _cache[icaoCode] = airportObj;
           return airportObj;
         } else {
-          print('DEBUG: API returned empty data for $icaoCode');
+          debugPrint('DEBUG: API returned empty data for $icaoCode');
         }
       } else {
-        print('DEBUG: API call failed for $icaoCode. Status: ${response.statusCode}, Body: ${response.body}');
+        debugPrint('DEBUG: API call failed for $icaoCode. Status: ${response.statusCode}, Body: ${response.body}');
       }
     } catch (e) {
-      print('Error fetching airport data for $icaoCode: $e');
+      debugPrint('Error fetching airport data for $icaoCode: $e');
     }
     
-    print('DEBUG: Returning null for $icaoCode');
+    debugPrint('DEBUG: Returning null for $icaoCode');
     return null;
   }
 

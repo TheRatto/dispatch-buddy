@@ -74,7 +74,7 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                       naipsPassword: settingsProvider.naipsPassword,
                     );
                   },
-                  child: TafTab(tafsByIcao: flightProvider.tafsByIcao),
+                  child: TafTab(),
                 ),
               ],
             );
