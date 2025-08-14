@@ -1,3 +1,35 @@
+## Lessons learned – NAIPS + API weather, parsing and display
+
+- NAIPS TAF parsing
+  - Leading whitespace and optional variants (AMD/COR/TAF3) appear frequently in NAIPS. Our TAF regex must allow leading spaces before `TAF` and optional markers after it, and it must stop at the next section boundary without eating it.
+  - Always preserve the full multi‑line NAIPS TAF in `Weather.rawText` for display and highlighting. Build a compact, single‑line version only for decoding.
+  - Normalize line endings (CR/LF) and collapse stray blank lines to prevent random spacing.
+  - Showing the initial weather: if the first body line is initial weather (not a period marker), join it to the header for readability, but never swallow trailing markers like `TAF3`.
+  - Ensure `TAF3` is retained and displayed on its own line so users can see the version.
+
+- ATIS timestamp and age
+  - Deduplication and “age” must use the actual broadcast time, not fetch time. Parse the 6‑digit `ddhhmm` from the ATIS and set `Weather.timestamp` (and `DecodedWeather.timestamp`) in UTC.
+  - Convert ATIS to a `StatefulWidget` and update age on a timer, mirroring TAF behavior.
+
+- Merge strategy and staleness
+  - Treat METAR, TAF, and ATIS independently. Select the newest item per ICAO and per type; do not let a stale result of one type override a fresh result of another.
+  - Prefer NAIPS TAFs on ties and give NAIPS a small advantage: API replaces a NAIPS TAF only if it is clearly newer (>2 minutes). This avoids NAIPS being displaced by negligible API skew while still surfacing genuinely newer API data when NAIPS lags.
+  - For API METARs, always route through `Weather.fromMetar` to ensure full decode and the true issue timestamp.
+
+- Display and highlighting
+  - INITIAL highlighting should begin after the TAF header and extend until the first explicit period (FM/BECMG/TEMPO/INTER/PROBxx), so initial wind/vis on the next line is fully included.
+  - Formatter should insert line breaks before forecast tokens and keep `TAF3` visible.
+
+- Parser hardening process
+  - Build and maintain a corpus of NAIPS outputs (TAF/METAR/ATIS) with variants (COR, AUTO, AMD, TAF3, spacing) and keep an acceptance matrix.
+  - Add targeted debug logs (e.g., TAF regex match counts) to validate changes quickly without flooding logs.
+
+- Pitfalls we hit
+  - Accidentally overwriting full raw TAF with compact text caused “first‑line only” rendering.
+  - Assuming `Z` had no space before it; NAIPS occasionally inserts optional spaces.
+  - Using fetch time for ATIS led to incorrect ages and dedupe order.
+  - A tie‑blind “NAIPS over API” merge allowed older NAIPS to suppress newer API; a naive “newest‑wins” then suppressed NAIPS too aggressively. The 2‑minute NAIPS preference is a pragmatic balance.
+
 # Lessons Learned - Dispatch Buddy Development
 
 ## Navigation & UX Design

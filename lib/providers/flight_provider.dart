@@ -539,10 +539,10 @@ class FlightProvider with ChangeNotifier {
       final apiService = ApiService();
       final icaos = _currentFlight!.airports.map((airport) => airport.icao).toList();
       
-      // Use provided NAIPS settings or defaults
-      naipsEnabled ??= false;
-      naipsUsername ??= null;
-      naipsPassword ??= null;
+      // Use provided NAIPS settings or load from SettingsProvider if not provided
+      naipsEnabled ??= settingsProvider.naipsEnabled;
+      naipsUsername ??= settingsProvider.naipsUsername;
+      naipsPassword ??= settingsProvider.naipsPassword;
       
       debugPrint('DEBUG: 🔄 FlightProvider - NAIPS settings being passed to API: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
       

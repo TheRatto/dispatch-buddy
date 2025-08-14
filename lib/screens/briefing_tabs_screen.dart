@@ -3,6 +3,7 @@ import 'home_screen.dart';
 import 'summary_screen.dart';
 import 'airport_detail_screen.dart';
 import 'raw_data_screen.dart';
+import '../widgets/more_sheet.dart';
 
 class BriefingTabsScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -65,12 +66,25 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          // Save current system page state before switching tabs
-          if (_currentIndex == 2) { // If currently on Airports tab (now index 2)
-            // The system page state will be saved by the AirportDetailScreen
-            // when it detects the tab change
+          // If user taps the More tab, open modal sheet instead of switching page
+          const moreTabIndex = 4; // last item
+          if (index == moreTabIndex) {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              builder: (ctx) => const MoreSheet(),
+            );
+            return;
           }
-          
+
+          // Save current system page state before switching tabs
+          if (_currentIndex == 2) {
+            // AirportDetailScreen can persist its state on tab change
+          }
+
           setState(() {
             _currentIndex = index;
           });
@@ -94,6 +108,10 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.code),
             label: 'Raw Data',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.more_horiz),
+            label: 'More',
           ),
         ],
       ),

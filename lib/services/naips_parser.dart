@@ -73,7 +73,13 @@ class NAIPSParser {
     final List<Weather> tafs = [];
     
     // Find TAF sections
-    final tafMatches = RegExp(r'TAF\s+(\w{4})\s+(\d{6})\s*Z\s+(\d{4})/(\d{4})\s+([^\n]+(?:\n(?!\s*(?:SPECI|ATIS|NOTAM|$))[^\n]+)*)', dotAll: true).allMatches(content);
+    // Allow indentation before TAF and optional AMD/COR marker; capture until next section
+    final tafRegex = RegExp(
+      r'(?:^|\n)\s*TAF(?:\s+(?:AMD|COR|TAF3))?\s+([A-Z]{4})\s+(\d{6})\s*Z\s+(\d{4})/(\d{4})\s+([\s\S]*?)(?=\n\s*(?:TAF\s|METAR|SPECI|ATIS|NOTAM|$))',
+      dotAll: true,
+    );
+    final tafMatches = tafRegex.allMatches(content);
+    debugPrint('DEBUG: NAIPSParser - TAF regex found ${taMatchesCount(tafMatches)} matches');
     
     for (final match in tafMatches) {
       final icao = match.group(1) ?? '';
@@ -83,24 +89,36 @@ class NAIPSParser {
       final tafText = match.group(5) ?? '';
       
       if (icao.isNotEmpty && tafText.isNotEmpty) {
-        // Create compact TAF format similar to aviationweather.gov
-        final compactTafText = _createCompactTafText(icao, issueTime, validityStart, validityEnd, tafText);
-        
+        // Normalize body text to avoid \r and excessive blank lines
+        final normalizedBody = _normalizeMultiline(tafText);
+
+        // Create compact TAF string for decoding only
+        final compactTafText = _createCompactTafText(icao, issueTime, validityStart, validityEnd, normalizedBody);
+
+        // Preserve full multi-line TAF for display; ensure 'TAF3' marker is retained at end if present
+        final bodyLines = normalizedBody.trim().split('\n');
+        String joined = normalizedBody.trim();
+        // If the first body line looks like initial weather, join to header for readability
+        if (bodyLines.isNotEmpty && !bodyLines.first.startsWith(RegExp(r'(FM\d{6}|TEMPO|BECMG|PROB(30|40)|INTER|RMK|TAF3)'))) {
+          joined = bodyLines.first + (bodyLines.length > 1 ? '\n' + bodyLines.sublist(1).join('\n') : '');
+        }
+        // Build display with potential trailing TAF3 on its own line
+        String displayTafText = 'TAF ' + icao + ' ' + issueTime + 'Z ' + validityStart + '/' + validityEnd + '\n' + joined;
+
         try {
-          // Use existing decoder service
           final decoderService = decoder.DecoderService();
           final decodedWeather = decoderService.decodeTaf(compactTafText);
-          
+
           final weather = Weather(
             icao: icao,
             timestamp: decodedWeather.timestamp,
-            rawText: compactTafText,
+            rawText: displayTafText,
             decodedText: _generateDecodedText(decodedWeather),
-            windDirection: 0, // TAFs don't have current wind
+            windDirection: 0,
             windSpeed: 0,
             visibility: 9999,
             cloudCover: decodedWeather.cloudCover ?? '',
-            temperature: 0.0, // TAFs don't have current temperature
+            temperature: 0.0,
             dewPoint: 0.0,
             qnh: 0,
             conditions: decodedWeather.conditions ?? '',
@@ -108,16 +126,31 @@ class NAIPSParser {
             decodedWeather: decodedWeather,
             source: 'naips',
           );
-          
+
           tafs.add(weather);
-          debugPrint('DEBUG: NAIPSParser - Parsed TAF for $icao');
+          debugPrint('DEBUG: NAIPSParser - Parsed TAF for ' + icao);
         } catch (e) {
-          debugPrint('DEBUG: NAIPSParser - Error parsing TAF for $icao: $e');
+          debugPrint('DEBUG: NAIPSParser - Error parsing TAF for ' + icao + ': ' + e.toString());
         }
       }
     }
     
     return tafs;
+  }
+
+  // Helper: count iterable without consuming
+  static int taMatchesCount(Iterable<RegExpMatch> matches) {
+    int c = 0; for (final _ in matches) { c++; } return c;
+  }
+
+  // Normalize newlines and collapse multiple blank lines
+  static String _normalizeMultiline(String input) {
+    var s = input.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    // Trim trailing spaces on lines
+    s = s.split('\n').map((line) => line.trimRight()).join('\n');
+    // Collapse 2+ blank lines to a single blank line
+    s = s.replaceAll(RegExp(r'\n{2,}'), '\n');
+    return s;
   }
   
   /// Create compact TAF text format similar to aviationweather.gov
@@ -278,6 +311,24 @@ class NAIPSParser {
       if (icao.isNotEmpty && atisText.isNotEmpty) {
         final fullAtisText = 'ATIS $icao $atisCode $issueTime $atisText';
         
+        // Derive true ATIS timestamp (UTC) from ddhhmm string
+        DateTime atisTimestampUtc;
+        try {
+          final nowUtc = DateTime.now().toUtc();
+          final day = int.parse(issueTime.substring(0, 2));
+          final hour = int.parse(issueTime.substring(2, 4));
+          final minute = int.parse(issueTime.substring(4, 6));
+          var ts = DateTime.utc(nowUtc.year, nowUtc.month, day, hour, minute);
+          // If constructed time is in the future, roll back a month/day window
+          if (ts.isAfter(nowUtc)) {
+            final yesterday = nowUtc.subtract(const Duration(days: 1));
+            ts = DateTime.utc(yesterday.year, yesterday.month, day, hour, minute);
+          }
+          atisTimestampUtc = ts;
+        } catch (_) {
+          atisTimestampUtc = DateTime.now().toUtc();
+        }
+        
         debugPrint('DEBUG: NAIPSParser - Extracted ATIS: ICAO=$icao, Code=$atisCode, Time=$issueTime');
         debugPrint('DEBUG: NAIPSParser - Full ATIS text: $fullAtisText');
         
@@ -285,7 +336,7 @@ class NAIPSParser {
           // Create a simple decoded weather object for ATIS
           final decodedWeather = DecodedWeather(
             icao: icao,
-            timestamp: DateTime.now().toUtc(), // ATIS doesn't have standard timestamp format
+            timestamp: atisTimestampUtc,
             rawText: fullAtisText,
             type: 'ATIS',
             windDirection: null,
@@ -309,7 +360,7 @@ class NAIPSParser {
           
           final weather = Weather(
             icao: icao,
-            timestamp: DateTime.now().toUtc(),
+            timestamp: atisTimestampUtc,
             rawText: fullAtisText,
             decodedText: 'ATIS Information: $atisText',
             windDirection: 0,

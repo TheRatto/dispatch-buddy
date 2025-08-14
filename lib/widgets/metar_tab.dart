@@ -6,7 +6,7 @@ import '../models/weather.dart';
 import '../providers/flight_provider.dart';
 import '../providers/settings_provider.dart';
 import 'metar_compact_details.dart';
-import 'atis_card.dart';
+import 'atis_card.dart' as atis_widget;
 
 class MetarTab extends StatefulWidget {
   const MetarTab({
@@ -378,7 +378,8 @@ class _MetarTabState extends State<MetarTab> {
                         builder: (context) {
                           final atis = _getAtisForAirport(context, flightProvider.selectedAirport);
                           if (atis != null) {
-                            return AtisCard(
+                            return atis_widget.AtisCard(
+                              key: ValueKey('atis_${flightProvider.selectedAirport ?? ''}'),
                               atis: atis,
                               icao: flightProvider.selectedAirport ?? '',
                             );
@@ -428,7 +429,6 @@ class _MetarTabState extends State<MetarTab> {
                       
                       // METAR Cards
                       ...metarsToShow.entries.map((entry) {
-                        final airport = entry.key;
                         final metars = entry.value;
                         return Column(
                           children: [

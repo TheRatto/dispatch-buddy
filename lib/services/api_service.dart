@@ -384,16 +384,21 @@ class ApiService {
               'Accept': 'text/plain',
             });
             if (resp.statusCode == 200) {
-              final raw = resp.body.trim();
-              if (raw.isNotEmpty && raw != 'No data found') {
-                // Take first line (latest) and decode
-                final line = raw.split('\n').first.trim();
+              final raw = resp.body;
+              if (raw.trim().isNotEmpty && raw.trim() != 'No data found') {
+                // Use the full multi-line TAF block; decode on compact form
+                final lines = raw.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+                final fullBlock = lines.join('\n');
+
+                // Build a compact single-line for decoding
+                final firstLine = lines.first;
                 final decoderService = DecoderService();
-                final decoded = decoderService.decodeTaf(line);
+                final decoded = decoderService.decodeTaf(firstLine);
+
                 apiTafs.add(Weather(
                   icao: icao,
                   timestamp: decoded.timestamp,
-                  rawText: line,
+                  rawText: fullBlock,
                   decodedText: '',
                   windDirection: 0,
                   windSpeed: 0,
@@ -444,19 +449,50 @@ class ApiService {
           }
 
           naipsTafs = aggregated.where((w) => icaos.contains(w.icao)).toList();
-          // Merge NAIPS over API results
+          // Merge by freshest timestamp per ICAO (independent per type)
           if (naipsTafs.isNotEmpty || apiTafs.isNotEmpty) {
             final Map<String, Weather> mergedByIcao = {};
-            // Start with API results
-            for (final w in apiTafs) {
-              mergedByIcao[w.icao] = w;
+            const naipsAdvantage = Duration(minutes: 2);
+
+            void consider(Weather cand) {
+              final cur = mergedByIcao[cand.icao];
+              if (cur == null) {
+                mergedByIcao[cand.icao] = cand;
+                return;
+              }
+              // If candidate is NAIPS and within 2 minutes older than current API, prefer NAIPS
+              final isCandNaips = cand.source == 'naips';
+              final isCurApi = cur.source != 'naips';
+              if (isCandNaips && isCurApi) {
+                if (!cand.timestamp.isAfter(cur.timestamp)) {
+                  final diff = cur.timestamp.difference(cand.timestamp).abs();
+                  if (diff <= naipsAdvantage) {
+                    mergedByIcao[cand.icao] = cand;
+                    return;
+                  }
+                }
+              }
+              // If current is NAIPS and candidate is API, replace only if API is > 2 minutes newer
+              final isCurNaips = cur.source == 'naips';
+              final isCandApi = cand.source != 'naips';
+              if (isCurNaips && isCandApi) {
+                if (cand.timestamp.isAfter(cur.timestamp.add(naipsAdvantage))) {
+                  mergedByIcao[cand.icao] = cand;
+                }
+                return;
+              }
+              // Default: pick newest timestamp
+              if (cand.timestamp.isAfter(cur.timestamp)) {
+                mergedByIcao[cand.icao] = cand;
+              }
             }
-            // Overlay NAIPS where available
-            for (final w in naipsTafs) {
-              mergedByIcao[w.icao] = w;
-            }
+
+            // Evaluate both sets
+            for (final w in naipsTafs) consider(w);
+            for (final w in apiTafs) consider(w);
+
             final merged = mergedByIcao.values.toList();
-            debugPrint('DEBUG: 🔍 Returning merged TAF data: API=${apiTafs.length}, NAIPS=${naipsTafs.length}, merged=${merged.length}');
+            debugPrint('DEBUG: 🔍 Returning merged TAF data (newest wins, NAIPS +2min advantage): API=${apiTafs.length}, NAIPS=${naipsTafs.length}, merged=${merged.length}');
             return merged;
           }
           debugPrint('DEBUG: 🔍 No TAF data from NAIPS or API');
@@ -469,7 +505,15 @@ class ApiService {
     }
 
     // NAIPS disabled/unavailable: return API (including CGI fallback) results
-    return apiTafs;
+    // Ensure we return the newest per ICAO
+    final Map<String, Weather> newestApi = {};
+    for (final w in apiTafs) {
+      final existing = newestApi[w.icao];
+      if (existing == null || w.timestamp.isAfter(existing.timestamp)) {
+        newestApi[w.icao] = w;
+      }
+    }
+    return newestApi.values.toList();
   }
 
   /// Fetch METAR data for the given ICAO codes
@@ -513,8 +557,10 @@ class ApiService {
             }
           }
 
-          // Filter aggregated to only METAR types and requested ICAOs
-          final naipsMetars = aggregated.where((w) => w.type == 'METAR' && icaos.contains(w.icao)).toList();
+          // Filter aggregated to only METAR/SPECI types and requested ICAOs
+          final naipsMetars = aggregated
+              .where((w) => (w.type == 'METAR' || w.type == 'SPECI') && icaos.contains(w.icao))
+              .toList();
 
           debugPrint('DEBUG: 🔍 NAIPS METARs found: ${naipsMetars.length}');
 
@@ -534,22 +580,17 @@ class ApiService {
                 if (response.statusCode == 200) {
                   final rawText = response.body.trim();
                   if (rawText.isNotEmpty && rawText != 'No data found') {
-                    apiMetarsForRemaining.add(Weather(
-                      icao: icao,
-                      type: 'METAR',
-                      rawText: rawText,
-                      timestamp: DateTime.now().toUtc(),
-                      source: 'aviationweather.gov',
-                      decodedText: '',
-                      windDirection: 0,
-                      windSpeed: 0,
-                      visibility: 0,
-                      cloudCover: '',
-                      temperature: 0.0,
-                      dewPoint: 0.0,
-                      qnh: 0,
-                      conditions: '',
-                    ));
+                    // Decode using Weather.fromMetar for consistency
+                    final lines = rawText.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+                    if (lines.isNotEmpty) {
+                      final firstLine = lines.first; // Latest METAR
+                      final w = Weather.fromMetar({
+                        'icaoId': icao,
+                        'rawOb': firstLine,
+                        'metarType': firstLine.startsWith('SPECI') ? 'SPECI' : 'METAR',
+                      });
+                      apiMetarsForRemaining.add(w);
+                    }
                   }
                 }
               } catch (e) {

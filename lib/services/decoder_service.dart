@@ -642,6 +642,17 @@ class DecoderService {
     // Add line breaks before forecast elements for better readability
     String formatted = rawText;
     
+    // Normalize line endings and trim trailing spaces
+    formatted = formatted.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    formatted = formatted.split('\n').map((l) => l.trim()).join('\n');
+
+    // Merge header and immediate next line for single-line initial when body is short/simple
+    // This improves readability for cases like WSSS where the initial wind/vis is on the next line
+    formatted = formatted.replaceFirstMapped(
+      RegExp(r'^(TAF\s+[A-Z]{4}\s+\d{6}Z\s+\d{4}/\d{4})\s*\n\s*'),
+      (m) => '${m.group(1)} ',
+    );
+
     // Add line breaks before TAF forecast elements
     formatted = formatted.replaceAll(' FM', '\nFM');
     formatted = formatted.replaceAll(' TEMPO', '\nTEMPO');
@@ -650,12 +661,17 @@ class DecoderService {
     formatted = formatted.replaceAll(' PROB40', '\nPROB40');
     formatted = formatted.replaceAll(' INTER', '\nINTER');
     formatted = formatted.replaceAll(' RMK', '\nRMK');
+    // Ensure TAF version markers like TAF3 are visible on their own line
+    formatted = formatted.replaceAll(' TAF3', '\nTAF3');
     
     // Fix: Remove newline before TEMPO/INTER if immediately after PROB30/40
     formatted = formatted.replaceAll('\nPROB30\nTEMPO', '\nPROB30 TEMPO');
     formatted = formatted.replaceAll('\nPROB30\nINTER', '\nPROB30 INTER');
     formatted = formatted.replaceAll('\nPROB40\nTEMPO', '\nPROB40 TEMPO');
     formatted = formatted.replaceAll('\nPROB40\nINTER', '\nPROB40 INTER');
+    
+    // Collapse stray blank lines (including whitespace-only)
+    formatted = formatted.replaceAll(RegExp(r'\n[ \t]*\n+'), '\n');
     
     return formatted;
   }
@@ -714,16 +730,20 @@ class DecoderService {
     debugPrint('DEBUG: findPeriodPositionInText called for ${period.type}');
     debugPrint('DEBUG: Formatted text: "$formattedText"');
     
-    // For INITIAL period, find the section before the first period indicator
+    // For INITIAL period, find the section after the TAF header and before the first period indicator
     if (period.type == 'INITIAL') {
       debugPrint('DEBUG: Looking for INITIAL period in formatted text');
       final firstPeriodMatch = RegExp(r'\n(FM\d{6}|TEMPO|BECMG|PROB30|PROB40|INTER)').firstMatch(formattedText);
       debugPrint('DEBUG: First period match in formatted: ${firstPeriodMatch?.group(0)} at position ${firstPeriodMatch?.start}');
-      
+
+      // Identify the end of the TAF header
+      final headerMatch = RegExp(r'^TAF\s+[A-Z]{4}\s+\d{6}Z\s+\d{4}/\d{4}\s*').firstMatch(formattedText);
+      final headerEnd = headerMatch?.end ?? 0;
+
       if (firstPeriodMatch != null) {
-        const formattedStart = 0;
+        final formattedStart = headerEnd;
         final formattedEnd = firstPeriodMatch.start;
-        final formattedSection = formattedText.substring(formattedStart, formattedEnd).trim();
+        final formattedSection = formattedText.substring(formattedStart.clamp(0, formattedEnd), formattedEnd).trim();
         debugPrint('DEBUG: Formatted INITIAL section: "$formattedSection"');
         
         if (formattedSection.isNotEmpty) {
@@ -739,10 +759,11 @@ class DecoderService {
         } else {
         debugPrint('DEBUG: No first period match found - entire text is INITIAL');
         // If no period indicators found, entire text is INITIAL
+        final formattedStart = headerEnd;
         return {
-            'start': 0,
+            'start': formattedStart,
           'end': formattedText.length,
-          'text': formattedText,
+          'text': formattedText.substring(formattedStart),
             'type': 'baseline',
             'periodType': 'INITIAL',
         };

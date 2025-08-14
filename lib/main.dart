@@ -12,6 +12,9 @@ import 'screens/decoded_screen.dart';
 import 'providers/flight_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/briefing_tabs_screen.dart';
+import 'providers/charts_provider.dart';
+import 'services/naips_charts_service.dart';
+import 'services/naips_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +28,12 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => SettingsProvider()..initialize(),
+        ),
+        ChangeNotifierProvider(
+          lazy: true,
+          create: (context) => ChartsProvider(
+            chartsService: NaipsChartsService(naipsService: NAIPSService()),
+          ),
         ),
       ],
       child: const MyApp(),
