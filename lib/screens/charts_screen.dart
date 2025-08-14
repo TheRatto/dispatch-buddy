@@ -21,12 +21,23 @@ class ChartsScreen extends StatelessWidget {
           ChangeNotifierProvider(
             create: (_) => ChartsProvider(
               chartsService: NaipsChartsService(naipsService: NAIPSService()),
-            )..refreshCatalog(),
+            ),
           ),
         ],
         child: Consumer2<SettingsProvider, ChartsProvider>(
           builder: (context, settings, provider, _) {
             final credsMissing = !(settings.naipsEnabled && (settings.naipsUsername?.isNotEmpty == true) && (settings.naipsPassword?.isNotEmpty == true));
+
+            // Trigger load with auth once settings initialized
+            if (!provider.loading && provider.items.isEmpty && provider.error == null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                provider.refreshCatalogWithAuth(
+                  naipsEnabled: settings.naipsEnabled,
+                  username: settings.naipsUsername,
+                  password: settings.naipsPassword,
+                );
+              });
+            }
 
             return Column(
               children: [
@@ -58,7 +69,11 @@ class ChartsScreen extends StatelessWidget {
                                     Text(provider.error!, textAlign: TextAlign.center),
                                     const SizedBox(height: 12),
                                     ElevatedButton(
-                                      onPressed: () => provider.refreshCatalog(),
+                                      onPressed: () => provider.refreshCatalogWithAuth(
+                                        naipsEnabled: settings.naipsEnabled,
+                                        username: settings.naipsUsername,
+                                        password: settings.naipsPassword,
+                                      ),
                                       child: const Text('Retry'),
                                     )
                                   ],
