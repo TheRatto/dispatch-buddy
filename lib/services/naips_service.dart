@@ -314,6 +314,20 @@ class NAIPSService {
         .map((entry) => '${entry.key}=${entry.value}')
         .join('; ');
   }
+
+  /// Public helper to build standard authenticated headers for NAIPS GETs
+  Map<String, String> buildAuthHeaders({String? referer}) {
+    return {
+      if (_sessionCookies.isNotEmpty) 'Cookie': _buildCookieHeader(),
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+      if (referer != null) 'Referer': referer,
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Accept-Encoding': 'gzip, deflate',
+      'Connection': 'keep-alive',
+      'Cache-Control': 'no-cache',
+    };
+  }
   
   /// Check if currently authenticated
   bool get isAuthenticated => _isAuthenticated;
