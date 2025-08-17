@@ -2,6 +2,22 @@
 
 ## 🎯 **Quick Reference Todo**
 
+### **🏗️ Current Sprint Progress - Facility Status Feature**
+**Status**: Phase 1 Complete ✅ | Phase 2 Starting 🚀
+**Last Updated**: $(date)
+**Next Milestone**: Facility-specific status calculation (Green/Amber/Red)
+
+**What We Just Built**:
+- ✅ **FacilityNotamMapper Service** - Maps NOTAMs to specific airport facilities
+- ✅ **Smart Pattern Matching** - Handles dual-direction runways (07/25, 16L/34R)
+- ✅ **Cross-Group Search** - Finds all NOTAMs affecting a specific runway
+- ✅ **Comprehensive Testing** - All 15 unit tests passing
+
+**What We're Building Next**:
+- 🔄 **Enhanced AirportSystemAnalyzer** - Add facility-specific status methods
+- 🔄 **Status Calculation Logic** - Determine Green/Amber/Red based on NOTAM impact
+- 🔄 **Status Text Generation** - Show limitation reasons in UI
+
 ### **Phase 1: Infrastructure Models & Database** ✅ **COMPLETED**
 
 #### **Task 1.1: Airport Infrastructure Models** ✅ **COMPLETED**
@@ -16,6 +32,22 @@
 - ✅ `Approach` class with identifier, type, runway, minimums, status
 - ✅ `AirportInfrastructure` class to hold all components
 - ✅ Added unit tests for all models
+
+#### **Task 1.4: Facility-NOTAM Mapping Service** ✅ **COMPLETED**
+**File**: `lib/services/facility_notam_mapper.dart`
+**Priority**: HIGH
+**Estimated Time**: 3-4 hours
+
+**Service Created**:
+- ✅ `FacilityNotamMapper` class with comprehensive facility mapping
+- ✅ `getRunwayNotams()` - Maps runway-group NOTAMs to specific runways
+- ✅ `getAllRunwayAffectingNotams()` - Maps ALL NOTAMs affecting a runway (cross-group)
+- ✅ `getNavaidNotams()` - Maps instrument procedure NOTAMs to specific NAVAIDs
+- ✅ `getTaxiwayNotams()` - Maps taxiway NOTAMs to specific taxiways
+- ✅ `getLightingNotams()` - Maps lighting NOTAMs to specific lighting systems
+- ✅ **Smart pattern matching** for dual-direction runways (e.g., "07" matches "RWY 07/25")
+- ✅ **Enhanced regex patterns** for runway identifiers with letters (16L/34R, etc.)
+- ✅ **Comprehensive unit tests** - All 15 tests passing
 
 #### **Task 1.2: Airport Infrastructure Database** ✅ **COMPLETED**
 **File**: `lib/data/airport_infrastructure_data.dart`
