@@ -122,15 +122,20 @@ class FlightProvider with ChangeNotifier {
     // First filter by airport
     final airportNotams = notams.where((notam) => notam.icao == airportIcao).toList();
     
+    // Filter out CNL (Cancellation) NOTAMs - they don't provide useful operational information
+    final activeNotams = airportNotams.where((notam) => 
+      !notam.rawText.toUpperCase().contains('CNL NOTAM')
+    ).toList();
+    
     if (_selectedTimeFilter == 'All Future:') {
-      return airportNotams;
+      return activeNotams;
     }
 
     final now = DateTime.now();
     final hours = _getHoursFromFilter(_selectedTimeFilter);
     final cutoffTime = now.add(Duration(hours: hours));
 
-    return airportNotams.where((notam) => 
+    return activeNotams.where((notam) => 
       // Include NOTAMs that are currently active or will become active within the time period
       notam.validFrom.isBefore(cutoffTime) && notam.validTo.isAfter(now)
     ).toList();
@@ -961,5 +966,45 @@ class FlightProvider with ChangeNotifier {
         }
       }
     }
+  }
+
+  // Get NOTAMs for display - now simplified since all NOTAMs are from FAA API
+  List<Notam> getDisplayNotams() {
+    if (_currentFlight == null) return [];
+    
+    // All NOTAMs are now from FAA API, so return them all
+    debugPrint('DEBUG: 🔍 FlightProvider - Display NOTAMs: ${_currentFlight!.notams.length} FAA API NOTAMs');
+    
+    return _currentFlight!.notams;
+  }
+
+  // Get all NOTAMs (including NAIPS) - for system analysis
+  List<Notam> getAllNotams() {
+    if (_currentFlight == null) return [];
+    return _currentFlight!.notams;
+  }
+
+  // Get NOTAMs by source for analysis
+  Map<String, List<Notam>> getNotamsBySource() {
+    if (_currentFlight == null) return {};
+    
+    final notamsBySource = <String, List<Notam>>{};
+    for (final notam in _currentFlight!.notams) {
+      notamsBySource.putIfAbsent(notam.source, () => []).add(notam);
+    }
+    
+    return notamsBySource;
+  }
+
+  // Get NOTAM statistics by source
+  Map<String, int> getNotamSourceStats() {
+    if (_currentFlight == null) return {};
+    
+    final stats = <String, int>{};
+    for (final notam in _currentFlight!.notams) {
+      stats[notam.source] = (stats[notam.source] ?? 0) + 1;
+    }
+    
+    return stats;
   }
 } 

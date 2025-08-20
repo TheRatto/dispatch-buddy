@@ -3,20 +3,27 @@
 ## 🎯 **Quick Reference Todo**
 
 ### **🏗️ Current Sprint Progress - Facility Status Feature**
-**Status**: Phase 1 Complete ✅ | Phase 2 Starting 🚀
-**Last Updated**: $(date)
-**Next Milestone**: Facility-specific status calculation (Green/Amber/Red)
+**Status**: Phase 4 Complete ✅ | Phase 5 Complete ✅ | Phase 6 Starting 🚀
+**Last Updated**: 2025-08-20
+**Next Milestone**: Implement time-based status updates and background refresh
 
 **What We Just Built**:
 - ✅ **FacilityNotamMapper Service** - Maps NOTAMs to specific airport facilities
 - ✅ **Smart Pattern Matching** - Handles dual-direction runways (07/25, 16L/34R)
-- ✅ **Cross-Group Search** - Finds all NOTAMs affecting a specific runway
-- ✅ **Comprehensive Testing** - All 15 unit tests passing
+- ✅ **Enhanced AirportSystemAnalyzer** - Facility-specific status methods with Q-code analysis
+- ✅ **UI Integration** - Dynamic status colors, clickable indicators, NOTAM modals
+- ✅ **Custom Classification Logic** - Methods to prevent NAVAID/lighting NOTAMs in runway analysis
+- ✅ **CNL NOTAM Filtering** - Removes redundant cancellation NOTAMs for cleaner display
+
+**Current Issue**:
+- ❌ **Classification Conflicts** - Custom classification methods conflict with existing `NotamGroupingService`
+- ❌ **ILS NOTAM Routing** - ILS NOTAMs still appearing in runway section instead of NAVAID section
+- ❌ **Duplicate Logic** - Two classification systems running in parallel
 
 **What We're Building Next**:
-- 🔄 **Enhanced AirportSystemAnalyzer** - Add facility-specific status methods
-- 🔄 **Status Calculation Logic** - Determine Green/Amber/Red based on NOTAM impact
-- 🔄 **Status Text Generation** - Show limitation reasons in UI
+- 🔄 **Phase 4: NOTAM Classification Integration** - Use existing `NotamGroupingService.groupNotams()`
+- 🔄 **Hybrid Approach** - Combine working classification + our facility mapping
+- 🔄 **Eliminate Conflicts** - Remove custom classification methods, use proven system
 
 ### **Phase 1: Infrastructure Models & Database** ✅ **COMPLETED**
 
@@ -48,6 +55,57 @@
 - ✅ **Smart pattern matching** for dual-direction runways (e.g., "07" matches "RWY 07/25")
 - ✅ **Enhanced regex patterns** for runway identifiers with letters (16L/34R, etc.)
 - ✅ **Comprehensive unit tests** - All 15 tests passing
+
+#### **Task 1.5: NOTAM Classification Integration** ✅ **COMPLETED**
+**File**: `lib/widgets/facilities_widget.dart`
+**Priority**: HIGH
+**Estimated Time**: 1-2 hours
+
+**Issue Resolved**:
+- ✅ **Custom classification methods removed** - No more conflicts with existing `NotamGroupingService`
+- ✅ **ILS NOTAM routing fixed** - ILS NOTAMs now correctly appear in NAVAID section
+- ✅ **Duplicate classification logic eliminated** - Single source of truth for NOTAM grouping
+
+**Solution Implemented - Hybrid Approach**:
+- ✅ **Use `NotamGroupingService.groupNotams()`** for initial NOTAM grouping
+- ✅ **Apply existing facility mapping logic** to grouped NOTAMs
+- ✅ **Remove custom classification methods** that conflicted with working system
+
+**Implementation Completed**:
+- ✅ **Replaced custom classification** with `NotamGroupingService.groupNotams()` calls
+- ✅ **Extract facility-specific NOTAMs** from grouped results:
+  - `groupedNotams[NotamGroup.runways]` for runway analysis
+  - `groupedNotams[NotamGroup.instrumentProcedures]` for NAVAID analysis
+  - `groupedNotams[NotamGroup.airportServices]` for lighting analysis
+- ✅ **Kept existing facility mapping methods** (`_getRunwayNotams()`, `_getNavaidNotams()`, etc.)
+- ✅ **Maintained existing status analysis methods** (`_analyzeRunwayStatus()`, etc.)
+
+**Result Achieved**:
+- ✅ **ILS NOTAMs now correctly appear in NAVAID section** (not runway section)
+- ✅ **No more classification conflicts** between systems
+- ✅ **Single source of truth** for NOTAM grouping
+- ✅ **Best of both systems**: working classification + facility mapping
+
+#### **Task 1.6: CNL NOTAM Filtering** ✅ **COMPLETED**
+**File**: `lib/providers/flight_provider.dart`
+**Priority**: MEDIUM
+**Estimated Time**: 0.5 hours
+
+**Issue Identified**:
+- ❌ **CNL NOTAMs cluttering display** - Cancellation NOTAMs like "H6629/25 NOTAMC H6514/25"
+- ❌ **Redundant information** - These don't provide useful operational details
+- ❌ **Inconsistent with NAIPS** - Mature NOTAM systems filter these out
+
+**Solution Implemented**:
+- ✅ **Added CNL NOTAM filtering** in `filterNotamsByTimeAndAirport()` method
+- ✅ **Filters out NOTAMs containing "CNL NOTAM"** in text
+- ✅ **Applied at filtering level** - affects all NOTAM displays across the app
+
+**Benefits Achieved**:
+- ✅ **Cleaner NOTAM display** - No more confusing cancellation NOTAMs
+- ✅ **Better operational focus** - Only active, relevant NOTAMs shown
+- ✅ **Consistent with NAIPS** - Matches behavior of mature NOTAM systems
+- ✅ **Improved readability** - Users see only actionable information
 
 #### **Task 1.2: Airport Infrastructure Database** ✅ **COMPLETED**
 **File**: `lib/data/airport_infrastructure_data.dart`

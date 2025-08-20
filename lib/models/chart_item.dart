@@ -6,6 +6,8 @@ class ChartItem {
   final String name; // e.g., SIGMET AUSTRALIA ALL LEVELS
   final DateTime validFromUtc;
   final DateTime? validTillUtc; // null for PERM entries
+  final DateTime? validAtUtc; // center time for products with a single validity time
+  final DateTime? issueUtc; // time the chart was issued (if inferable)
   final String category; // e.g., MSL_ANALYSIS, MSL_PROGNOSIS, SIGWX_HIGH, SIGWX_MID, SIGMET, SATPIC, GP_WINDS
   final String? level; // e.g., High, Mid, A050, A100, F185, F340
   final String? cycleZ; // e.g., 0000/0600/1200/1800
@@ -19,6 +21,8 @@ class ChartItem {
     required this.name,
     required this.validFromUtc,
     required this.validTillUtc,
+    this.validAtUtc,
+    this.issueUtc,
     required this.category,
     this.level,
     this.cycleZ,

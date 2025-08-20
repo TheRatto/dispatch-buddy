@@ -14,23 +14,36 @@ class NAIPSParser {
       final preMatches = RegExp(r'<pre[^>]*>(.*?)</pre>', dotAll: true).allMatches(html);
       
       for (final match in preMatches) {
-        final content = match.group(1)?.trim() ?? '';
+        // Normalize line endings to ensure regex anchors using \n work across NAIPS variants (CRLF vs LF)
+        final content = (match.group(1) ?? '').replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
         if (content.isEmpty) continue;
         
         debugPrint('DEBUG: NAIPSParser - Processing pre content: ${content.substring(0, content.length > 200 ? 200 : content.length)}...');
         
-        // Parse TAFs
-        final tafs = _parseTAFs(content);
-        weatherList.addAll(tafs);
+        // Parse TAFs (guard parsing so one failure doesn't drop all prior results)
+        try {
+          final tafs = _parseTAFs(content);
+          weatherList.addAll(tafs);
+        } catch (e) {
+          debugPrint('DEBUG: NAIPSParser - TAF parsing error (continuing): $e');
+        }
         
         // Parse METARs
-        final metars = _parseMETARs(content);
-        weatherList.addAll(metars);
+        try {
+          final metars = _parseMETARs(content);
+          weatherList.addAll(metars);
+        } catch (e) {
+          debugPrint('DEBUG: NAIPSParser - METAR parsing error (continuing): $e');
+        }
         
         // Parse ATIS
-        final atis = _parseATIS(content);
-        weatherList.addAll(atis);
-        debugPrint('DEBUG: NAIPSParser - Added ${atis.length} ATIS items to weather list');
+        try {
+          final atis = _parseATIS(content);
+          weatherList.addAll(atis);
+          debugPrint('DEBUG: NAIPSParser - Added ${atis.length} ATIS items to weather list');
+        } catch (e) {
+          debugPrint('DEBUG: NAIPSParser - ATIS parsing error (continuing): $e');
+        }
       }
       
       debugPrint('DEBUG: NAIPSParser - Parsed ${weatherList.length} weather items');
@@ -273,7 +286,9 @@ class NAIPSParser {
     if (content.contains('ATIS')) {
       debugPrint('DEBUG: NAIPSParser - Found "ATIS" in content');
       final atisIndex = content.indexOf('ATIS');
-      final atisContext = content.substring(atisIndex, atisIndex + 200);
+      var end = atisIndex + 200;
+      if (end > content.length) end = content.length;
+      final atisContext = content.substring(atisIndex, end);
       debugPrint('DEBUG: NAIPSParser - ATIS context: $atisContext');
     } else {
       debugPrint('DEBUG: NAIPSParser - No "ATIS" found in content');

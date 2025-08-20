@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/notam.dart';
 import '../services/airport_cache_manager.dart';
+import '../services/airport_system_analyzer.dart';
 import '../providers/flight_provider.dart';
 import '../providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/airport_infrastructure.dart';
+import '../models/airport.dart';
+import '../services/notam_grouping_service.dart';
 
 /// Custom painter for runway icon
 class RunwayIconPainter extends CustomPainter {
@@ -55,6 +59,8 @@ class FacilitiesWidget extends StatefulWidget {
 }
 
 class _FacilitiesWidgetState extends State<FacilitiesWidget> {
+  final NotamGroupingService _groupingService = NotamGroupingService();
+  
   @override
   Widget build(BuildContext context) {
     return Consumer<FlightProvider>(
@@ -345,8 +351,8 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   
   /// Build a facility item with enhanced runway formatting
   Widget _buildEnhancedRunwayItem(dynamic runway) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Consumer2<SettingsProvider, FlightProvider>(
+      builder: (context, settingsProvider, flightProvider, child) {
         if (runway is! Runway) {
           return _buildFacilityItem(
             name: 'Rwy ${runway.toString()}',
@@ -360,6 +366,9 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         final length = runway.length;
         final width = runway.width;
         final surface = runway.surface;
+        
+        // Analyze NOTAMs for this specific runway to determine real-time status
+        final runwayStatus = _analyzeRunwayStatus(identifier, flightProvider);
         
         // Use settings provider to format length and width
         final formattedLength = settingsProvider.formatLength(length);
@@ -418,8 +427,9 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
             ],
           ),
           details: '',
-          status: 'Operational',
-          statusColor: Colors.green,
+          status: runwayStatus.statusText,
+          statusColor: runwayStatus.statusColor,
+          onTap: runwayStatus.hasNotams ? () => _showRunwayNotams(identifier, runwayStatus.notams) : null,
         );
       },
     );
@@ -539,6 +549,10 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   
   /// Build runway-specific navaid item with column layout and reduced padding
   Widget _buildRunwayNavaidItem(Navaid navaid) {
+    // Get dynamic status from NOTAM analysis
+    final flightProvider = Provider.of<FlightProvider>(context, listen: false);
+    final navaidStatus = _analyzeNavaidStatus(navaid.identifier, navaid.type, flightProvider);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0), // Reduced padding
       child: Row(
@@ -579,20 +593,23 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
             ),
           ),
           const Spacer(),
-          // Status badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-            ),
-            child: const Text(
-              'Operational',
-              style: TextStyle(
-                color: Colors.green,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+          // Status badge - now dynamic based on NOTAM analysis with light styling
+          GestureDetector(
+            onTap: navaidStatus.hasNotams ? () => _showNavaidNotams(navaid.identifier, navaidStatus.notams) : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: navaidStatus.statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: navaidStatus.statusColor.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                navaidStatus.statusText,
+                style: TextStyle(
+                  color: navaidStatus.statusColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -603,6 +620,10 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   
   /// Build general navaid item with column layout
   Widget _buildGeneralNavaidItem(Navaid navaid) {
+    // Get dynamic status from NOTAM analysis
+    final flightProvider = Provider.of<FlightProvider>(context, listen: false);
+    final navaidStatus = _analyzeNavaidStatus(navaid.identifier, navaid.type, flightProvider);
+    
     return _buildFacilityItem(
       name: Row(
         children: [
@@ -644,8 +665,8 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         ],
       ),
       details: '',
-      status: 'Operational',
-      statusColor: Colors.green,
+      status: navaidStatus.statusText,
+      statusColor: navaidStatus.statusColor,
     );
   }
 
@@ -719,97 +740,110 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
 
   /// Build runway end lighting item with horizontal layout
   Widget _buildRunwayEndLightingItem(String runwayEnd, List<Lighting> lights) {
-    // Determine overall status for this runway end
-    final hasOperational = lights.any((light) => light.status == 'OPERATIONAL');
-    final hasClosed = lights.any((light) => light.status == 'CLOSED');
-    final hasMaintenance = lights.any((light) => light.status == 'MAINTENANCE');
-    
-    String overallStatus;
-    Color statusColor;
-    if (hasClosed) {
-      overallStatus = 'CLOSED';
-      statusColor = Colors.red;
-    } else if (hasMaintenance) {
-      overallStatus = 'MAINTENANCE';
-      statusColor = Colors.orange;
-    } else if (hasOperational) {
-      overallStatus = 'OPERATIONAL';
-      statusColor = Colors.green;
-    } else {
-      overallStatus = 'UNKNOWN';
-      statusColor = Colors.grey;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Runway end heading
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0, bottom: 2.0, left: 0, right: 16.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'RWY $runwayEnd',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+    return Consumer<FlightProvider>(
+      builder: (context, flightProvider, child) {
+        // Analyze NOTAMs for this runway end's lighting to determine real-time status
+        final lightingStatus = _analyzeLightingStatus(runwayEnd, lights, flightProvider);
+        
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Runway end heading (just the text, no status)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0, bottom: 2.0, left: 0, right: 16.0),
+                child: Text(
+                  'RWY $runwayEnd',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-          ),
-          // Lighting types row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 8.0,
-                    runSpacing: 4.0,
-                    children: lights.map((light) => _buildLightingChip(light)).toList(),
-                  ),
-                ),
-                // Status indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    overallStatus,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+              // Lighting types row with right-aligned status
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0),
+                child: Row(
+                  children: [
+                    // Lighting components on the left
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8.0,
+                        runSpacing: 4.0,
+                        children: lights.map((light) => _buildLightingChip(light, runwayEnd, flightProvider)).toList(),
+                      ),
                     ),
-                  ),
+                    // Status indicator on the right
+                    GestureDetector(
+                      onTap: lightingStatus.hasNotams ? () => _showLightingNotams(runwayEnd, lightingStatus.notams) : null,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: lightingStatus.statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: lightingStatus.statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          lightingStatus.statusText,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: lightingStatus.statusColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  /// Build individual lighting chip
-  Widget _buildLightingChip(Lighting light) {
+  /// Build individual lighting chip with status-based coloring
+  Widget _buildLightingChip(Lighting light, String runwayEnd, FlightProvider flightProvider) {
+    // Analyze individual lighting component status
+    final componentStatus = _analyzeIndividualLightingStatus(light, runwayEnd, flightProvider);
+    
+    // Determine colors based on status
+    Color backgroundColor;
+    Color borderColor;
+    Color textColor;
+    
+    switch (componentStatus) {
+      case 'unserviceable':
+        backgroundColor = Colors.red[100]!;
+        borderColor = Colors.red;
+        textColor = Colors.red[800]!;
+        break;
+      case 'limited':
+        backgroundColor = Colors.orange[100]!;
+        borderColor = Colors.orange;
+        textColor = Colors.orange[800]!;
+        break;
+      case 'operational':
+      default:
+        backgroundColor = Colors.grey[100]!;
+        borderColor = Colors.grey[300]!;
+        textColor = Colors.grey[700]!;
+        break;
+    }
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: borderColor),
       ),
       child: Text(
         light.description,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           fontSize: 11,
           fontWeight: FontWeight.w500,
+          color: textColor,
         ),
       ),
     );
@@ -930,8 +964,9 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     required String details,
     required String status,
     required Color statusColor,
+    VoidCallback? onTap,
   }) {
-    return Padding(
+    Widget content = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
@@ -977,5 +1012,746 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         ],
       ),
     );
+
+    // Wrap with GestureDetector if onTap is provided
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.transparent,
+          ),
+          child: content,
+        ),
+      );
+    }
+
+    return content;
   }
+
+  /// Analyze runway status based on NOTAMs
+  RunwayStatusInfo _analyzeRunwayStatus(String runwayId, FlightProvider flightProvider) {
+    // Filter NOTAMs for this specific runway
+    final filteredNotams = flightProvider.filterNotamsByTimeAndAirport(widget.notams, widget.icao);
+    
+    // Use NotamGroupingService to get properly grouped NOTAMs
+    final groupedNotams = _groupingService.groupNotams(filteredNotams);
+    
+    // Extract runway-specific NOTAMs from the grouped results
+    final runwayGroupNotams = groupedNotams[NotamGroup.runways] ?? [];
+    final runwayNotams = _getRunwayNotams(runwayId, runwayGroupNotams);
+    
+    if (runwayNotams.isEmpty) {
+      return RunwayStatusInfo(
+        statusText: 'Operational',
+        statusColor: Colors.green,
+        hasNotams: false,
+        notams: [],
+      );
+    }
+
+    // Use our enhanced Q-code analysis
+    final systemAnalyzer = AirportSystemAnalyzer();
+    final status = systemAnalyzer.analyzeRunwayStatus(runwayNotams, widget.icao);
+    
+    // Determine status text and color based on Q-code analysis
+    String statusText;
+    Color statusColor;
+    
+    switch (status) {
+      case SystemStatus.red:
+        statusText = 'Closed';
+        statusColor = Colors.red;
+        break;
+      case SystemStatus.yellow:
+        statusText = 'Limited';
+        statusColor = Colors.orange;
+        break;
+      case SystemStatus.green:
+        statusText = 'Operational';
+        statusColor = Colors.green;
+        break;
+    }
+
+    return RunwayStatusInfo(
+      statusText: statusText,
+      statusColor: statusColor,
+      hasNotams: runwayNotams.isNotEmpty,
+      notams: runwayNotams,
+    );
+  }
+
+  /// Get NOTAMs that affect a specific runway
+  List<Notam> _getRunwayNotams(String runwayId, List<Notam> notams) {
+    return notams.where((notam) {
+      final text = notam.rawText.toUpperCase();
+      
+      // Check for runway-specific NOTAMs
+      return text.contains('RWY $runwayId') || 
+             text.contains('RUNWAY $runwayId') ||
+             text.contains('RWY ${runwayId.split('/')[0]}') ||
+             text.contains('RWY ${runwayId.split('/')[1]}');
+    }).toList();
+  }
+
+
+
+  /// Show runway NOTAMs in a modal
+  void _showRunwayNotams(String runwayId, List<Notam> notams) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'NOTAMs for Runway $runwayId',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: notams.length,
+                itemBuilder: (context, index) {
+                  final notam = notams[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(notam.rawText),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 18),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: notam.rawText));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('NOTAM copied to clipboard'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            tooltip: 'Copy NOTAM text',
+                          ),
+                        ],
+                      ),
+                      subtitle: notam.qCode != null 
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: Text('Q-Code: ${notam.qCode}'),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 16),
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: notam.qCode!));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Q-Code copied to clipboard'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                tooltip: 'Copy Q-Code',
+                              ),
+                            ],
+                          )
+                        : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build enhanced NAVAID item with NOTAM-based status
+  Widget _buildEnhancedNavaidItem(dynamic navaid, String? runwayId) {
+    return Consumer<FlightProvider>(
+      builder: (context, flightProvider, child) {
+        if (navaid is! Navaid) {
+          return _buildFacilityItem(
+            name: 'Navaid ${navaid.toString()}',
+            details: '',
+            status: 'Operational',
+            statusColor: Colors.green,
+          );
+        }
+
+        final identifier = navaid.identifier;
+        final frequency = navaid.frequency;
+        final type = navaid.type;
+        
+        // Analyze NOTAMs for this specific NAVAID to determine real-time status
+        final navaidStatus = _analyzeNavaidStatus(identifier, type, flightProvider);
+        
+        // Build the name with frequency and runway association
+        String name = '$type $identifier';
+        if (frequency != null && frequency.isNotEmpty) {
+          name += ' ($frequency)';
+        }
+        if (runwayId != null) {
+          name += ' (RWY $runwayId)';
+        }
+
+        return _buildFacilityItem(
+          name: name,
+          details: '',
+          status: navaidStatus.statusText,
+          statusColor: navaidStatus.statusColor,
+          onTap: navaidStatus.hasNotams ? () => _showNavaidNotams(identifier, navaidStatus.notams) : null,
+        );
+      },
+    );
+  }
+
+  /// Analyze NAVAID status based on NOTAMs
+  NavaidStatusInfo _analyzeNavaidStatus(String navaidId, String navaidType, FlightProvider flightProvider) {
+    // Filter NOTAMs for this specific NAVAID
+    final filteredNotams = flightProvider.filterNotamsByTimeAndAirport(widget.notams, widget.icao);
+    
+    // Use NotamGroupingService to get properly grouped NOTAMs
+    final groupedNotams = _groupingService.groupNotams(filteredNotams);
+    
+    // Extract NAVAID-specific NOTAMs from the grouped results
+    final navaidGroupNotams = groupedNotams[NotamGroup.instrumentProcedures] ?? [];
+    final navaidNotams = _getNavaidNotams(navaidId, navaidType, navaidGroupNotams);
+    
+    if (navaidNotams.isEmpty) {
+      return NavaidStatusInfo(
+        statusText: 'Operational',
+        statusColor: Colors.green,
+        hasNotams: false,
+        notams: [],
+      );
+    }
+
+    // Use our enhanced Q-code analysis
+    final systemAnalyzer = AirportSystemAnalyzer();
+    final status = systemAnalyzer.analyzeNavaidStatus(navaidNotams, widget.icao);
+    
+    // Determine status text and color based on Q-code analysis
+    String statusText;
+    Color statusColor;
+    
+    switch (status) {
+      case SystemStatus.red:
+        statusText = 'Unserviceable';
+        statusColor = Colors.red;
+        break;
+      case SystemStatus.yellow:
+        statusText = 'Limited';
+        statusColor = Colors.orange;
+        break;
+      case SystemStatus.green:
+        statusText = 'Operational';
+        statusColor = Colors.green;
+        break;
+    }
+
+    return NavaidStatusInfo(
+      statusText: statusText,
+      statusColor: statusColor,
+      hasNotams: navaidNotams.isNotEmpty,
+      notams: navaidNotams,
+    );
+  }
+
+  /// Get NOTAMs that affect a specific NAVAID
+  List<Notam> _getNavaidNotams(String navaidId, String navaidType, List<Notam> notams) {
+    return notams.where((notam) {
+      final text = notam.rawText.toUpperCase();
+      final navaidIdUpper = navaidId.toUpperCase();
+      final navaidTypeUpper = navaidType.toUpperCase();
+      
+      // Check for NAVAID-specific NOTAMs with more precise matching
+      // Look for the specific NAVAID identifier (e.g., "IPN", "IGD", "IPH")
+      if (text.contains(navaidIdUpper)) {
+        return true;
+      }
+      
+      // For ILS systems, check for the specific identifier in quotes or after "ILS"
+      if (navaidTypeUpper.contains('ILS')) {
+        // Look for patterns like "ILS 'IPN'", "ILS 'IGD'", etc.
+        if (text.contains("ILS '$navaidIdUpper'") || 
+            text.contains("ILS $navaidIdUpper") ||
+            text.contains("'$navaidIdUpper'")) {
+          return true;
+        }
+        
+        // Also check if the NOTAM mentions the specific runway this ILS serves
+        // This helps catch runway-specific ILS NOTAMs
+        if (text.contains('RWY') && text.contains('ILS')) {
+          return true;
+        }
+      }
+      
+      if (navaidTypeUpper.contains('VOR') && text.contains('VOR')) {
+        return true;
+      }
+      
+      if (navaidTypeUpper.contains('DME') && text.contains('DME')) {
+        return true;
+      }
+      
+      return false;
+    }).toList();
+  }
+
+  /// Show NAVAID NOTAMs in a modal
+  void _showNavaidNotams(String navaidId, List<Notam> notams) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'NOTAMs for $navaidId',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: notams.length,
+                itemBuilder: (context, index) {
+                  final notam = notams[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notam.rawText,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 18),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: notam.rawText));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('NOTAM copied to clipboard'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            tooltip: 'Copy NOTAM text',
+                          ),
+                        ],
+                      ),
+                      subtitle: notam.qCode != null 
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Q-Code: ${notam.qCode}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 16),
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: notam.qCode!));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Q-Code copied to clipboard'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                tooltip: 'Copy Q-Code',
+                              ),
+                            ],
+                          )
+                        : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Analyze lighting status based on NOTAMs
+  LightingStatusInfo _analyzeLightingStatus(String runwayEnd, List<Lighting> lights, FlightProvider flightProvider) {
+    // Filter NOTAMs for this specific runway end's lighting
+    final filteredNotams = flightProvider.filterNotamsByTimeAndAirport(widget.notams, widget.icao);
+    
+    // Use NotamGroupingService to get properly grouped NOTAMs
+    final groupedNotams = _groupingService.groupNotams(filteredNotams);
+    
+    // Extract lighting-specific NOTAMs from the grouped results
+    // Note: Some lighting NOTAMs might be in airportServices group
+    final lightingGroupNotams = (groupedNotams[NotamGroup.airportServices] ?? []) + 
+                                (groupedNotams[NotamGroup.runways] ?? []);
+    final lightingNotams = _getLightingNotams(runwayEnd, lightingGroupNotams);
+    
+    if (lightingNotams.isEmpty) {
+      return LightingStatusInfo(
+        statusText: 'Operational',
+        statusColor: Colors.green,
+        hasNotams: false,
+        notams: [],
+      );
+    }
+
+    // NEW APPROACH: Derive overall status from individual component statuses
+    // This ensures consistency between overall status and individual component statuses
+    String mostSevereComponentStatus = 'operational';
+    
+    for (final light in lights) {
+      final componentStatus = _analyzeIndividualLightingStatus(light, runwayEnd, flightProvider);
+      
+      // Determine severity hierarchy: unserviceable > limited > operational
+      if (componentStatus == 'unserviceable') {
+        mostSevereComponentStatus = 'unserviceable';
+        break; // Can't get more severe than unserviceable
+      } else if (componentStatus == 'limited' && mostSevereComponentStatus == 'operational') {
+        mostSevereComponentStatus = 'limited';
+      }
+    }
+    
+    // Map component status to overall status
+    String statusText;
+    Color statusColor;
+    
+    switch (mostSevereComponentStatus) {
+      case 'unserviceable':
+        statusText = 'Unserviceable';
+        statusColor = Colors.red;
+        break;
+      case 'limited':
+        statusText = 'Limited';
+        statusColor = Colors.orange;
+        break;
+      case 'operational':
+      default:
+        statusText = 'Operational';
+        statusColor = Colors.green;
+        break;
+    }
+
+    return LightingStatusInfo(
+      statusText: statusText,
+      statusColor: statusColor,
+      hasNotams: lightingNotams.isNotEmpty,
+      notams: lightingNotams,
+    );
+  }
+
+  /// Get NOTAMs that affect lighting for a specific runway end
+  List<Notam> _getLightingNotams(String runwayEnd, List<Notam> notams) {
+    return notams.where((notam) {
+      final text = notam.rawText.toUpperCase();
+      final runwayEndUpper = runwayEnd.toUpperCase();
+      
+      // Check if the NOTAM mentions this specific runway end
+      return text.contains('RWY $runwayEndUpper') || 
+             text.contains('RUNWAY $runwayEndUpper') ||
+             text.contains(runwayEndUpper);
+    }).toList();
+  }
+
+  /// Analyze individual lighting component status based on NOTAMs
+  String _analyzeIndividualLightingStatus(Lighting light, String runwayEnd, FlightProvider flightProvider) {
+    // Filter NOTAMs for this specific runway end's lighting
+    final filteredNotams = flightProvider.filterNotamsByTimeAndAirport(widget.notams, widget.icao);
+    
+    // Use NotamGroupingService to get properly grouped NOTAMs
+    final groupedNotams = _groupingService.groupNotams(filteredNotams);
+    
+    // Extract lighting-specific NOTAMs from the grouped results
+    final lightingGroupNotams = (groupedNotams[NotamGroup.airportServices] ?? []) + 
+                                (groupedNotams[NotamGroup.runways] ?? []);
+    
+    // Look for NOTAMs that specifically mention this lighting component
+    final componentNotams = lightingGroupNotams.where((notam) {
+      final text = notam.rawText.toUpperCase();
+      final runwayEndUpper = runwayEnd.toUpperCase();
+      
+      // Check if NOTAM mentions this specific runway end
+      final mentionsRunway = text.contains('RWY $runwayEndUpper') || 
+                            text.contains('RUNWAY $runwayEndUpper') ||
+                            text.contains(runwayEndUpper);
+      
+      if (!mentionsRunway) return false;
+      
+      // Check if NOTAM mentions this specific lighting type (using expanded search terms)
+      return _doesNotamMentionLightingType(text, light.type);
+    }).toList();
+    
+    if (componentNotams.isEmpty) {
+      return 'operational';
+    }
+    
+    // Find the most severe status among all relevant NOTAMs for this specific component
+    String mostSevereStatus = 'operational';
+    
+    for (final notam in componentNotams) {
+      final componentStatus = _getComponentStatusFromNotam(notam, light.type);
+      
+      // Determine severity hierarchy: unserviceable > limited > operational
+      if (componentStatus == 'unserviceable') {
+        mostSevereStatus = 'unserviceable';
+        break; // Can't get more severe than unserviceable
+      } else if (componentStatus == 'limited' && mostSevereStatus == 'operational') {
+        mostSevereStatus = 'limited';
+      }
+    }
+    
+    return mostSevereStatus;
+  }
+
+  /// Check if NOTAM text mentions a specific lighting type (handles abbreviations vs full descriptions)
+  bool _doesNotamMentionLightingType(String notamText, String lightingType) {
+    final text = notamText.toUpperCase();
+    final type = lightingType.toUpperCase();
+    
+    // Direct match first
+    if (text.contains(type)) return true;
+    
+    // Handle common lighting type abbreviations and their full NOTAM descriptions
+    switch (type) {
+      case 'HIAL':
+        return text.contains('HIGH INTENSITY APPROACH LGT') || 
+               text.contains('HIGH INTENSITY APPROACH LIGHTING') ||
+               text.contains('APPROACH LGT') ||
+               text.contains('APPROACH LIGHTING');
+      case 'HIRL':
+        return text.contains('HIGH INTENSITY RUNWAY LGT') || 
+               text.contains('HIGH INTENSITY RUNWAY LIGHTING') ||
+               text.contains('RUNWAY LGT') ||
+               text.contains('RUNWAY LIGHTING');
+      case 'MIRL':
+        return text.contains('MEDIUM INTENSITY RUNWAY LGT') || 
+               text.contains('MEDIUM INTENSITY RUNWAY LIGHTING') ||
+               text.contains('RUNWAY LGT') ||
+               text.contains('RUNWAY LIGHTING');
+      case 'PAPI':
+        return text.contains('PAPI') || 
+               text.contains('PRECISION APPROACH PATH INDICATOR') ||
+               text.contains('APPROACH PATH INDICATOR');
+      case 'RCLL':
+        return text.contains('RCLL') || 
+               text.contains('RUNWAY CENTERLINE LGT') ||
+               text.contains('RUNWAY CENTERLINE LIGHTING') ||
+               text.contains('CENTERLINE LGT') ||
+               text.contains('CENTERLINE LIGHTING');
+      case 'RTZL':
+        return text.contains('RTZL') || 
+               text.contains('RUNWAY TOUCHDOWN ZONE LGT') ||
+               text.contains('RUNWAY TOUCHDOWN ZONE LIGHTING') ||
+               text.contains('TOUCHDOWN ZONE LGT') ||
+               text.contains('TOUCHDOWN ZONE LIGHTING');
+      case 'RTIL':
+        return text.contains('RTIL') || 
+               text.contains('RUNWAY THRESHOLD IDENTIFICATION LGT') ||
+               text.contains('RUNWAY THRESHOLD IDENTIFICATION LIGHTING') ||
+               text.contains('THRESHOLD IDENTIFICATION LGT') ||
+               text.contains('THRESHOLD IDENTIFICATION LIGHTING');
+      default:
+        // For any other lighting types, try both the abbreviation and common variations
+        return text.contains(type) ||
+               text.contains(type.replaceAll('/', ' ')) ||
+               text.contains(type.replaceAll('_', ' '));
+    }
+  }
+
+  /// Get the specific status for a lighting component from a NOTAM
+  String _getComponentStatusFromNotam(Notam notam, String lightingType) {
+    final text = notam.rawText.toUpperCase();
+    final type = lightingType.toUpperCase();
+    
+    // Check if this NOTAM specifically mentions this lighting component
+    if (!_doesNotamMentionLightingType(text, type)) {
+      return 'operational'; // Component not mentioned in this NOTAM
+    }
+    
+    // Determine status based on Q-code analysis
+    if (notam.qCode != null && notam.qCode!.isNotEmpty) {
+      final qCode = notam.qCode!.toUpperCase();
+      
+      // Extract status identifier (4th and 5th letters) and map to our status
+      if (qCode.length >= 5) {
+        final status = qCode.substring(3, 5);
+        
+        switch (status) {
+          // RED Status - Facility is unusable
+          case 'LC': return 'unserviceable'; // QMRLC = Runway Closed
+          case 'AS': return 'unserviceable'; // QICAS = ILS Unserviceable
+          case 'CC': return 'unserviceable'; // QFACC = Facility Closed
+          case 'UC': return 'unserviceable'; // QICUC = Instrument Unserviceable
+          
+          // YELLOW Status - Facility has operational limitations
+          case 'LT': return 'limited';       // QMRLT = Runway Limited
+          case 'MT': return 'limited';       // QMRMT = Runway Maintenance
+          case 'DP': return 'limited';       // QMRDP = Runway Displaced Threshold
+          case 'RD': return 'limited';       // QMRRD = Runway Reduced
+          case 'LM': return 'limited';       // QICLM = ILS Limited
+          case 'MM': return 'limited';       // QICMM = ILS Maintenance
+          case 'LR': return 'limited';       // QOLR = Lighting Limited
+          case 'MR': return 'limited';       // QOLMR = Lighting Maintenance
+          case 'CR': return 'limited';       // QFACR = Facility Reduced
+          case 'CM': return 'limited';       // QFACM = Facility Maintenance
+          
+          // GREEN Status - No operational impact
+          case 'OP': return 'operational';   // QMROP = Runway Operational
+          case 'AC': return 'operational';   // QICAC = ILS Active
+          case 'OK': return 'operational';   // QFAOK = Facility Operational
+          
+          // Default to unknown for unmapped status codes
+          default: return 'operational';
+        }
+      }
+    }
+    
+    // Fallback: analyze text for status indicators
+    if (text.contains('U/S') || text.contains('UNSERVICEABLE') || text.contains('CLOSED')) {
+      return 'unserviceable';
+    } else if (text.contains('LIMITED') || text.contains('RESTRICTED') || text.contains('DUE WIP')) {
+      return 'limited';
+    }
+    
+    return 'operational';
+  }
+
+  /// Show lighting NOTAMs in a modal
+  void _showLightingNotams(String runwayEnd, List<Notam> notams) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'NOTAMs for RWY $runwayEnd Lighting',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: notams.length,
+                itemBuilder: (context, index) {
+                  final notam = notams[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notam.rawText,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 18),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: notam.rawText));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('NOTAM copied to clipboard'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            tooltip: 'Copy NOTAM text',
+                          ),
+                        ],
+                      ),
+                      subtitle: notam.qCode != null 
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Q-Code: ${notam.qCode}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 16),
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: notam.qCode!));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Q-Code copied to clipboard'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                tooltip: 'Copy Q-Code',
+                              ),
+                            ],
+                          )
+                        : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Data class for runway status information
+class RunwayStatusInfo {
+  final String statusText;
+  final Color statusColor;
+  final bool hasNotams;
+  final List<Notam> notams;
+
+  RunwayStatusInfo({
+    required this.statusText,
+    required this.statusColor,
+    required this.hasNotams,
+    required this.notams,
+  });
+}
+
+/// Data class for NAVAID status information
+class NavaidStatusInfo {
+  final String statusText;
+  final Color statusColor;
+  final bool hasNotams;
+  final List<Notam> notams;
+
+  NavaidStatusInfo({
+    required this.statusText,
+    required this.statusColor,
+    required this.hasNotams,
+    required this.notams,
+  });
+}
+
+/// Data class for lighting status information
+class LightingStatusInfo {
+  final String statusText;
+  final Color statusColor;
+  final bool hasNotams;
+  final List<Notam> notams;
+
+  LightingStatusInfo({
+    required this.statusText,
+    required this.statusColor,
+    required this.hasNotams,
+    required this.notams,
+  });
 } 

@@ -74,51 +74,7 @@ class ApiService {
   }
 
   Future<List<Notam>> fetchNotams(String icao) async {
-    // Get NAIPS settings automatically
-    final naipsSettings = await _getNaipsSettings();
-    final naipsEnabled = naipsSettings['enabled'] as bool;
-    final naipsUsername = naipsSettings['username'] as String?;
-    final naipsPassword = naipsSettings['password'] as String?;
-    
-    debugPrint('DEBUG: 🔍 fetchNotams - Auto-loaded NAIPS settings: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
-    
-    // Try NAIPS first if enabled and credentials are available
-    if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
-      try {
-        debugPrint('DEBUG: 🔍 Attempting to fetch NOTAMs from NAIPS for $icao');
-        final naipsService = NAIPSService();
-        
-        // Authenticate with NAIPS
-        final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);
-        
-        if (isAuthenticated) {
-          debugPrint('DEBUG: 🔍 NAIPS authentication successful');
-          
-          final html = await naipsService.requestLocationBriefing(icao);
-          
-          // Parse NOTAM data from NAIPS HTML
-          final notamList = NAIPSParser.parseNOTAMsFromHTML(html);
-          
-          debugPrint('DEBUG: 🔍 NAIPS returned ${notamList.length} NOTAMs');
-          
-          // If we got data from NAIPS, return it
-          if (notamList.isNotEmpty) {
-            debugPrint('DEBUG: 🔍 Returning NAIPS NOTAM data');
-            return notamList;
-          } else {
-            debugPrint('DEBUG: 🔍 NAIPS returned no NOTAM data, falling back to free APIs');
-          }
-        } else {
-          debugPrint('DEBUG: 🔍 NAIPS authentication failed, falling back to free APIs');
-        }
-      } catch (e) {
-        debugPrint('DEBUG: 🔍 NAIPS NOTAM fetch failed: $e');
-        debugPrint('DEBUG: 🔍 Falling back to free APIs');
-      }
-    }
-    
-    // Fall back to free APIs
-    debugPrint('DEBUG: 🔍 Using free APIs for NOTAM data');
+    debugPrint('DEBUG: 🔍 fetchNotams - Fetching NOTAMs from FAA API for $icao');
     
     try {
       debugPrint('DEBUG: 🔍 Attempting to fetch NOTAMs for $icao with offset-based pagination...');
@@ -269,13 +225,13 @@ class ApiService {
         }
       }
       
-      debugPrint('DEBUG: ✅ Successfully fetched ${allNotams.length} unique NOTAMs for $icao via multi-strategy pagination');
+      debugPrint('DEBUG: ✅ Successfully fetched ${allNotams.length} unique NOTAMs for $icao via FAA API');
       debugPrint('DEBUG: 🔍 Total API responses: $totalFetched');
       debugPrint('DEBUG: 🔍 Total unique NOTAMs: ${allNotams.length}');
       
       // Debug: Print all NOTAM IDs that were fetched
-      final allNotamIds = allNotams.map((n) => n.id).toList();
-      debugPrint('DEBUG: 🔍 ALL NOTAM IDs fetched: $allNotamIds');
+      final faaNotamIds = allNotams.map((n) => n.id).toList();
+      debugPrint('DEBUG: 🔍 FAA API NOTAM IDs fetched: $faaNotamIds');
       
       return allNotams;
       

@@ -289,6 +289,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                         icon: Icon(Icons.access_time, size: 18), // Smaller icon
                         text: 'TAFs',
                       ),
+
                     ],
                   ),
                 ),
@@ -346,6 +347,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                       ),
                       // TAFs tab: timeline-based TAF display
                       _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+
                     ],
                   ),
                 ),
@@ -1197,4 +1199,6 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
       ),
     );
   }
+
+
 } 

@@ -328,6 +328,26 @@ class NAIPSService {
       'Cache-Control': 'no-cache',
     };
   }
+
+  /// Verify that current cookies can access the Chart Directory. Returns true when
+  /// the response looks like the directory (has table headers like Code/Name),
+  /// false when we got the login page.
+  Future<bool> ensureChartsSession() async {
+    try {
+      final uri = Uri.parse('$baseUrl/ChartDirectory');
+      final res = await http.get(uri, headers: buildAuthHeaders(referer: '$baseUrl/'));
+      debugPrint('DEBUG: NAIPSService - ensureChartsSession status: ${res.statusCode}');
+      if (res.statusCode != 200) return false;
+      final body = res.body;
+      final looksLogin = body.contains('User Not Logged in') || body.contains('Login') || body.contains('User Name');
+      if (looksLogin) return false;
+      final looksDirectory = body.contains('Code') && body.contains('Lo-Res') && body.contains('Hi-Res');
+      return looksDirectory;
+    } catch (e) {
+      debugPrint('DEBUG: NAIPSService - ensureChartsSession error: $e');
+      return false;
+    }
+  }
   
   /// Check if currently authenticated
   bool get isAuthenticated => _isAuthenticated;

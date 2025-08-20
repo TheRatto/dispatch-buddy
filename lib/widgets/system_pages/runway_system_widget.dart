@@ -186,7 +186,22 @@ class RunwaySystemWidget extends StatelessWidget {
   }
 
   RunwayStatus _analyzeRunway(String identifier, List<Notam> notams) {
-    // Determine status based on NOTAMs
+    // Enhanced analysis using Q-codes when available
+    if (notams.isNotEmpty) {
+      // Use the enhanced Q-code status calculation by analyzing runway status
+      final systemAnalyzer = AirportSystemAnalyzer();
+      final enhancedStatus = systemAnalyzer.analyzeRunwayStatus(notams, 'temp'); // Use temp ICAO since we're analyzing specific runway
+      final enhancedStatusText = _getEnhancedStatusText(notams, enhancedStatus);
+      
+      return RunwayStatus(
+        identifier: identifier,
+        status: enhancedStatus,
+        impacts: [enhancedStatusText],
+        notams: notams,
+      );
+    }
+    
+    // Fallback to basic analysis
     SystemStatus status = SystemStatus.green;
     final impacts = <String>[];
     
@@ -206,6 +221,40 @@ class RunwaySystemWidget extends StatelessWidget {
       impacts: impacts,
       notams: notams,
     );
+  }
+
+  String _getEnhancedStatusText(List<Notam> notams, SystemStatus status) {
+    if (notams.isEmpty) return 'Operational';
+    
+    // Check Q-codes first for precise status
+    for (final notam in notams) {
+      if (notam.qCode != null) {
+        final qCode = notam.qCode!;
+        if (qCode.length >= 5) {
+          final statusLetters = qCode.substring(3, 5);
+          switch (statusLetters) {
+            case 'LC': return 'Closed';
+            case 'AS': return 'Unserviceable';
+            case 'LT': return 'Limited';
+            case 'MT': return 'Maintenance';
+            case 'DP': return 'Displaced Threshold';
+            case 'RD': return 'Reduced';
+            case 'OP': return 'Operational';
+            case 'AC': return 'Active';
+          }
+        }
+      }
+    }
+    
+    // Fallback to text-based analysis
+    switch (status) {
+      case SystemStatus.red:
+        return 'Critical Issue';
+      case SystemStatus.yellow:
+        return 'Operational Limitation';
+      case SystemStatus.green:
+        return 'Operational';
+    }
   }
 
   List<String> _extractOperationalImpacts(List<Notam> runwayNotams) {

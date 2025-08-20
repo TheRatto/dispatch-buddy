@@ -19,6 +19,14 @@ class DecoderService {
   DecodedWeather decodeTaf(String rawText) {
     debugPrint('DEBUG: 🚀 decodeTaf called with rawText: "$rawText"');
     
+    // Check if this is YPPH TAF
+    if (rawText.contains('YPPH')) {
+      debugPrint('DEBUG: 🎯 YPPH TAF detected!');
+      debugPrint('DEBUG: YPPH raw text: "$rawText"');
+      debugPrint('DEBUG: YPPH TAF length: ${rawText.length}');
+      debugPrint('DEBUG: YPPH TAF first 200 chars: "${rawText.substring(0, rawText.length > 200 ? 200 : rawText.length)}"');
+    }
+    
     // Check if this is KJFK TAF
     if (rawText.contains('KJFK')) {
       debugPrint('DEBUG: 🎯 KJFK TAF detected!');
@@ -107,6 +115,12 @@ class DecoderService {
 
   List<DecodedForecastPeriod> _parseTafPeriods(String rawText) {
     debugPrint('DEBUG: 🔍 _parseTafPeriods called with rawText: "$rawText"');
+    
+    // Add debug logging for YPPH
+    if (rawText.contains('YPPH')) {
+      debugPrint('DEBUG: 🔍 Starting YPPH TAF period parsing...');
+      debugPrint('DEBUG: YPPH TAF raw text: "$rawText"');
+    }
     
     // Add debug logging for KJFK
     if (rawText.contains('KJFK')) {
@@ -557,15 +571,18 @@ class DecoderService {
   }
 
   DateTime? _parseTafEndTime(String rawText) {
+    // Parse TAF issue time first to get the correct month reference
+    final issueTime = _parseTafTimestamp(rawText);
+    
     // Parse TAF validity period end time from header (e.g., "2512/2618")
     final validityMatch = RegExp(r'(\d{2})(\d{2})/(\d{2})(\d{2})').firstMatch(rawText);
     if (validityMatch != null) {
       final endDay = int.parse(validityMatch.group(3)!);
       final endHour = int.parse(validityMatch.group(4)!);
       
-      // Use helper method for proper month transition handling
+      // Use TAF issue time as reference for month transition handling
       final startTime = _parseTafCommencementTime(rawText);
-      return createEndDateTimeWithMonthTransition(startTime, endDay, endHour);
+      return _createEndDateTimeWithTafReference(startTime, endDay, endHour);
     }
     
     return null;
@@ -917,6 +934,34 @@ class DecoderService {
     int month = startTime.month;
     
     debugPrint('DEBUG: 🔍 _createEndDateTimeWithMonthTransition called with startTime: $startTime, endDay: $endDay, endHour: $endHour');
+    debugPrint('DEBUG: 🔍   Initial year: $year, month: $month');
+    
+    // If end day is less than start day, assume it's next month
+    if (endDay < startTime.day) {
+      month++;
+      if (month > 12) {
+        month = 1;
+        year++;
+      }
+      debugPrint('DEBUG: 🔍   End day $endDay < start day ${startTime.day}, incrementing month to $month');
+    }
+    
+    final result = DateTime(year, month, endDay, endHour, endMinute);
+    debugPrint('DEBUG: 🔍   Created end DateTime: $result');
+    return result;
+  }
+
+  /// Helper method to create end DateTime with proper month transition handling
+  /// Takes the start DateTime as reference to determine if end time is in next month
+  /// Made public for testing purposes
+  /// 
+  /// CRITICAL: Only increment month when end day < start day.
+  /// This handles cases like 3020/0100 where end is in next month.
+  DateTime _createEndDateTimeWithTafReference(DateTime startTime, int endDay, int endHour, [int endMinute = 0]) {
+    int year = startTime.year;
+    int month = startTime.month;
+    
+    debugPrint('DEBUG: 🔍 _createEndDateTimeWithTafReference called with startTime: $startTime, endDay: $endDay, endHour: $endHour');
     debugPrint('DEBUG: 🔍   Initial year: $year, month: $month');
     
     // If end day is less than start day, assume it's next month

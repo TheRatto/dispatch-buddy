@@ -63,7 +63,7 @@ class DecodedScreen extends StatelessWidget {
 
             return TabBarView(
               children: [
-                _buildNotamsTab(flight),
+                _buildNotamsTab(flight, flightProvider),
                 _buildMetarsTab(flight),
                 _buildTafsTab(flight),
               ],
@@ -74,7 +74,7 @@ class DecodedScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotamsTab(dynamic flight) {
+  Widget _buildNotamsTab(dynamic flight, FlightProvider flightProvider) {
     if (flight.notams.isEmpty) {
       return Center(
         child: Column(

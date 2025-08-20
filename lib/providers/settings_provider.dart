@@ -18,6 +18,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _naipsPassword;
 
   Units get runwayUnits => _runwayUnits;
+  bool get isInitialized => _isInitialized;
   
   // NAIPS getters
   bool get naipsEnabled => _naipsEnabled;

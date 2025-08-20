@@ -30,6 +30,30 @@
   - Using fetch time for ATIS led to incorrect ages and dedupe order.
   - A tie‑blind “NAIPS over API” merge allowed older NAIPS to suppress newer API; a naive “newest‑wins” then suppressed NAIPS too aggressively. The 2‑minute NAIPS preference is a pragmatic balance.
 
+## Lessons learned – NAIPS Charts directory and viewer
+
+- Directory access
+  - The Chart Directory requires a login then a form POST to `ChartDirectorySearch` (not `ChartListing`). Mimic the browser: warm GET `/naips/ChartDirectory`, scrape hidden inputs, then POST with `SearchCriteria`, `ChartCategory`, and `SubmitChartSearch=Submit`.
+  - Some sessions still return the login/docs page with 200 OK; explicitly detect by content and re‑auth.
+
+- Parsing strategy
+  - Parse the main table by headers (Code | Name | Valid From | Valid Till | Lo‑Res | Hi‑Res | PDF). Fall back to link‑centric discovery if structure changes.
+  - “Details” pages do not link images directly; resolve to `/ChartDirectory/GetImage/...` and fetch bytes with NAIPS cookies and a proper Referer.
+  - Treat `Valid Till = PERM` as a single‑time product; compute a 6‑hour window centered on the valid time (±3h). If the name contains `VALID HHMMZ`, prefer that as `validAtUtc`.
+
+- Ordering vs pruning
+  - Avoid over‑pruning. We initially filtered to a narrow curated set and dropped many legitimate products. The correct approach is: keep the full set, then apply a stable ordering to surface the most useful first.
+  - Categorize broadly (MSL Analysis/Prognosis, SIGWX core vs regional, SIGMET All/High/Low, SATPIC Australia Regional, GP Winds High/Mid, others) and sort using explicit precedence.
+
+- Viewer UX
+  - Combine pinch‑to‑zoom and page‑swipe by disabling page scrolling whenever zoom > ~1x, and provide bottom arrow buttons as an alternative.
+  - Double‑tap zoom should center on the tap point by mapping the tap into scene coordinates and animating the transform.
+  - Show compact validity at the top; single‑time color coding (e.g., 0000Z/0600Z) helps quickly group cycles.
+
+- Diagnostics
+  - Log table headers, counts, and a capped sample of rows (code, name, category, times) to validate parsing without noisy logs.
+  - When things look empty but status=200, assume login/docs body and check the Referer/POST path.
+
 # Lessons Learned - Dispatch Buddy Development
 
 ## Navigation & UX Design
