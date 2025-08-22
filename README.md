@@ -90,3 +90,31 @@ The app consists of the following 5 main screens:
 - **Next Sprint**: TafDisplayService extraction and widget separation
 
 See `docs/current_sprint_tasks.md` for detailed current tasks and priorities.
+
+## 🚀 Development Workflow & AI Collaboration
+
+### Daily Development Routine
+- **Morning Planning (9:00 AM)**: Review yesterday's progress, plan today's tasks
+- **Development Sessions**: 2-3 hour focused coding blocks with breaks
+- **End-of-Day Review (3:00 PM)**: Document accomplishments, plan tomorrow
+
+### AI Collaboration Templates
+- **`docs/development_workflow_template.md`** - Comprehensive development planning
+- **`docs/daily_development_log.md`** - Daily progress tracking and AI context
+- **`docs/ai_collaboration_guidelines.md`** - How to work effectively with AI
+- **`docs/quick_start_template.md`** - Copy-paste templates for daily use
+
+### Best Practices for AI Sessions
+1. **Start with context**: What file/feature you're working on
+2. **Be specific**: Describe the problem, not just "help me"
+3. **Show your code**: Paste relevant code snippets
+4. **Ask for explanations**: Understand why approaches work
+5. **Use templates**: Follow established workflow patterns
+
+### Quick Start for AI Sessions
+```
+I'm working on: [File/Feature Name]
+Current sprint goal: [What you're trying to achieve this week]
+Today's priority: [What you want to accomplish in this session]
+Time available: [How much time you have to work on this]
+```

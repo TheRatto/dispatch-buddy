@@ -913,24 +913,31 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     debugPrint('DEBUG: Airport filtered NOTAM IDs: ${airportFilteredNotams.map((n) => n.id).join(", ")}');
     
     // Filter by time
-    final timeFilteredNotams = _filterNotamsByTime(airportFilteredNotams);
-    debugPrint('DEBUG: After time filter: ${timeFilteredNotams.length} NOTAMs');
-    debugPrint('DEBUG: Time filtered NOTAM IDs: ${timeFilteredNotams.map((n) => n.id).join(", ")}');
+    final filteredNotams = _filterNotamsByTime(airportFilteredNotams);
+    debugPrint('DEBUG: After time filter: ${filteredNotams.length} NOTAMs');
+    debugPrint('DEBUG: Time filtered NOTAM IDs: ${filteredNotams.map((n) => n.id).join(", ")}');
     
     // Cache the result
-    _cacheManager.set(cacheKey, timeFilteredNotams);
+    _cacheManager.set(cacheKey, filteredNotams);
     
-    debugPrint('DEBUG: Cached ${timeFilteredNotams.length} filtered NOTAMs');
-    return timeFilteredNotams;
+    debugPrint('DEBUG: Cached ${filteredNotams.length} filtered NOTAMs');
+    return filteredNotams;
   }
 
   // Filter NOTAMs based on selected time filter
   List<Notam> _filterNotamsByTime(List<Notam> notams) {
     debugPrint('DEBUG: _filterNotamsByTime called with ${notams.length} NOTAMs, filter: $_selectedTimeFilter');
     
+    // Filter out CNL (Cancellation) NOTAMs - they don't provide useful operational information
+    final activeNotams = notams.where((notam) => 
+      !notam.rawText.toUpperCase().contains('CNL NOTAM')
+    ).toList();
+    
+    debugPrint('DEBUG: After CNL filter: ${activeNotams.length} NOTAMs (filtered out ${notams.length - activeNotams.length} CNL NOTAMs)');
+    
     if (_selectedTimeFilter == 'All NOTAMs') {
-      debugPrint('DEBUG: Returning all ${notams.length} NOTAMs (All NOTAMs filter)');
-      return notams;
+      debugPrint('DEBUG: Returning all ${activeNotams.length} NOTAMs (All NOTAMs filter)');
+      return activeNotams;
     }
     
     final now = DateTime.now().toUtc(); // Use UTC time consistently
@@ -950,8 +957,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         filterDuration = const Duration(hours: 72);
         break;
       default:
-        debugPrint('DEBUG: Unknown filter, returning all ${notams.length} NOTAMs');
-        return notams;
+        debugPrint('DEBUG: Unknown filter, returning all ${activeNotams.length} NOTAMs');
+        return activeNotams;
     }
     
     final filterEndTime = now.add(filterDuration);
@@ -961,15 +968,15 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     debugPrint('DEBUG: Filter duration: ${filterDuration.inHours} hours');
     
     // Only log NOTAMs occasionally to reduce console spam
-    if (notams.length <= 5) {
+    if (activeNotams.length <= 5) {
       // Log all NOTAMs if there are 5 or fewer
-      for (int i = 0; i < notams.length; i++) {
-        final notam = notams[i];
+      for (int i = 0; i < activeNotams.length; i++) {
+        final notam = activeNotams[i];
         final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
         final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
         final passesFilter = isCurrentlyActive || isFutureActive;
         
-        debugPrint('DEBUG: NOTAM ${i + 1}/${notams.length}: ${notam.id} (${notam.icao})');
+        debugPrint('DEBUG: NOTAM ${i + 1}/${activeNotams.length}: ${notam.id} (${notam.icao})');
         debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
         debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
         debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
@@ -979,26 +986,26 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     } else {
       // Log only first 3 and last 3 NOTAMs if there are more than 5
       for (int i = 0; i < 3; i++) {
-        final notam = notams[i];
+        final notam = activeNotams[i];
         final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
         final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
         final passesFilter = isCurrentlyActive || isFutureActive;
         
-        debugPrint('DEBUG: NOTAM ${i + 1}/${notams.length}: ${notam.id} (${notam.icao})');
+        debugPrint('DEBUG: NOTAM ${i + 1}/${activeNotams.length}: ${notam.id} (${notam.icao})');
         debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
         debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
         debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
         debugPrint('DEBUG:   Future active: $isFutureActive');
         debugPrint('DEBUG:   Passes filter: $passesFilter');
       }
-      debugPrint('DEBUG: ... (${notams.length - 6} more NOTAMs) ...');
-      for (int i = notams.length - 3; i < notams.length; i++) {
-        final notam = notams[i];
+      debugPrint('DEBUG: ... (${activeNotams.length - 6} more NOTAMs) ...');
+      for (int i = activeNotams.length - 3; i < activeNotams.length; i++) {
+        final notam = activeNotams[i];
         final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
         final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
         final passesFilter = isCurrentlyActive || isFutureActive;
         
-        debugPrint('DEBUG: NOTAM ${i + 1}/${notams.length}: ${notam.id} (${notam.icao})');
+        debugPrint('DEBUG: NOTAM ${i + 1}/${activeNotams.length}: ${notam.id} (${notam.icao})');
         debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
         debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
         debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
@@ -1007,7 +1014,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
       }
     }
     
-    final filteredNotams = notams.where((notam) {
+    final filteredNotams = activeNotams.where((notam) {
       // Show NOTAMs that are either:
       // 1. Currently active (started before now, ends after now)
       // 2. Will become active within the time window

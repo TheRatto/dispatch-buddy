@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/flight.dart';
 import '../models/airport.dart';
@@ -42,9 +43,71 @@ class FlightProvider with ChangeNotifier {
     'All Future:',
   ];
 
+  // Timer-based status updates
+  Timer? _statusUpdateTimer;
+  static const Duration _statusUpdateInterval = Duration(minutes: 15);
+  bool _isStatusUpdateEnabled = true;
+
   FlightProvider() {
     // Load saved flights when the provider is initialized
     loadSavedFlights();
+    // Start the status update timer
+    _startStatusUpdateTimer();
+  }
+
+  @override
+  void dispose() {
+    _stopStatusUpdateTimer();
+    super.dispose();
+  }
+
+  // Timer management methods
+  void _startStatusUpdateTimer() {
+    if (_statusUpdateTimer != null) {
+      _statusUpdateTimer!.cancel();
+    }
+    
+    _statusUpdateTimer = Timer.periodic(_statusUpdateInterval, (timer) {
+      if (_isStatusUpdateEnabled && _currentFlight != null) {
+        _refreshAllAirportSystemStatus();
+        debugPrint('DEBUG: 🔄 Status update timer triggered - refreshed system status for ${_currentFlight!.airports.length} airports');
+      }
+    });
+    
+    debugPrint('DEBUG: 🔄 Status update timer started - interval: ${_statusUpdateInterval.inMinutes} minutes');
+  }
+
+  void _stopStatusUpdateTimer() {
+    _statusUpdateTimer?.cancel();
+    _statusUpdateTimer = null;
+    debugPrint('DEBUG: 🔄 Status update timer stopped');
+  }
+
+  void _refreshAllAirportSystemStatus() {
+    if (_currentFlight == null) return;
+    
+    // Update system status for all airports
+    _updateAllAirportSystemStatus();
+    
+    // Notify listeners that status has been updated
+    notifyListeners();
+  }
+
+  // Public method to manually refresh status (for pull-to-refresh)
+  void refreshSystemStatus() {
+    debugPrint('DEBUG: 🔄 Manual system status refresh requested');
+    _refreshAllAirportSystemStatus();
+  }
+
+  // Public method to enable/disable automatic updates
+  void setStatusUpdateEnabled(bool enabled) {
+    _isStatusUpdateEnabled = enabled;
+    if (enabled) {
+      _startStatusUpdateTimer();
+    } else {
+      _stopStatusUpdateTimer();
+    }
+    debugPrint('DEBUG: 🔄 Status updates ${enabled ? 'enabled' : 'disabled'}');
   }
 
   // Getters
@@ -65,6 +128,10 @@ class FlightProvider with ChangeNotifier {
   // Time filter getters
   String get selectedTimeFilter => _selectedTimeFilter;
   List<String> get timeFilterOptions => _timeFilterOptions;
+  
+  // Timer status getters
+  bool get isStatusUpdateEnabled => _isStatusUpdateEnabled;
+  Duration get statusUpdateInterval => _statusUpdateInterval;
   
   // Navigation state getters
   int? get lastViewedSystemPage => _lastViewedSystemPage;

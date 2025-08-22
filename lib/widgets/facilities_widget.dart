@@ -63,55 +63,65 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   
   @override
   Widget build(BuildContext context) {
-    return Consumer<FlightProvider>(
-      builder: (context, flightProvider, child) {
-        return FutureBuilder<dynamic>(
-          key: ValueKey('facilities_${widget.icao}'),
-          future: _loadAirportData(widget.icao),
-          builder: (context, snapshot) {
-            debugPrint('DEBUG: FutureBuilder - Connection state: ${snapshot.connectionState}');
-            debugPrint('DEBUG: FutureBuilder - Has data: ${snapshot.hasData}');
-            debugPrint('DEBUG: FutureBuilder - Data type: ${snapshot.data?.runtimeType}');
-            
-            // Show content immediately with placeholder data
-            final airportData = snapshot.data;
-            
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ListView(
-                children: [
-                  // Airport header
-                  _buildAirportHeader(),
-                  const SizedBox(height: 24),
-                  
-                  // Runways section - uses real data when available
-                  _buildRunwaysSection(airportData),
-                  const SizedBox(height: 16),
-                  
-                  // NAVAIDs section - placeholder for now, will use real data later
-                  _buildNavAidsSection(airportData),
-                  const SizedBox(height: 16),
-                  
-                  // Lighting section - placeholder for now, will use real data later
-                  _buildLightingSection(airportData),
-                  const SizedBox(height: 16),
-                  
-                  // Services section - placeholder for now, will use real data later
-                  _buildServicesSection(airportData),
-                  const SizedBox(height: 16),
-                  
-                  // Hazards section - placeholder for now, will use real data later
-                  _buildHazardsSection(airportData),
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Airport Facilities'),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+      ),
+      body: Consumer<FlightProvider>(
+        builder: (context, flightProvider, child) {
+          final selectedAirport = flightProvider.selectedAirport;
+          if (selectedAirport == null) {
+            return const Center(
+              child: Text('Please select an airport from the home screen.'),
             );
-          },
-        );
-      },
+          }
+
+          return FutureBuilder<AirportInfrastructure?>(
+            future: _loadAirportData(selectedAirport),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error loading airport data: ${snapshot.error}'),
+                );
+              }
+
+              final airportData = snapshot.data;
+              if (airportData == null) {
+                return const Center(
+                  child: Text('No airport data available.'),
+                );
+              }
+
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildAirportHeader(airportData),
+                    const SizedBox(height: 16),
+                    _buildRunwaySection(airportData, flightProvider),
+                    const SizedBox(height: 16),
+                    _buildNavAidsSection(airportData, flightProvider),
+                    const SizedBox(height: 16),
+                    _buildLightingSection(airportData, flightProvider),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
-  Future<dynamic> _loadAirportData(String icao) async {
+  /// Load airport infrastructure data from cache or database
+  Future<AirportInfrastructure?> _loadAirportData(String icao) async {
     try {
       debugPrint('DEBUG: _loadAirportData called for $icao');
       // Use the cache manager to get airport infrastructure data
@@ -129,7 +139,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     }
   }
 
-  Widget _buildAirportHeader() {
+  Widget _buildAirportHeader(AirportInfrastructure airportData) {
     // Debug logging to see what airport name we have
     debugPrint('DEBUG: FacilitiesWidget - Airport name: "${widget.airportName}", ICAO: "${widget.icao}"');
     
@@ -181,24 +191,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  Widget _buildRunwaysSection(dynamic airportData) {
-    if (airportData == null) {
-      return _buildFacilitySection(
-        title: 'Runways',
-        icon: _buildRunwayIcon(), // Use custom icon immediately
-        color: Colors.green,
-        facilities: [
-          _buildFacilityItem(
-            name: 'Loading runway data...',
-            details: '',
-            status: 'Loading',
-            statusColor: Colors.orange,
-          ),
-        ],
-        emptyMessage: 'No runway data available',
-      );
-    }
-
+  Widget _buildRunwaySection(AirportInfrastructure airportData, FlightProvider flightProvider) {
     final runways = airportData.runways ?? [];
     debugPrint('DEBUG: FacilitiesWidget - Runway data received: ${runways.length} runways');
     
@@ -435,39 +428,13 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  Widget _buildNavAidsSection(dynamic airportData) {
+  Widget _buildNavAidsSection(AirportInfrastructure airportData, FlightProvider flightProvider) {
     debugPrint('DEBUG: _buildNavAidsSection called with airportData: ${airportData?.runtimeType}');
     
-    if (airportData == null) {
-      debugPrint('DEBUG: _buildNavAidsSection - airportData is null, showing loading');
-      return _buildFacilitySection(
-        title: 'NAVAIDs',
-        icon: Icons.radar,
-        color: Colors.blue,
-        facilities: [
-          _buildFacilityItem(
-            name: 'Loading navaid data...',
-            details: '',
-            status: 'Loading',
-            statusColor: Colors.orange,
-          ),
-        ],
-        emptyMessage: 'No navaid data available',
-      );
-    }
-
-    // Extract navaids from airport infrastructure data
-    List<Navaid> navaids = [];
-    
-    if (airportData is AirportInfrastructure) {
-      navaids = airportData.navaids;
-      debugPrint('DEBUG: _buildNavAidsSection - Found ${navaids.length} navaids from AirportInfrastructure');
-      for (final navaid in navaids) {
-        debugPrint('DEBUG: _buildNavAidsSection - Navaid: ${navaid.type} ${navaid.identifier} ${navaid.frequency} (runway: ${navaid.runway})');
-      }
-    } else {
-      debugPrint('DEBUG: _buildNavAidsSection - airportData is not AirportInfrastructure: ${airportData.runtimeType}');
-      debugPrint('DEBUG: _buildNavAidsSection - airportData value: $airportData');
+    final navaids = airportData.navaids;
+    debugPrint('DEBUG: _buildNavAidsSection - Found ${navaids.length} navaids from AirportInfrastructure');
+    for (final navaid in navaids) {
+      debugPrint('DEBUG: _buildNavAidsSection - Navaid: ${navaid.type} ${navaid.identifier} ${navaid.frequency} (runway: ${navaid.runway})');
     }
     
     // Group navaids by runway and type
@@ -670,17 +637,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  Widget _buildLightingSection(dynamic airportData) {
-    if (airportData == null || airportData.lighting == null) {
-      return _buildFacilitySection(
-        title: 'Lighting',
-        icon: Icons.lightbulb,
-        color: Colors.orange,
-        facilities: [],
-        emptyMessage: 'No lighting data available',
-      );
-    }
-
+  Widget _buildLightingSection(AirportInfrastructure airportData, FlightProvider flightProvider) {
     final lighting = airportData.lighting as List<Lighting>;
     debugPrint('DEBUG: _buildLightingSection - Found ${lighting.length} lighting systems');
 

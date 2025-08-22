@@ -368,8 +368,13 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
 
   // Filter NOTAMs based on selected time filter
   List<Notam> _filterNotamsByTime(List<Notam> notams) {
+    // Filter out CNL (Cancellation) NOTAMs - they don't provide useful operational information
+    final activeNotams = notams.where((notam) => 
+      !notam.rawText.toUpperCase().contains('CNL NOTAM')
+    ).toList();
+    
     if (_selectedTimeFilter == 'All NOTAMs') {
-      return notams;
+      return activeNotams;
     }
     
     final now = DateTime.now().toUtc(); // Use UTC time consistently
@@ -389,12 +394,12 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
         filterDuration = const Duration(hours: 72);
         break;
       default:
-        return notams;
+        return activeNotams;
     }
     
     final filterEndTime = now.add(filterDuration);
     
-    return notams.where((notam) {
+    return activeNotams.where((notam) {
       // Show NOTAMs that are either:
       // 1. Currently active (started before now, ends after now)
       // 2. Will become active within the time window

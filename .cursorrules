@@ -1,0 +1,91 @@
+# Cursor Rules for Dispatch Buddy Flutter Project
+
+## Project Context
+This is a Flutter aviation application called "Dispatch Buddy" that handles NOTAMs, weather data, and flight planning. The project uses Flutter/Dart with a focus on aviation data parsing and presentation.
+
+## Development Standards
+
+### Code Quality
+- Follow Flutter/Dart best practices
+- Use meaningful variable and function names
+- Implement proper error handling
+- Write unit tests for new features
+- Use consistent formatting (dart format)
+
+### Architecture
+- Separate business logic from UI components
+- Use providers for state management
+- Keep services focused and testable
+- Implement proper separation of concerns
+
+### Documentation
+- Document complex business logic
+- Keep README and docs updated
+- Use clear commit messages
+- Document API integrations
+
+## AI Collaboration Guidelines
+
+### When Working with AI
+- Always provide context about what you're working on
+- Share relevant code snippets
+- Explain your goals, not just problems
+- Ask for explanations, not just solutions
+- Use the established templates for consistency
+
+### Code Review Requests
+- Ask for best practices review
+- Request performance improvements
+- Seek testing strategies
+- Ask for architectural feedback
+
+### Learning Focus
+- Understand why approaches work
+- Learn Flutter/Dart patterns
+- Improve debugging skills
+- Build testing habits
+
+## Project-Specific Rules
+
+### Aviation Data Handling
+- Validate all aviation data inputs
+- Handle edge cases in weather parsing
+- Implement proper error handling for API failures
+- Cache data appropriately for offline use
+
+### UI/UX Standards
+- Follow Material Design principles
+- Ensure accessibility compliance
+- Test on multiple screen sizes
+- Implement responsive design
+
+### Testing Requirements
+- Unit tests for all services
+- Widget tests for UI components
+- Integration tests for critical flows
+- Mock external dependencies
+
+## File Organization
+- Keep related files together
+- Use consistent naming conventions
+- Organize by feature, not type
+- Maintain clear import structure
+
+## Performance Considerations
+- Lazy load when possible
+- Implement proper caching strategies
+- Optimize image and data handling
+- Monitor app performance
+
+## Security
+- Never commit API keys
+- Validate all user inputs
+- Implement proper authentication
+- Follow security best practices
+
+## Remember
+- You're learning and improving
+- Ask questions to understand concepts
+- Build incrementally and test often
+- Keep your development log updated
+- Use the established workflow templates

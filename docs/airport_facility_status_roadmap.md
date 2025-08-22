@@ -311,48 +311,98 @@ class AirportSystemAnalyzer {
 - ✅ **Consistent with NAIPS**: Matches behavior of mature NOTAM systems
 - ✅ **Improved Readability**: Users see only actionable information
 
-### **Phase 6: Time-Based Updates** (2-3 hours)
+### **Phase 6: Timer-Based Status Updates** ✅ COMPLETED
 **Priority**: MEDIUM
 **Goal**: Automatic status updates as NOTAMs change
 
-#### **Task 6.1: Background Status Updates**
+#### **Task 6.1: Background Status Updates** ✅ COMPLETED
 **Responsibility**: Update facility status every 15 minutes
 
 **Implementation**:
-- [ ] Add `Timer.periodic` for status updates
-- [ ] Check for NOTAMs entering/leaving time windows
-- [ ] Update UI when status changes
-- [ ] Clean up timers on dispose
+- ✅ **Timer management** - automatic start/stop with provider lifecycle
+- ✅ **Smart refresh logic** - only updates when flight data exists
+- ✅ **UI integration** - status indicator card with controls
+- ✅ **Public API** - methods to control timer behavior
+- ✅ **Debug logging** - comprehensive timer event logging
 
-#### **Task 5.2: Status Change Indicators**
-**Responsibility**: Show when facility status has changed
+**User Experience Features**:
+- ✅ **Status indicator card** - shows if auto-updates are active
+- ✅ **Toggle button** - pause/resume updates with visual feedback
+- ✅ **Interval display** - shows refresh frequency (15 minutes)
+- ✅ **Real-time updates** - facility status stays current automatically
 
-**Features**:
-- [ ] Visual indicator for recent status changes
-- [ ] "Updated X minutes ago" badge
-- [ ] Smooth transitions between status changes
+**Benefits Delivered**:
+- ✅ **Always current data** - facility status reflects latest NOTAM conditions
+- ✅ **Professional feel** - automatic updates like commercial aviation systems
+- ✅ **User flexibility** - pilots can pause updates during critical operations
+- ✅ **Efficient operation** - no manual refresh needed for routine updates
 
-### **Phase 6: Testing & Refinement** (2-3 hours)
-**Priority**: HIGH
-**Goal**: Ensure accuracy and performance
+### **Phase 7: Interface Cleanup & Global Filtering** ✅ COMPLETED
+**Priority**: LOW
+**Goal**: Simplify interface and ensure consistent NOTAM filtering
 
-#### **Task 6.1: Unit Testing**
-**Responsibility**: Test facility-NOTAM mapping accuracy
+#### **Task 7.1: Status Card Removal** ✅ COMPLETED
+**Responsibility**: Remove unnecessary status update indicator card
 
-**Tests**:
-- [ ] Test runway NOTAM mapping
-- [ ] Test NAVAID NOTAM mapping
-- [ ] Test lighting NOTAM mapping
-- [ ] Test status calculation logic
+**Implementation**:
+- ✅ **Removed status card** from `FacilitiesWidget._buildStatusUpdateIndicator()`
+- ✅ **Auto-updates continue** silently in background via `FlightProvider` timer
+- ✅ **Cleaner interface** - no unnecessary status management UI
+- ✅ **Simplified user experience** - focus on operational information
 
-#### **Task 6.2: Integration Testing**
-**Responsibility**: Test with real NOTAM data
+**Benefits**:
+- ✅ **Cleaner interface** - No unnecessary status management UI
+- ✅ **Better focus** - Users focus on operational information, not system management
+- ✅ **Simplified maintenance** - Less UI complexity to maintain
 
-**Scenarios**:
-- [ ] Runway closure NOTAMs
-- [ ] ILS unserviceable NOTAMs
-- [ ] Lighting outage NOTAMs
-- [ ] Mixed impact scenarios
+#### **Task 7.2: Global CNL NOTAM Filtering** ✅ COMPLETED
+**Responsibility**: Apply CNL NOTAM filtering across all screens
+
+**Implementation**:
+- ✅ **CNL filtering added** to `RawDataScreen._filterNotamsByTime()`
+- ✅ **CNL filtering added** to `AlternateDataScreen._filterNotamsByTime()`
+- ✅ **Consistent filtering logic** - All screens use same approach
+- ✅ **Global coverage** - CNL NOTAMs filtered everywhere
+
+**Benefits**:
+- ✅ **Consistent experience** - CNL NOTAMs filtered everywhere
+- ✅ **Better operational focus** - Only active, relevant NOTAMs shown
+- ✅ **Improved readability** - Users see only actionable information
+- ✅ **Unified filtering** - Single source of truth for NOTAM filtering logic
+
+### **Phase 8: Testing & Refinement** ⏳ PENDING
+**Priority**: MEDIUM
+**Goal**: Comprehensive testing and performance optimization
+
+#### **Task 8.1: End-to-End Testing** ⏳ PENDING
+**Responsibility**: Test complete workflow from NOTAM fetch to status display
+
+**Test Scenarios**:
+- [ ] NOTAM fetching and filtering
+- [ ] Facility status calculation
+- [ ] UI updates and responsiveness
+- [ ] Timer-based refresh functionality
+- [ ] Error handling and edge cases
+
+#### **Task 8.2: Performance Optimization** ⏳ PENDING
+**Responsibility**: Optimize performance for large numbers of NOTAMs
+
+**Optimization Areas**:
+- [ ] NOTAM filtering efficiency
+- [ ] Status calculation algorithms
+- [ ] UI rendering performance
+- [ ] Memory usage optimization
+- [ ] Caching strategies
+
+#### **Task 8.3: User Experience Refinement** ⏳ PENDING
+**Responsibility**: Polish user interface and interactions
+
+**Enhancements**:
+- [ ] Loading states and animations
+- [ ] Error message improvements
+- [ ] Accessibility enhancements
+- [ ] Mobile responsiveness
+- [ ] Visual design consistency
 
 ## 🎯 **Success Criteria**
 
