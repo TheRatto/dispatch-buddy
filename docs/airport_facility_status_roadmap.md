@@ -338,37 +338,57 @@ class AirportSystemAnalyzer {
 - ✅ **Efficient operation** - no manual refresh needed for routine updates
 
 ### **Phase 7: Interface Cleanup & Global Filtering** ✅ COMPLETED
-**Priority**: LOW
+**Priority**: MEDIUM
 **Goal**: Simplify interface and ensure consistent NOTAM filtering
 
 #### **Task 7.1: Status Card Removal** ✅ COMPLETED
 **Responsibility**: Remove unnecessary status update indicator card
 
 **Implementation**:
-- ✅ **Removed status card** from `FacilitiesWidget._buildStatusUpdateIndicator()`
-- ✅ **Auto-updates continue** silently in background via `FlightProvider` timer
-- ✅ **Cleaner interface** - no unnecessary status management UI
-- ✅ **Simplified user experience** - focus on operational information
-
-**Benefits**:
-- ✅ **Cleaner interface** - No unnecessary status management UI
-- ✅ **Better focus** - Users focus on operational information, not system management
-- ✅ **Simplified maintenance** - Less UI complexity to maintain
+- ✅ **Removed status card** - Cleaner, less cluttered interface
+- ✅ **Auto-updates continue** - Background timer still runs every 15 minutes
+- ✅ **Simplified UX** - Pilots focus on operational information, not system management
 
 #### **Task 7.2: Global CNL NOTAM Filtering** ✅ COMPLETED
 **Responsibility**: Apply CNL NOTAM filtering across all screens
 
 **Implementation**:
-- ✅ **CNL filtering added** to `RawDataScreen._filterNotamsByTime()`
-- ✅ **CNL filtering added** to `AlternateDataScreen._filterNotamsByTime()`
-- ✅ **Consistent filtering logic** - All screens use same approach
-- ✅ **Global coverage** - CNL NOTAMs filtered everywhere
+- ✅ **Raw Data Screen** - Added CNL filtering to `_filterNotamsByTime()`
+- ✅ **Alternate Data Screen** - Added CNL filtering to `_filterNotamsByTime()`
+- ✅ **Facilities Screen** - Already had CNL filtering via `FlightProvider`
+- ✅ **Consistent behavior** - CNL NOTAMs filtered out everywhere
+
+### **Phase 8: NOTAM Display Enhancement** ✅ COMPLETED
+**Priority**: MEDIUM
+**Goal**: Improve NOTAM presentation and user experience
+
+#### **Task 8.1: Raw Data Popup Redesign** ✅ COMPLETED
+**Responsibility**: Create pilot-focused NOTAM detail popup
+
+**Implementation**:
+- ✅ **New popup structure** - Header, validity section, content, metadata footer
+- ✅ **Prominent validity display** - Both absolute and relative times
+- ✅ **Smart status indicators** - Color-coded badges with countdown timers
+- ✅ **Clean styling** - Card-based design with proper spacing
+- ✅ **Pilot-focused layout** - Essential information prominently displayed
+
+**New Design Features**:
+- **Header**: NOTAM ID + Category badge (RWY, PROC, SVC, HAZ, ADM, OTH)
+- **Validity Section**: 
+  - Line 1: "Valid: DD/MM HH:MM - DD/MM HH:MM UTC"
+  - Line 2: Status badge + relative time (e.g., "Currently Active • Ends in 5h 20m")
+- **Content**: Full NOTAM text in readable format
+- **Footer**: Single-line metadata (Q-code, type, group) - small and muted
 
 **Benefits**:
-- ✅ **Consistent experience** - CNL NOTAMs filtered everywhere
-- ✅ **Better operational focus** - Only active, relevant NOTAMs shown
-- ✅ **Improved readability** - Users see only actionable information
-- ✅ **Unified filtering** - Single source of truth for NOTAM filtering logic
+- 🎯 **Pilot-focused** - Essential information prominently displayed
+- 🕐 **Clear validity** - Easy to see when NOTAM is active/expires
+- 🎨 **Consistent UX** - Same design pattern can be applied to Facilities popup
+- 📱 **Mobile-optimized** - Clean, scannable layout for mobile devices
+
+**Next Steps**:
+- Apply same design to Facilities popup for consistency
+- Implement time filter synchronization between screens
 
 ### **Phase 8: Testing & Refinement** ⏳ PENDING
 **Priority**: MEDIUM

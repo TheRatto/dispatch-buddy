@@ -15,31 +15,37 @@ enum NotamGroup {
 
 class Notam {
   final String id;
-  final String icao;
-  final NotamType type;
+  final String? qCode;
+  final String rawText;
+  final String fieldD;
+  final String fieldE;
+  final String fieldF;
+  final String fieldG;
   final DateTime validFrom;
   final DateTime validTo;
-  final String rawText;
-  final String decodedText;
-  final String affectedSystem;
+  final String icao;
+  final NotamType type;
+  final NotamGroup group;
+  final bool isPermanent;
+  final String source;
   final bool isCritical;
-  final String? qCode; // Q code from NOTAM text
-  final NotamGroup group; // New: Group assignment
-  final String source; // 'faa', 'naips'
 
-  Notam({
+  const Notam({
     required this.id,
-    required this.icao,
-    required this.type,
+    this.qCode,
+    required this.rawText,
+    required this.fieldD,
+    required this.fieldE,
+    required this.fieldF,
+    required this.fieldG,
     required this.validFrom,
     required this.validTo,
-    required this.rawText,
-    required this.decodedText,
-    required this.affectedSystem,
-    required this.isCritical,
-    this.qCode,
+    required this.icao,
+    required this.type,
     required this.group,
+    this.isPermanent = false,
     this.source = 'faa',
+    this.isCritical = false,
   });
 
   // Extract Q code from NOTAM text using regex
@@ -557,28 +563,61 @@ class Notam {
     return sanitizeText(text); // fallback
   }
 
+  // Helper to extract ICAO fields E, F, and G
+  static Map<String, String> _extractIcaoFields(String icaoText) {
+    final fields = <String, String>{};
+    
+    // Find each field by its marker
+    final eMatch = RegExp(r'E\)(.*?)(?=\n[F-G]\)|$)', dotAll: true).firstMatch(icaoText);
+    final fMatch = RegExp(r'F\)(.*?)(?=\n[G]\)|$)', dotAll: true).firstMatch(icaoText);
+    final gMatch = RegExp(r'G\)(.*?)(?=\n[A-Z]\)|$)', dotAll: true).firstMatch(icaoText);
+    
+    fields['E'] = eMatch?.group(1)?.trim() ?? '';
+    fields['F'] = fMatch?.group(1)?.trim() ?? '';
+    fields['G'] = gMatch?.group(1)?.trim() ?? '';
+    
+    return fields;
+  }
+
+  // Helper to create enhanced NOTAM text by combining stored fields
+  static String _createEnhancedNotamText(String fieldE, String fieldF, String fieldG) {
+    String result = fieldE;
+    if (fieldF.isNotEmpty || fieldG.isNotEmpty) {
+      result += '\n';
+      if (fieldF.isNotEmpty && fieldG.isNotEmpty) {
+        result += '$fieldF TO $fieldG';
+      } else if (fieldF.isNotEmpty) {
+        result += fieldF;
+      } else if (fieldG.isNotEmpty) {
+        result += fieldG;
+      }
+    }
+    return result;
+  }
+
   // Get sanitized raw text for display (only E) line if present)
   String get displayRawText => extractELine(rawText);
   
   // Get sanitized decoded text for display  
-  String get displayDecodedText => sanitizeText(decodedText);
+  String get displayDecodedText => sanitizeText(rawText); // Use rawText for display
 
   factory Notam.fromJson(Map<String, dynamic> json) {
     return Notam(
       id: json['id'],
-      icao: json['icao'],
-      type: NotamType.values.firstWhere((e) => e.toString() == 'NotamType.${json['type']}'),
+      qCode: json['qCode'],
+      rawText: json['rawText'],
+      fieldD: json['fieldD'] ?? '',
+      fieldE: json['fieldE'] ?? '',
+      fieldF: json['fieldF'] ?? '',
+      fieldG: json['fieldG'] ?? '',
       validFrom: DateTime.parse(json['validFrom']),
       validTo: DateTime.parse(json['validTo']),
-      rawText: json['rawText'],
-      decodedText: json['decodedText'],
-      affectedSystem: json['affectedSystem'],
-      isCritical: json['isCritical'],
-      qCode: json['qCode'],
-      group: json['group'] != null 
-          ? NotamGroup.values.firstWhere((e) => e.toString() == 'NotamGroup.${json['group']}')
-          : determineGroupFromQCode(json['qCode']),
+      icao: json['icao'],
+      type: NotamType.values.firstWhere((e) => e.name == json['type']),
+      group: NotamGroup.values.firstWhere((e) => e.name == json['group']),
+      isPermanent: json['isPermanent'] ?? false,
       source: json['source'] ?? 'faa',
+      isCritical: json['isCritical'] ?? false,
     );
   }
 
@@ -641,10 +680,12 @@ class Notam {
       validTo = DateTime.now().add(const Duration(days: 365 * 10));
     }
     
-    final text = notam['text'] ?? '';
+    // Check if this is a permanent NOTAM
+    final isPermanent = validToStr == 'PERM' || validToStr == 'PERMANENT';
     
-    // Extract Q code from notamTranslation (ICAO format) instead of text
+    // Extract Q code and complete ICAO text from notamTranslation
     String? qCode;
+    String completeIcaoText = '';
     final translations = coreNotamData['notamTranslation'] as List?;
     if (translations != null) {
       debugPrint('DEBUG: 🔍 Found ${translations.length} translations for ${notam['number']}');
@@ -654,6 +695,7 @@ class Notam {
           final formattedText = translation['formattedText'] as String?;
           if (formattedText != null) {
             debugPrint('DEBUG: 🔍 ICAO formatted text: $formattedText');
+            completeIcaoText = formattedText;
             qCode = extractQCode(formattedText);
             debugPrint('DEBUG: 🔍 Extracted Q code: $qCode');
             if (qCode != null) break;
@@ -665,13 +707,57 @@ class Notam {
     // Fallback to text field if no Q code found in translations
     if (qCode == null) {
       debugPrint('DEBUG: 🔍 No Q code found in translations, trying text field');
-      qCode = extractQCode(text);
+      qCode = extractQCode(notam['text'] ?? '');
     }
     
-    // Debug: Log the complete raw NOTAM text
-    debugPrint(' RAW NOTAM TEXT for ${notam['number']}:');
+    // Extract the main operational description (Field E) from FAA API text
+    String fieldE = notam['text'] ?? '';
+    
+    // Extract schedule information for Field D (time periods within validity)
+    String fieldD = '';
+    final schedule = notam['schedule'] as String?;
+    if (schedule != null && schedule.isNotEmpty) {
+      fieldD = schedule;
+      debugPrint('DEBUG: 🔍 Using FAA API schedule: "$fieldD"');
+    }
+    
+    // Extract altitude/limit information for Fields F and G
+    String fieldF = '';
+    String fieldG = '';
+    
+    // Use the FAA API's structured altitude fields directly
+    final lowerLimit = notam['lowerLimit'] as String?;
+    final upperLimit = notam['upperLimit'] as String?;
+    
+    if (lowerLimit != null && lowerLimit.isNotEmpty) {
+      fieldF = lowerLimit;
+      debugPrint('DEBUG: 🔍 Using FAA API lowerLimit: "$fieldF"');
+    }
+    
+    if (upperLimit != null && upperLimit.isNotEmpty) {
+      fieldG = upperLimit;
+      debugPrint('DEBUG: 🔍 Using FAA API upperLimit: "$fieldG"');
+    }
+    
+    // Only fall back to ICAO F) and G) fields if FAA API doesn't have them
+    if (fieldF.isEmpty && fieldG.isEmpty && completeIcaoText.isNotEmpty) {
+      debugPrint('DEBUG: 🔍 No FAA API altitude fields, trying ICAO F) and G)');
+      final fields = _extractIcaoFields(completeIcaoText);
+      fieldF = fields['F'] ?? '';
+      fieldG = fields['G'] ?? '';
+      debugPrint('DEBUG: 🔍 Extracted from ICAO - F: "$fieldF", G: "$fieldG"');
+    }
+    
+    // Use the original FAA API text as rawText (no enhancement needed)
+    String rawText = fieldE;
+    
+    // Debug: Log the parsed NOTAM fields
+    debugPrint(' PARSED NOTAM FIELDS for ${notam['number']}:');
     debugPrint('${'=' * 80}');
-    debugPrint(text);
+    debugPrint('Field D (Schedule): $fieldD');
+    debugPrint('Field E (Main): $fieldE');
+    debugPrint('Field F (Lower): $fieldF');
+    debugPrint('Field G (Upper): $fieldG');
     debugPrint('${'=' * 80}');
     
     // Determine NOTAM type - prefer Q code over text-based classification
@@ -679,67 +765,74 @@ class Notam {
     
     // Fallback to text-based classification if no Q code found
     if (type == NotamType.other) {
-    if (text.toLowerCase().contains('rwy') || text.toLowerCase().contains('runway')) {
-      type = NotamType.runway;
-    } else if (text.toLowerCase().contains('navaid') || text.toLowerCase().contains('ils')) {
-      type = NotamType.navaid;
-    } else if (text.toLowerCase().contains('airspace')) {
-      type = NotamType.airspace;
+      if (rawText.toLowerCase().contains('rwy') || rawText.toLowerCase().contains('runway')) {
+        type = NotamType.runway;
+      } else if (rawText.toLowerCase().contains('navaid') || rawText.toLowerCase().contains('ils')) {
+        type = NotamType.navaid;
+      } else if (rawText.toLowerCase().contains('airspace')) {
+        type = NotamType.airspace;
       }
     }
 
     // Determine NOTAM group based on Q code
     NotamGroup group = determineGroupFromQCode(qCode);
-    
+
     return Notam(
       id: notam['number'] ?? 'N/A',
-      icao: notam['location'] ?? 'N/A',
-      type: type,
+      qCode: qCode,
+      rawText: rawText,
+      fieldD: fieldD,
+      fieldE: fieldE,
+      fieldF: fieldF,
+      fieldG: fieldG,
       validFrom: validFrom,
       validTo: validTo,
-      rawText: text,
-      decodedText: '', // Will be generated by AI later
-      affectedSystem: notam['featureType'] ?? 'N/A',
-      isCritical: notam['classification'] == 'CRITICAL',
-      qCode: qCode,
+      icao: notam['location'] ?? 'N/A',
+      type: type,
       group: group,
+      isPermanent: isPermanent,
       source: 'faa',
+      isCritical: false, // FAA NOTAMs are not critical by default
     );
   }
 
   factory Notam.fromDbJson(Map<String, dynamic> json) {
     return Notam(
       id: json['id'],
-      icao: json['icao'],
-      type: NotamType.values.firstWhere((e) => e.toString() == 'NotamType.${json['type']}'),
+      qCode: json['qCode'],
+      rawText: json['rawText'],
+      fieldD: json['fieldD'] ?? '',
+      fieldE: json['fieldE'] ?? '',
+      fieldF: json['fieldF'] ?? '',
+      fieldG: json['fieldG'] ?? '',
       validFrom: DateTime.parse(json['validFrom']),
       validTo: DateTime.parse(json['validTo']),
-      rawText: json['rawText'],
-      decodedText: json['decodedText'],
-      affectedSystem: json['affectedSystem'],
-      isCritical: json['isCritical'] == 1,
-      qCode: json['qCode'],
-      group: json['group'] != null 
-          ? NotamGroup.values.firstWhere((e) => e.toString() == 'NotamGroup.${json['group']}')
-          : determineGroupFromQCode(json['qCode']),
+      icao: json['icao'],
+      type: NotamType.values.firstWhere((e) => e.name == json['type']),
+      group: NotamGroup.values.firstWhere((e) => e.name == json['group']),
+      isPermanent: json['isPermanent'] ?? false,
       source: json['source'] ?? 'faa',
+      isCritical: json['isCritical'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'icao': icao,
-      'type': type.toString().split('.').last,
+      'qCode': qCode,
+      'rawText': rawText,
+      'fieldD': fieldD,
+      'fieldE': fieldE,
+      'fieldF': fieldF,
+      'fieldG': fieldG,
       'validFrom': validFrom.toIso8601String(),
       'validTo': validTo.toIso8601String(),
-      'rawText': rawText,
-      'decodedText': decodedText,
-      'affectedSystem': affectedSystem,
-      'isCritical': isCritical,
-      'qCode': qCode,
-      'group': group.toString().split('.').last,
+      'icao': icao,
+      'type': type.name,
+      'group': group.name,
+      'isPermanent': isPermanent,
       'source': source,
+      'isCritical': isCritical,
     };
   }
 
@@ -748,16 +841,21 @@ class Notam {
       'flightId': flightId,
       'id': id,
       'icao': icao,
-      'type': type.toString().split('.').last,
+      'type': type.name,
       'validFrom': validFrom.toIso8601String(),
       'validTo': validTo.toIso8601String(),
       'rawText': rawText,
-      'decodedText': decodedText,
-      'affectedSystem': affectedSystem,
-      'isCritical': isCritical ? 1 : 0,
+      'decodedText': '', // Decoded text is not stored in DB for NOTAMs
+      'affectedSystem': '', // No direct mapping for affectedSystem in NOTAMs
+      'isCritical': isCritical,
       'qCode': qCode,
-      'group': group.toString().split('.').last,
-      'source': source,
+      'fieldD': fieldD,
+      'fieldE': fieldE,
+      'fieldF': fieldF,
+      'fieldG': fieldG,
+      'group': group.name,
+      'source': 'faa', // Assuming source is always FAA for NOTAMs
+      'isPermanent': isPermanent,
     };
   }
 } 

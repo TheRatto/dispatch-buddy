@@ -468,11 +468,13 @@ class NAIPSParser {
             validFrom: validFrom ?? DateTime.now().toUtc(),
             validTo: validTo ?? DateTime.now().toUtc().add(const Duration(days: 30)),
             rawText: notamText.trim(),
-            decodedText: notamText.trim(),
-            affectedSystem: 'NAIPS',
-            isCritical: false,
+            fieldD: '',
+            fieldE: notamText.trim(),
+            fieldF: '',
+            fieldG: '',
             group: NotamGroup.other,
             source: 'naips',
+            isCritical: false,
           );
           
           notams.add(notam);

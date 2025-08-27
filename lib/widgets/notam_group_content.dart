@@ -172,14 +172,14 @@ class NotamGroupContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (notam.decodedText != null && notam.decodedText!.isNotEmpty)
+        if (notam.fieldE.isNotEmpty)
           Text(
-            notam.decodedText!,
+            notam.fieldE,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           )
-        else if (notam.rawText != null && notam.rawText!.isNotEmpty)
+        else if (notam.rawText.isNotEmpty)
           Text(
             notam.displayRawText,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -220,7 +220,7 @@ class NotamGroupContent extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            'Ends in ${_formatTimeDifference(validTo, now)}',
+            'Ends in ${_formatTimeDifference(validTo, now, notam)}',
             style: const TextStyle(
               color: Colors.green,
               fontSize: 11,
@@ -234,7 +234,7 @@ class NotamGroupContent extends StatelessWidget {
       return Row(
         children: [
           Text(
-            'Starts in ${_formatTimeDifference(validFrom, now)}',
+            'Starts in ${_formatTimeDifference(validFrom, now, notam)}',
             style: const TextStyle(
               color: Colors.orange,
               fontSize: 11,
@@ -243,7 +243,7 @@ class NotamGroupContent extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            'Ends in ${_formatTimeDifference(validTo, now)}',
+            'Ends in ${_formatTimeDifference(validTo, now, notam)}',
             style: const TextStyle(
               color: Colors.green,
               fontSize: 11,
@@ -257,7 +257,7 @@ class NotamGroupContent extends StatelessWidget {
       return Row(
         children: [
           Text(
-            'Expired ${_formatTimeDifference(now, validTo)} ago',
+            'Expired ${_formatTimeDifference(now, validTo, notam)} ago',
             style: const TextStyle(
               color: Colors.red,
               fontSize: 11,
@@ -336,7 +336,12 @@ class NotamGroupContent extends StatelessWidget {
     }
   }
 
-  String _formatTimeDifference(DateTime later, DateTime earlier) {
+  String _formatTimeDifference(DateTime later, DateTime earlier, Notam notam) {
+    // Check if this is a permanent NOTAM
+    if (notam.isPermanent) {
+      return 'PERM';
+    }
+    
     final difference = later.difference(earlier);
     
     if (difference.inDays > 0) {

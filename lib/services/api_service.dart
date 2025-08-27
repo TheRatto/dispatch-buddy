@@ -154,7 +154,7 @@ class ApiService {
                 debugPrint('DEBUG: FOUND TARGET NOTAM: ${notam.id}');
                 debugPrint('DEBUG: FULL FAA JSON: ${jsonEncode(item)}');
                 debugPrint('DEBUG: NOTAM TEXT: ${notam.rawText}');
-                debugPrint('DEBUG: DECODED TEXT: ${notam.decodedText}');
+                debugPrint('DEBUG: FIELD E: ${notam.fieldE}');
                 debugPrint('DEBUG: Q CODE: ${notam.qCode}');
                 debugPrint('DEBUG: Q CODE SUBJECT: ${Notam.getQCodeSubjectDescription(notam.qCode)}');
                 debugPrint('DEBUG: Q CODE STATUS: ${Notam.getQCodeStatusDescription(notam.qCode)}');

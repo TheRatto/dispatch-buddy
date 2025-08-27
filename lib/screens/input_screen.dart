@@ -363,14 +363,18 @@ class _InputScreenState extends State<InputScreen> {
             'id': notam.id,
             'icao': notam.icao,
             'rawText': notam.rawText,
-            'decodedText': notam.decodedText,
+            'fieldD': notam.fieldD,
+            'fieldE': notam.fieldE,
+            'fieldF': notam.fieldF,
+            'fieldG': notam.fieldG,
             'validFrom': notam.validFrom.toIso8601String(),
             'validTo': notam.validTo.toIso8601String(),
-            'affectedSystem': notam.affectedSystem,
             'isCritical': notam.isCritical,
             'type': notam.type.name,
             'group': notam.group.name,
             'qCode': notam.qCode,
+            'source': notam.source,
+            'isPermanent': notam.isPermanent,
           }
       };
 

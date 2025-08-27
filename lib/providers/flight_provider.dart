@@ -983,10 +983,15 @@ class FlightProvider with ChangeNotifier {
                 'validFrom': notam.validFrom.toIso8601String(),
                 'validTo': notam.validTo.toIso8601String(),
                 'rawText': notam.rawText,
-                'decodedText': notam.decodedText,
-                'affectedSystem': notam.affectedSystem,
-                'isCritical': notam.isCritical,
+                'fieldD': notam.fieldD,
+                'fieldE': notam.fieldE,
+                'fieldF': notam.fieldF,
+                'fieldG': notam.fieldG,
+                'qCode': notam.qCode,
+                'group': notam.group.name,
+                'isPermanent': notam.isPermanent,
                 'source': notam.source,
+                'isCritical': notam.isCritical,
               };
               return map;
             },

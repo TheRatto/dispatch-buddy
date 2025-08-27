@@ -162,6 +162,40 @@
 - ✅ **CNL filtering added** to `AlternateDataScreen._filterNotamsByTime()`
 - ✅ **Auto-updates continue** silently in background via `FlightProvider` timer
 
+#### **Task 1.8: Raw Data Popup Redesign** ✅ **COMPLETED**
+**File**: `lib/screens/raw_data_screen.dart`
+**Priority**: MEDIUM
+**Estimated Time**: 2 hours
+
+**Issue Identified**:
+- ❌ **Poor NOTAM presentation** - Raw Data popup showed technical details prominently
+- ❌ **Missing validity period** - No clear display of when NOTAM is active
+- ❌ **Inconsistent styling** - Different from Facilities popup design
+- ❌ **Poor readability** - Validity times had too many zeros, hard to scan
+
+**Solution Implemented**:
+- ✅ **New pilot-focused design** - Clean, scannable layout
+- ✅ **Prominent validity section** - Both absolute and relative times clearly displayed
+- ✅ **Smart status indicators** - Color-coded status badges with countdown timers
+- ✅ **Consistent styling** - Card-based design with proper spacing and colors
+- ✅ **Metadata footer** - Technical details moved to bottom, small and muted
+
+**New Popup Structure**:
+- **Header**: NOTAM ID + Category badge (RWY, PROC, SVC, etc.)
+- **Validity Section**: Absolute times + relative status (Active Now, Ends in X hours)
+- **Content**: Full NOTAM text in readable format
+- **Footer**: Single-line metadata (Q-code, type, group)
+
+**Benefits**:
+- 🎯 **Pilot-focused** - Essential information prominently displayed
+- 🕐 **Clear validity** - Easy to see when NOTAM is active/expires
+- 🎨 **Consistent UX** - Same design pattern can be applied to Facilities popup
+- 📱 **Mobile-optimized** - Clean, scannable layout for mobile devices
+
+**Next Steps**:
+- Apply same design to Facilities popup for consistency
+- Consider time filter synchronization between screens
+
 #### **Task 1.2: Airport Infrastructure Database** ✅ **COMPLETED**
 **File**: `lib/data/airport_infrastructure_data.dart`
 **Priority**: HIGH
