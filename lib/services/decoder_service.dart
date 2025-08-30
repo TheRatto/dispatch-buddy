@@ -74,8 +74,17 @@ class DecoderService {
       debugPrint('DEBUG: Period $i: ${period.type} - ${period.time} - isConcurrent: ${period.isConcurrent} - startTime: ${period.startTime} - endTime: ${period.endTime}');
     }
     
-    // Create timeline from TAF validity period
+    // Create timeline from TAF validity period (using clean text without RMK)
     final timeline = createTimelineFromTaf(rawText);
+    
+    // Extract TURB periods from RMK section for future concurrent display
+    final turbPeriods = _extractTurbPeriods(rawText);
+    if (turbPeriods.isNotEmpty) {
+      debugPrint('DEBUG: 🔍 Found ${turbPeriods.length} TURB periods in RMK section');
+      for (final turb in turbPeriods) {
+        debugPrint('DEBUG: 🔍 TURB: ${turb['intensity']} TURB BLW ${turb['height']} from ${turb['startTime']}');
+      }
+    }
     
     // Create decoded weather with timeline
     return DecodedWeather(
@@ -128,9 +137,13 @@ class DecoderService {
     }
     
     try {
-      // Find all period indicators in the TAF
+      // Remove RMK section from TAF parsing to avoid TURB interference
+      final cleanTafText = _removeRmkSection(rawText);
+      debugPrint('DEBUG: 🔍 TAF text after RMK removal: "$cleanTafText"');
+      
+      // Find all period indicators in the clean TAF (excluding RMK)
       final periodPattern = RegExp(r'\b(FM|BECMG|TEMPO|INTER|PROB30|PROB40)\b');
-      final matches = periodPattern.allMatches(rawText);
+      final matches = periodPattern.allMatches(cleanTafText);
       
       if (rawText.contains('KJFK')) {
         debugPrint('DEBUG: 🔍 KJFK period matches found: ${matches.length}');
@@ -141,8 +154,8 @@ class DecoderService {
       
       final sections = <Map<String, dynamic>>[];
       
-      // Find all period start positions - ORDER MATTERS: longer patterns first
-      final periodMatches = RegExp(r'\b(FM\d{6}|BECMG|PROB30\s+TEMPO|PROB30\s+INTER|PROB40\s+TEMPO|PROB40\s+INTER|PROB30|PROB40|INTER|TEMPO)\b').allMatches(rawText);
+      // Find all period start positions in clean TAF - ORDER MATTERS: longer patterns first
+      final periodMatches = RegExp(r'\b(FM\d{6}|BECMG|PROB30\s+TEMPO|PROB30\s+INTER|PROB40\s+TEMPO|PROB40\s+INTER|PROB30|PROB40|INTER|TEMPO)\b').allMatches(cleanTafText);
       
       debugPrint('DEBUG: 🔍 Found ${periodMatches.length} period matches:');
       for (final match in periodMatches) {
@@ -654,6 +667,53 @@ class DecoderService {
     return timeline;
   }
 
+  // Remove RMK section from TAF to avoid TURB interference with main parsing
+  String _removeRmkSection(String rawText) {
+    // Find RMK position and remove everything from there onwards
+    final rmkMatch = RegExp(r'\bRMK\b').firstMatch(rawText);
+    if (rmkMatch != null) {
+      final beforeRmk = rawText.substring(0, rmkMatch.start).trim();
+      debugPrint('DEBUG: 🔍 RMK section found, removed from TAF parsing. Text before RMK: "$beforeRmk"');
+      return beforeRmk;
+    }
+    return rawText;
+  }
+
+  // Extract TURB information from RMK section for future concurrent display
+  List<Map<String, dynamic>> _extractTurbPeriods(String rawText) {
+    final turbPeriods = <Map<String, dynamic>>[];
+    final rmkMatch = RegExp(r'\bRMK\b').firstMatch(rawText);
+    
+    if (rmkMatch != null) {
+      final rmkSection = rawText.substring(rmkMatch.start);
+      debugPrint('DEBUG: 🔍 RMK section found: "$rmkSection"');
+      
+      // Find TURB periods in RMK section
+      final turbPattern = RegExp(r'FM(\d{6})\s+(MOD|SEV)\s+TURB\s+BLW\s+(\d+)FT(?:\s+TL(\d{6}))?');
+      final turbMatches = turbPattern.allMatches(rmkSection);
+      
+      for (final match in turbMatches) {
+        final startTime = match.group(1)!;
+        final intensity = match.group(2)!;
+        final height = match.group(3)!;
+        final endTime = match.group(4);
+        
+        debugPrint('DEBUG: 🔍 TURB period found: $intensity TURB BLW ${height}FT from $startTime${endTime != null ? ' to $endTime' : ''}');
+        
+        turbPeriods.add({
+          'type': 'TURB',
+          'intensity': intensity,
+          'height': '${height}FT',
+          'startTime': startTime,
+          'endTime': endTime,
+          'text': match.group(0)!,
+        });
+      }
+    }
+    
+    return turbPeriods;
+  }
+
   // Simple method to format TAF text with line breaks for display
   String formatTafForDisplay(String rawText) {
     // Add line breaks before forecast elements for better readability
@@ -689,6 +749,9 @@ class DecoderService {
     
     // Collapse stray blank lines (including whitespace-only)
     formatted = formatted.replaceAll(RegExp(r'\n[ \t]*\n+'), '\n');
+    
+    // Add a clear line break after TAF3 only if there's content following it (AFTER blank line removal)
+    formatted = formatted.replaceAll(RegExp(r'TAF3\n(?=\w)'), 'TAF3\n\n');
     
     return formatted;
   }

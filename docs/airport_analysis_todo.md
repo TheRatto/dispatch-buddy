@@ -15,6 +15,11 @@
 
 **Next Milestone**: **Phase 8: Testing, Refinement & Future Enhancements**
 
+**Future Enhancements**:
+- 🕐 **NOTAM Timeline Visualization** - Visual timeline bars for long-duration NOTAMs with daily operational windows
+- 📊 **Enhanced Status Analytics** - Historical status tracking and trend analysis
+- 🎯 **Smart NOTAM Prioritization** - AI-powered relevance scoring based on flight context
+
 **What We've Built**:
 - 🏗️ **Complete airport facility status system** with real-time NOTAM analysis
 - 🔄 **Automatic status updates** every 15 minutes
@@ -275,3 +280,130 @@
 
 #### **Task 3.2: Operational Impact Dashboard** ⏳ **PENDING**
 **File**: `lib/widgets/operational_impact_dashboard.dart`
+
+## **🕐 NOTAM Timeline Visualization - Future Feature**
+
+**Problem Statement**: Long-duration NOTAMs with daily operational windows (like F2442/25: valid for months but only active "DAILY 2300-1300") are difficult to understand at a glance. Pilots need visual representation of when restrictions are actually active.
+
+**Use Case Example**: NOTAM F2442/25 (Multicopter Operations)
+- **Total Validity**: 22/06 23:00Z - 19/09 13:00Z (3 months)
+- **Daily Schedule**: DAILY 2300-1300 (11 hours per day)
+- **Current Status**: Active now, but only during specific hours
+
+### **Design Alternative 1: Individual NOTAM Timeline Bars**
+```
+NOTAM F2442/25: |----|********|----|
+                 22/06  NOTAM    19/09
+                 23:00Z PERIOD   13:00Z
+                 
+Daily Schedule:  |----|********|----|
+                 23:00  ACTIVE   13:00
+                 Daily  HOURS    Daily
+```
+
+**Features**:
+- Horizontal timeline bar showing total validity period
+- Highlighted section for daily active hours
+- Time labels at start, middle, and end
+- Compact enough for list view integration
+
+### **Design Alternative 2: Current Time Integration**
+```
+Current: 27/08 14:00Z
+         |----|********|----|
+         22/06  NOTAM    19/09
+         23:00Z PERIOD   13:00Z
+         ▲     ▲         ▲
+    Start  Flight    End
+    Time   Time     Time
+```
+
+**Features**:
+- Current time indicator (vertical line)
+- Flight time overlay (if available)
+- Visual context of where "now" fits in the timeline
+- Helps pilots understand if they'll be affected
+
+### **Design Alternative 3: Multi-NOTAM Comparison View**
+```
+F2442/25: |----|********|----|
+H6454/25: |----|****|----|
+H6428/25: |----|****|----|
+          22/06    19/09
+          23:00Z   13:00Z
+```
+
+**Features**:
+- Stacked timeline bars for multiple NOTAMs
+- Easy comparison of durations and overlaps
+- Identifies potential operational conflicts
+- Shows cumulative impact on operations
+
+### **Design Alternative 4: Interactive Timeline with Schedule Details**
+```
+Timeline: |----|********|----|
+          22/06  NOTAM    19/09
+          23:00Z PERIOD   13:00Z
+          
+Schedule: |----|********|----|
+          23:00  ACTIVE   13:00
+          Daily  HOURS    Daily
+          
+Legend:   ● = Current Time
+          ▲ = Flight Time
+          ■ = Active Period
+```
+
+**Features**:
+- Expandable timeline with detailed schedule
+- Interactive elements (tap to zoom)
+- Color-coded periods (active/inactive)
+- Integration with flight planning times
+
+### **Implementation Priority**
+
+**Phase 1: Basic Timeline (High Priority)**
+- Simple horizontal bars in NOTAM detail dialogs
+- Show total validity period with visual duration
+- Basic daily schedule overlay
+
+**Phase 2: Enhanced Features (Medium Priority)**
+- Current time indicator
+- Flight time integration
+- Multiple NOTAM comparison
+
+**Phase 3: Interactive Elements (Low Priority)**
+- Tap to expand detailed view
+- Drag to navigate through time
+- Filter by timeline position
+
+### **Technical Considerations**
+
+**Data Requirements**:
+- ✅ `validFrom` and `validTo` (already available)
+- ✅ `fieldD` schedule information (recently added)
+- ✅ Current time (UTC)
+- 🔄 Flight time range (if available)
+
+**UI Integration Points**:
+- **Raw Data Screen**: Add timeline above NOTAM details
+- **List View**: Compact timeline bars in NOTAM cards
+- **Filter View**: Show timeline alignment with selected time range
+
+**Performance Considerations**:
+- Timeline calculations should be lightweight
+- Cache timeline data for frequently accessed NOTAMs
+- Responsive design for mobile devices
+
+### **Expected Benefits**
+
+1. **Immediate Understanding**: Pilots can instantly see NOTAM duration and daily windows
+2. **Operational Planning**: Easy to identify when restrictions are actually active
+3. **Risk Assessment**: Long-duration NOTAMs with daily schedules become clear
+4. **Flight Planning**: Visual alignment with planned flight times
+5. **Comparative Analysis**: Multiple NOTAMs can be compared side-by-side
+
+**Success Metrics**:
+- Reduced time to understand NOTAM temporal impact
+- Improved pilot decision-making for flight planning
+- Better operational awareness of long-term restrictions

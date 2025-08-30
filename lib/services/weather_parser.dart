@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Handles parsing of weather elements from METAR and TAF segments
 class WeatherParser {
   // Weather parsing regex patterns
@@ -177,15 +179,23 @@ class WeatherParser {
       weather['Weather'] = 'No Significant Weather';
       print('DEBUG: Found explicit NSW');
     } else {
-      weather['Weather'] = '-';
-      print('DEBUG: No weather phenomena found, setting to "-"');
+      // Try to parse full text weather descriptions (NAIPS format)
+      final fullTextWeather = _parseFullTextWeather(segment);
+      if (fullTextWeather != null) {
+        weather['Weather'] = fullTextWeather;
+        print('DEBUG: Found full text weather: "$fullTextWeather"');
+      } else {
+        weather['Weather'] = '-';
+        print('DEBUG: No weather phenomena found, setting to "-"');
+      }
     }
 
     // Set CAVOK visibility if detected (this overrides any other visibility)
     if (isCavok) {
       weather['Visibility'] = 'CAVOK';
       weather['Cloud'] = 'CAVOK';
-      print('DEBUG: Set CAVOK visibility and cloud');
+      weather['Weather'] = 'CAVOK';
+      print('DEBUG: Set CAVOK visibility, cloud, and weather');
     }
 
     if (isEgll) {
@@ -294,6 +304,79 @@ class WeatherParser {
     } else if (segment.contains('NSW')) {
       return 'No Significant Weather';
     }
+    
+    // Try to parse full text weather descriptions (NAIPS format)
+    final fullTextWeather = _parseFullTextWeather(segment);
+    if (fullTextWeather != null) {
+      debugPrint('DEBUG: 🌧️ Full text weather parsed: "$fullTextWeather" from segment: "$segment"');
+      return fullTextWeather;
+    }
+    
+    return null;
+  }
+
+  /// Parse full text weather descriptions (NAIPS format)
+  static String? _parseFullTextWeather(String segment) {
+    debugPrint('DEBUG: 🔍 _parseFullTextWeather called with segment: "$segment"');
+    
+    // Look for common full text weather patterns
+    if (segment.contains('SHOWERS OF LIGHT RAIN')) {
+      debugPrint('DEBUG: 🎯 Found SHOWERS OF LIGHT RAIN');
+      return 'Light Showers of Rain';
+    } else if (segment.contains('SHOWERS OF MODERATE RAIN')) {
+      debugPrint('DEBUG: 🎯 Found SHOWERS OF MODERATE RAIN');
+      return 'Moderate Showers of Rain';
+    } else if (segment.contains('SHOWERS OF HEAVY RAIN')) {
+      debugPrint('DEBUG: 🎯 Found SHOWERS OF HEAVY RAIN');
+      return 'Heavy Showers of Rain';
+    } else if (segment.contains('LIGHT RAIN')) {
+      debugPrint('DEBUG: 🎯 Found LIGHT RAIN');
+      return 'Light Rain';
+    } else if (segment.contains('MODERATE RAIN')) {
+      debugPrint('DEBUG: 🎯 Found MODERATE RAIN');
+      return 'Moderate Rain';
+    } else if (segment.contains('HEAVY RAIN')) {
+      debugPrint('DEBUG: 🎯 Found HEAVY RAIN');
+      return 'Heavy Rain';
+    } else if (segment.contains('LIGHT DRIZZLE')) {
+      debugPrint('DEBUG: 🎯 Found LIGHT DRIZZLE');
+      return 'Light Drizzle';
+    } else if (segment.contains('MODERATE DRIZZLE')) {
+      debugPrint('DEBUG: 🎯 Found MODERATE DRIZZLE');
+      return 'Moderate Drizzle';
+    } else if (segment.contains('HEAVY DRIZZLE')) {
+      debugPrint('DEBUG: 🎯 Found HEAVY DRIZZLE');
+      return 'Heavy Drizzle';
+    } else if (segment.contains('LIGHT SNOW')) {
+      debugPrint('DEBUG: 🎯 Found LIGHT SNOW');
+      return 'Light Snow';
+    } else if (segment.contains('MODERATE SNOW')) {
+      debugPrint('DEBUG: 🎯 Found MODERATE SNOW');
+      return 'Moderate Snow';
+    } else if (segment.contains('HEAVY SNOW')) {
+      debugPrint('DEBUG: 🎯 Found HEAVY SNOW');
+      return 'Heavy Snow';
+    } else if (segment.contains('LIGHT FOG')) {
+      debugPrint('DEBUG: 🎯 Found LIGHT FOG');
+      return 'Light Fog';
+    } else if (segment.contains('MODERATE FOG')) {
+      debugPrint('DEBUG: 🎯 Found MODERATE FOG');
+      return 'Moderate Fog';
+    } else if (segment.contains('HEAVY FOG')) {
+      debugPrint('DEBUG: 🎯 Found HEAVY FOG');
+      return 'Heavy Fog';
+    } else if (segment.contains('LIGHT MIST')) {
+      debugPrint('DEBUG: 🎯 Found LIGHT MIST');
+      return 'Light Mist';
+    } else if (segment.contains('MODERATE MIST')) {
+      debugPrint('DEBUG: 🎯 Found MODERATE MIST');
+      return 'Moderate Mist';
+    } else if (segment.contains('HEAVY MIST')) {
+      debugPrint('DEBUG: 🎯 Found HEAVY MIST');
+      return 'Heavy Mist';
+    }
+    
+    debugPrint('DEBUG: 🔍 No full text weather patterns found');
     return null;
   }
 

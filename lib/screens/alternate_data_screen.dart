@@ -217,7 +217,7 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   child: ExpansionTile(
                     title: Text(
-                      '${notam.id} - ${notam.affectedSystem}',
+                      '${notam.id} - ${notam.fieldE.split(' ').take(3).join(' ')}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
@@ -246,8 +246,8 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                             _buildInfoRow('NOTAM ID', notam.id),
                             _buildInfoRow('ICAO', notam.icao),
                             _buildInfoRow('Type', notam.type.toString().split('.').last),
-                            if (notam.qCode != null) _buildInfoRow('Q Code', notam.qCode!),
-                            _buildInfoRow('Affected System', notam.affectedSystem),
+                            if (notam.qCode != null && notam.qCode!.isNotEmpty) _buildInfoRow('Q Code', notam.qCode!),
+                            _buildInfoRow('Main Content', notam.fieldE),
                             _buildInfoRow('Critical', notam.isCritical ? 'Yes' : 'No'),
                             _buildInfoRow('Effective From', _formatDateTime(notam.validFrom)),
                             _buildInfoRow('Effective To', _formatDateTime(notam.validTo)),
@@ -272,7 +272,7 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                                 border: Border.all(color: Colors.grey.shade300),
                               ),
                               child: Text(
-                                notam.displayRawText,
+                                notam.rawText,
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontFamily: 'monospace',
@@ -282,9 +282,9 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                             
                             const SizedBox(height: 20),
                             
-                            // Decoded NOTAM Data
+                            // Field E (Main Content)
                             Text(
-                              'Decoded NOTAM Data:',
+                              'Field E (Main Content):',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[700],
@@ -300,13 +300,42 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                                 border: Border.all(color: Colors.blue.shade200),
                               ),
                               child: Text(
-                                notam.displayDecodedText,
+                                notam.fieldE,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue.shade900,
                                 ),
                               ),
                             ),
+                            
+                            // Fields F & G (Altitude Info) - only show if present
+                            if (notam.fieldF.isNotEmpty || notam.fieldG.isNotEmpty) ...[
+                              const SizedBox(height: 20),
+                              Text(
+                                'Altitude Info (Fields F & G):',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.green.shade200),
+                                ),
+                                child: Text(
+                                  '${notam.fieldF} TO ${notam.fieldG}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green.shade900,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),

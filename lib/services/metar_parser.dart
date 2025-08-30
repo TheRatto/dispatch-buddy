@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/decoded_weather_models.dart';
 import 'weather_parser.dart';
 
@@ -26,7 +27,7 @@ class MetarParser {
   // Use the same weather pattern as WeatherParser
   static final _weatherPattern = RegExp(r'(?<!\w)([+-]?(?:TSRA|SHRA|TS|SH|FZ|MI|BC|DR|BL|DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS|VCTS|SHSN|SHGR|SHGS|SHPL|SHIC|SHUP|SHBR|SHFG|SHFU|SHVA|SHDU|SHSA|SHHZ|SHPY|SHPO|SHSQ|SHFC|SHSS|SHDS|SHVCTS|SHFZ|SHMI|SHBC|SHDR|SHBL))\b');
   
-  static final _remarksPattern = RegExp(r'RMK(.+)');
+  static final _remarksPattern = RegExp(r'RMK\s*(.+)');
   static final _peakWindPattern = RegExp(r'PK WND (\d{3})(\d{2})/(\d{2})'); // Peak wind pattern
   static final _windShiftPattern = RegExp(r'WSHFT (\d{4})'); // Wind shift pattern
   
@@ -124,18 +125,43 @@ class MetarParser {
     String? conditions;
     String? conditionsDescription;
 
-    if (!isCavok) {
-    final weatherMatches = _weatherPattern.allMatches(rawText);
+    if (isCavok) {
+      // When CAVOK is present, set weather to CAVOK
+      conditions = 'CAVOK';
+      conditionsDescription = 'CAVOK - Ceiling and Visibility OK';
+      debugPrint('DEBUG: 🌧️ METAR CAVOK detected, setting weather to CAVOK');
+    } else {
+      final weatherMatches = _weatherPattern.allMatches(rawText);
       if (weatherMatches.isNotEmpty) {
         final rawCodes = weatherMatches.map((m) => m.group(1)!).toList();
         conditions = rawCodes.join(' ');
         conditionsDescription = rawCodes.map((code) => WeatherParser.describeConditions(code)).join(', ');
+      } else {
+        // Try to parse full text weather descriptions (NAIPS format)
+        final fullTextWeather = _parseFullTextWeather(rawText);
+        if (fullTextWeather != null) {
+          conditions = fullTextWeather;
+          conditionsDescription = fullTextWeather;
+          debugPrint('DEBUG: 🌧️ METAR full text weather parsed: "$fullTextWeather"');
+        } else if (rawText.contains('NCD')) {
+          // Handle No Cloud Detected case
+          conditions = 'No Cloud Detected';
+          conditionsDescription = 'No Cloud Detected';
+          debugPrint('DEBUG: 🌧️ METAR NCD detected');
+        }
       }
     }
     
     // Parse remarks
     final remarksMatch = _remarksPattern.firstMatch(rawText);
     var remarks = remarksMatch?.group(1)?.trim();
+
+    // Debug logging for specific airports showing rainfall issues
+    if (icao == 'YSCB' || icao == 'YSSY' || icao == 'YPDN') {
+      debugPrint('DEBUG: 🔍 $icao Raw METAR: "$rawText"');
+      debugPrint('DEBUG: 🔍 $icao Remarks match: ${remarksMatch?.group(0)}');
+      debugPrint('DEBUG: 🔍 $icao Remarks section: "$remarks"');
+    }
 
     // Parse comprehensive remarks
     final parsedRemarks = <String>[];
@@ -171,6 +197,15 @@ class MetarParser {
       if (rainBeginMatch != null) {
         final time = rainBeginMatch.group(1)!;
         parsedRemarks.add('Rain began at $time past hour');
+      }
+      
+      // Recent rain
+      if (remarks.contains('RECENT MODERATE RAIN')) {
+        parsedRemarks.add('Recent moderate rain');
+      } else if (remarks.contains('RECENT LIGHT RAIN')) {
+        parsedRemarks.add('Recent light rain');
+      } else if (remarks.contains('RECENT HEAVY RAIN')) {
+        parsedRemarks.add('Recent heavy rain');
       }
       
       // Ceiling variable
@@ -216,6 +251,24 @@ class MetarParser {
         parsedRemarks.add('6-hour precipitation total: ${amount.toStringAsFixed(2)} inches');
       }
       
+      // Rainfall data (RF format) - more flexible pattern to handle varying digits
+      // Handle both RF00.0/000.0 and RF00.0/004.4 formats
+      final rfPattern = RegExp(r'RF(\d+\.?\d*)/(\d+\.?\d*)');
+      final rfMatch = rfPattern.firstMatch(remarks);
+      debugPrint('DEBUG: 🌧️ Checking RF pattern in remarks: "$remarks"');
+      debugPrint('DEBUG: 🌧️ RF pattern match: ${rfMatch?.group(0)}');
+      if (rfMatch != null) {
+        final tenMinStr = rfMatch.group(1)!;
+        final sinceStr = rfMatch.group(2)!;
+        
+        // Parse values, handling both decimal and whole numbers
+        final tenMin = tenMinStr.contains('.') ? double.parse(tenMinStr) : double.parse('$tenMinStr.0');
+        final since = sinceStr.contains('.') ? double.parse(sinceStr) : double.parse('$sinceStr.0');
+        
+        debugPrint('DEBUG: 🌧️ RF parsed: ${tenMin}mm in 10min, ${since}mm since 0900 local');
+        parsedRemarks.add('Rainfall: ${tenMin}mm in 10min, ${since}mm since 0900 local');
+      }
+      
       // Temperature/dewpoint extremes
       final tempDewMatch = _temperatureDewpointPattern.firstMatch(remarks);
       if (tempDewMatch != null) {
@@ -246,6 +299,17 @@ class MetarParser {
         parsedRemarks.add(desc);
       }
       
+      // Wind direction indicator
+      if (remarks.contains('DL-NE')) {
+        parsedRemarks.add('Wind direction indicator: Northeast');
+      } else if (remarks.contains('DL-SE')) {
+        parsedRemarks.add('Wind direction indicator: Southeast');
+      } else if (remarks.contains('DL-SW')) {
+        parsedRemarks.add('Wind direction indicator: Southwest');
+      } else if (remarks.contains('DL-NW')) {
+        parsedRemarks.add('Wind direction indicator: Northwest');
+      }
+      
       // Cloud coverage (e.g., CU1SC5)
       final cloudCoverageMatch = _cloudCoveragePattern.firstMatch(remarks);
       if (cloudCoverageMatch != null) {
@@ -272,7 +336,7 @@ class MetarParser {
       parsedRemarks.add('No significant change expected in the next 2 hours');
     }
     
-    final finalRemarks = parsedRemarks.isNotEmpty ? parsedRemarks.join('\n') : null;
+    final finalRemarks = parsedRemarks.isNotEmpty ? parsedRemarks.join('\n') : '';
     
     return DecodedWeather(
       icao: icao,
@@ -298,6 +362,65 @@ class MetarParser {
       rvrDescription: WeatherParser.describeRvr(rvr),
       timeline: [],
     );
+  }
+
+  // Parse full text weather descriptions (NAIPS format)
+  String? _parseFullTextWeather(String rawText) {
+    debugPrint('DEBUG: 🔍 METAR _parseFullTextWeather called with: "$rawText"');
+    
+    // Look for common full text weather patterns
+    if (rawText.contains('SHOWERS OF LIGHT RAIN')) {
+      debugPrint('DEBUG: 🎯 METAR Found SHOWERS OF LIGHT RAIN');
+      return 'Light Showers of Rain';
+    } else if (rawText.contains('SHOWERS OF MODERATE RAIN')) {
+      debugPrint('DEBUG: 🎯 METAR Found SHOWERS OF MODERATE RAIN');
+      return 'Moderate Showers of Rain';
+    } else if (rawText.contains('SHOWERS OF HEAVY RAIN')) {
+      debugPrint('DEBUG: 🎯 METAR Found SHOWERS OF HEAVY RAIN');
+      return 'Heavy Showers of Rain';
+    } else if (rawText.contains('LIGHT RAIN')) {
+      debugPrint('DEBUG: 🎯 METAR Found LIGHT RAIN');
+      return 'Light Rain';
+    } else if (rawText.contains('MODERATE RAIN')) {
+      debugPrint('DEBUG: 🎯 METAR Found MODERATE RAIN');
+      return 'Moderate Rain';
+    } else if (rawText.contains('HEAVY RAIN')) {
+      debugPrint('DEBUG: 🎯 METAR Found HEAVY RAIN');
+      return 'Heavy Rain';
+    } else if (rawText.contains('LIGHT DRIZZLE')) {
+      debugPrint('DEBUG: 🎯 METAR Found LIGHT DRIZZLE');
+      return 'Light Drizzle';
+    } else if (rawText.contains('MODERATE DRIZZLE')) {
+      debugPrint('DEBUG: 🎯 METAR Found MODERATE DRIZZLE');
+      return 'Moderate Drizzle';
+    } else if (rawText.contains('HEAVY DRIZZLE')) {
+      debugPrint('DEBUG: 🎯 METAR Found HEAVY DRIZZLE');
+      return 'Heavy Drizzle';
+    } else if (rawText.contains('LIGHT SNOW')) {
+      debugPrint('DEBUG: 🎯 METAR Found LIGHT SNOW');
+      return 'Light Snow';
+    } else if (rawText.contains('MODERATE SNOW')) {
+      debugPrint('DEBUG: 🎯 METAR Found MODERATE SNOW');
+      return 'Moderate Snow';
+    } else if (rawText.contains('HEAVY SNOW')) {
+      debugPrint('DEBUG: 🎯 METAR Found HEAVY SNOW');
+      return 'Heavy Snow';
+    } else if (rawText.contains('LIGHT FOG')) {
+      debugPrint('DEBUG: 🎯 METAR Found LIGHT FOG');
+      return 'Light Fog';
+    } else if (rawText.contains('MODERATE FOG')) {
+      debugPrint('DEBUG: 🎯 METAR Found MODERATE FOG');
+      return 'Moderate Fog';
+    } else if (rawText.contains('HEAVY FOG')) {
+      debugPrint('DEBUG: 🎯 METAR Found HEAVY FOG');
+      return 'Heavy Fog';
+    } else if (rawText.contains('SH IN AREA')) {
+      debugPrint('DEBUG: 🎯 METAR Found SH IN AREA');
+      return 'Showers in Area';
+    }
+    
+    debugPrint('DEBUG: 🔍 METAR No full text weather patterns found');
+    return null;
   }
 
   DateTime _parseTimestamp(String rawText) {
