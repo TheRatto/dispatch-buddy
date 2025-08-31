@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/charts_screen.dart';
+import '../screens/weather_radar_screen.dart';
 
 class MoreSheet extends StatelessWidget {
   const MoreSheet({super.key});
@@ -30,6 +31,19 @@ class MoreSheet extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ChartsScreen()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.radar, color: Color(0xFF3B82F6)),
+              title: const Text('Weather Radar'),
+              subtitle: const Text('Live BOM radar imagery and loops'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WeatherRadarScreen()),
                 );
               },
             ),

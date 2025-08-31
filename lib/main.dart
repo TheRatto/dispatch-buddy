@@ -13,6 +13,7 @@ import 'providers/flight_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/briefing_tabs_screen.dart';
 import 'providers/charts_provider.dart';
+import 'providers/weather_radar_provider.dart';
 import 'services/naips_charts_service.dart';
 import 'services/naips_service.dart';
 
@@ -34,6 +35,10 @@ Future<void> main() async {
           create: (context) => ChartsProvider(
             chartsService: NaipsChartsService(naipsService: NAIPSService()),
           ),
+        ),
+        ChangeNotifierProvider(
+          lazy: true,
+          create: (context) => WeatherRadarProvider(),
         ),
       ],
       child: const MyApp(),

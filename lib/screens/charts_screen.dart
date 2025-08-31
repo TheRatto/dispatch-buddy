@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math_64.dart' show Matrix4, Vector3;
 import '../services/naips_charts_service.dart';
 import '../providers/charts_provider.dart';
 import '../providers/settings_provider.dart';
+import '../widgets/zulu_time_widget.dart';
 
 class ChartsScreen extends StatefulWidget {
   const ChartsScreen({super.key});
@@ -82,7 +83,17 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Charts'),
+        title: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+            SizedBox(height: 2),
+            Text(
+              'Charts',
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
         centerTitle: true,
       ),
       body: Column(
@@ -309,7 +320,17 @@ class _ChartViewerScreenState extends State<_ChartViewerScreen> with SingleTicke
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.name),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
+            const SizedBox(height: 2),
+            Text(
+              item.name,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(32),
           child: Padding(
