@@ -152,13 +152,10 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
               // Site info and controls
               if (provider.selectedSite != null) _buildSiteInfoBar(provider),
               
-              // Main radar display area
+              // Main radar display area (now includes legend overlay)
               Expanded(
                 child: _buildRadarDisplay(provider),
               ),
-              
-              // Legend section in black area
-              _buildRadarLegend(provider),
               
               // Time scale below the radar image
               if (provider.currentRadarLoop.isNotEmpty)
@@ -458,32 +455,30 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
 
 
 
-  /// Build legend section below the radar display
-  Widget _buildRadarLegend(WeatherRadarProvider provider) {
+  /// Build legend overlay positioned at bottom of radar area
+  Widget _buildLegendOverlay() {
     return Container(
       width: double.infinity,
-      height: 60, // Similar to time scale height
-      color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Center(
-        child: Image.asset(
-          'assets/images/radar_legend.png',
-          fit: BoxFit.contain,
-          width: double.infinity, // Use full width for maximum size
-          height: 44, // Use most of the container space
-          errorBuilder: (context, error, stackTrace) {  
-            return Container(
-              height: 44,
-              color: Colors.grey.shade800,
-              child: const Center(
-                child: Text(
-                  'Legend unavailable',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
+      height: 120, // Increased height to accommodate the full legend image (557px tall)
+      color: Colors.transparent, // Make container transparent to show legend transparency
+      child: Image.asset(
+        'assets/radar_layers/common/legend/standard.png',
+        fit: BoxFit.cover, // Use cover to fill the container and align properly
+        width: double.infinity, // Use full width
+        height: double.infinity, // Use full height to show the entire legend
+        alignment: Alignment.bottomCenter, // Align the solid bar at the bottom
+        errorBuilder: (context, error, stackTrace) {  
+          return Container(
+            height: 120,
+            color: Colors.grey.shade800,
+            child: const Center(
+              child: Text(
+                'Legend unavailable',
+                style: TextStyle(color: Colors.white, fontSize: 12),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -666,6 +661,13 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
           fallback: _buildMockRadarDisplay(provider.selectedSite!, provider.selectedRange),
         ),
         
+        // Layer 6: Legend overlay (positioned to align transparent part with radar layers)
+        Positioned(
+          bottom: 0, // Position at the very bottom
+          left: 0,
+          right: 0,
+          child: _buildLegendOverlay(),
+        ),
 
       ],
     );
@@ -712,6 +714,14 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
         CustomPaint(
           size: Size.infinite,
           painter: RadarRangeOverlayPainter(provider.selectedRange),
+        ),
+        
+        // Legend overlay (positioned to align transparent part with radar layers)
+        Positioned(
+          bottom: 0, // Position at the very bottom
+          left: 0,
+          right: 0,
+          child: _buildLegendOverlay(),
         ),
       ],
     );
