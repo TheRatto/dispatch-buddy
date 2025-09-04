@@ -977,7 +977,7 @@ class _LocationSelectorSheet extends StatelessWidget {
                                               isFavorite ? Icons.star : Icons.star_border,
                                               color: isFavorite ? Colors.amber : Colors.grey,
                                             ),
-                                            onPressed: () => provider.toggleFavorite(site.id),
+                                            onPressed: () async => await provider.toggleFavorite(site.id),
                                           ),
                                           SizedBox(
                                             width: 24, // Fixed space for check mark
@@ -1081,7 +1081,7 @@ class _LocationSelectorSheet extends StatelessWidget {
                     Icons.star,
                     color: Colors.amber,
                   ),
-                  onPressed: () => provider.toggleFavorite(site.id),
+                  onPressed: () async => await provider.toggleFavorite(site.id),
                 ),
                 SizedBox(
                   width: 24, // Fixed space for check mark

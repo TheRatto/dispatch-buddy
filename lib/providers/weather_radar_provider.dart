@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/radar_site.dart';
 import '../models/radar_image.dart';
 import '../services/bom_radar_service.dart';
@@ -7,6 +8,9 @@ import '../services/bom_radar_service.dart';
 /// Provider for managing weather radar state and data
 class WeatherRadarProvider extends ChangeNotifier {
   final BomRadarService _radarService = BomRadarService();
+  
+  // Constants for SharedPreferences keys
+  static const String _favoritesKey = 'radar_favorites';
 
   // State
   List<RadarSite> _availableSites = [];
@@ -60,12 +64,16 @@ class WeatherRadarProvider extends ChangeNotifier {
   }
 
   /// Toggle favorite status of a site
-  void toggleFavorite(String siteId) {
+  Future<void> toggleFavorite(String siteId) async {
     if (_favoriteSiteIds.contains(siteId)) {
       _favoriteSiteIds.remove(siteId);
     } else {
       _favoriteSiteIds.add(siteId);
     }
+    
+    // Save favorites to SharedPreferences
+    await _saveFavorites();
+    
     notifyListeners();
   }
 
@@ -87,6 +95,9 @@ class WeatherRadarProvider extends ChangeNotifier {
     try {
       debugPrint('DEBUG: WeatherRadarProvider - Initializing with available radar sites');
       _availableSites = BomRadarService.getAvailableRadarSites();
+      
+      // Load favorites from SharedPreferences
+      await _loadFavorites();
       
       // Set default site to National if available
       if (_availableSites.isNotEmpty) {
@@ -373,6 +384,30 @@ class WeatherRadarProvider extends ChangeNotifier {
     _loadingGraceTimer?.cancel();
     _layersLoading = false;
     notifyListeners();
+  }
+
+  /// Load favorites from SharedPreferences
+  Future<void> _loadFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favoriteIds = prefs.getStringList(_favoritesKey) ?? [];
+      _favoriteSiteIds = favoriteIds;
+      debugPrint('DEBUG: WeatherRadarProvider - Loaded ${favoriteIds.length} favorites: $favoriteIds');
+    } catch (e) {
+      debugPrint('ERROR: WeatherRadarProvider - Failed to load favorites: $e');
+      _favoriteSiteIds = [];
+    }
+  }
+
+  /// Save favorites to SharedPreferences
+  Future<void> _saveFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_favoritesKey, _favoriteSiteIds);
+      debugPrint('DEBUG: WeatherRadarProvider - Saved ${_favoriteSiteIds.length} favorites: $_favoriteSiteIds');
+    } catch (e) {
+      debugPrint('ERROR: WeatherRadarProvider - Failed to save favorites: $e');
+    }
   }
 
   /// Dispose of resources
