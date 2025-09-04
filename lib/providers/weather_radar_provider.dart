@@ -88,10 +88,10 @@ class WeatherRadarProvider extends ChangeNotifier {
       debugPrint('DEBUG: WeatherRadarProvider - Initializing with available radar sites');
       _availableSites = BomRadarService.getAvailableRadarSites();
       
-      // Set default site to Sydney if available
+      // Set default site to National if available
       if (_availableSites.isNotEmpty) {
         _selectedSite = _availableSites.firstWhere(
-          (site) => site.id == '71', // Sydney base ID
+          (site) => site.id == 'NATIONAL', // National radar ID
           orElse: () => _availableSites.first,
         );
         debugPrint('DEBUG: WeatherRadarProvider - Default site set to: ${_selectedSite?.displayName}');
