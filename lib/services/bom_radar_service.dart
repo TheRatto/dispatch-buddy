@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/radar_site.dart';
 import '../models/radar_image.dart';
+import 'radar_assets_service.dart';
 
 /// Service for fetching Bureau of Meteorology radar imagery
 class BomRadarService {
@@ -884,6 +885,46 @@ class BomRadarService {
     }
   }
 
+  /// Fetch national radar loop (multiple hourly frames)
+  Future<List<RadarImage>> fetchNationalRadarLoop({int frames = 6}) async {
+    return await _fetchNationalRadarLoop(frames: frames);
+  }
+
+  /// Find available satellite image URL with graceful fallback
+  Future<String> _findAvailableSatelliteUrl(DateTime targetTime) async {
+    // Try current hour first, then previous hour as fallback
+    for (int hourOffset = 0; hourOffset <= 2; hourOffset++) {
+      final satCheckTime = targetTime.subtract(Duration(hours: hourOffset));
+      final satTime = DateTime(satCheckTime.year, satCheckTime.month, satCheckTime.day, satCheckTime.hour, 30);
+      final satTimeString = '${satTime.year}'
+          '${satTime.month.toString().padLeft(2, '0')}'
+          '${satTime.day.toString().padLeft(2, '0')}'
+          '${satTime.hour.toString().padLeft(2, '0')}'
+          '${satTime.minute.toString().padLeft(2, '0')}';
+      
+      final testSatUrl = 'https://www.bom.gov.au/gms/IDE00135.radar.$satTimeString.jpg';
+      
+      try {
+        final satResponse = await http.head(
+          Uri.parse(testSatUrl),
+          headers: _requestHeaders,
+        ).timeout(requestTimeout);
+        
+        if (satResponse.statusCode == 200) {
+          debugPrint('DEBUG: BomRadarService - Found available satellite (${hourOffset}h back): $testSatUrl');
+          return testSatUrl;
+        }
+      } catch (e) {
+        debugPrint('DEBUG: BomRadarService - Satellite not available at $satTimeString (${hourOffset}h back)');
+        continue;
+      }
+    }
+    
+    // Final fallback: use the background map if no satellite is available
+    debugPrint('DEBUG: BomRadarService - No satellite available, using background fallback');
+    return 'https://www.bom.gov.au/products/radar_transparencies/IDE00035.background.png';
+  }
+
   /// Generate radar image URL based on BOM patterns
   RadarImage _generateRadarImageUrl(String siteId, DateTime timestamp, String range) {
     // BOM radar URLs follow pattern: IDR{site_id}.T.{timestamp}.png
@@ -958,24 +999,117 @@ class BomRadarService {
     }
   }
 
-  /// Fetch national radar composite image
+  /// Fetch national radar composite loop (multiple hourly frames)
+  Future<List<RadarImage>> _fetchNationalRadarLoop({int frames = 6}) async {
+    try {
+      debugPrint('DEBUG: BomRadarService - Fetching national radar loop ($frames hourly frames)');
+      
+      final now = DateTime.now().toUtc();
+      final List<RadarImage> images = [];
+      
+      // Fetch multiple hourly frames for animation
+      for (int hoursBack = 0; hoursBack < frames && hoursBack <= 12; hoursBack++) {
+        final checkTime = now.subtract(Duration(hours: hoursBack));
+        
+        // National radar: hourly at 48 minutes (e.g., 0748, 0848, 0948, 1048)
+        var radarTime = DateTime(checkTime.year, checkTime.month, checkTime.day, checkTime.hour, 48);
+        
+        // If radar time is in the future, go back to previous hour
+        if (radarTime.isAfter(now)) {
+          radarTime = radarTime.subtract(const Duration(hours: 1));
+          debugPrint('DEBUG: BomRadarService - Adjusted future radarTime to previous hour: ${radarTime.toIso8601String()}');
+        }
+        final radarTimeString = '${radarTime.year}'
+            '${radarTime.month.toString().padLeft(2, '0')}'
+            '${radarTime.day.toString().padLeft(2, '0')}'
+            '${radarTime.hour.toString().padLeft(2, '0')}'
+            '${radarTime.minute.toString().padLeft(2, '0')}';
+        
+        // National radar composite URLs (hourly pattern)
+        final radarDataUrl = 'https://www.bom.gov.au/radar/IDR00004.T.$radarTimeString.png';
+        
+        // Find available satellite image with graceful fallback
+        final satelliteUrl = await _findAvailableSatelliteUrl(checkTime);
+        
+        try {
+          final response = await http.head(
+            Uri.parse(radarDataUrl),
+            headers: _requestHeaders,
+          ).timeout(requestTimeout);
+
+          if (response.statusCode == 200) {
+            debugPrint('DEBUG: BomRadarService - Found national radar frame ${hoursBack+1}/$frames: $radarDataUrl');
+            debugPrint('DEBUG: BomRadarService - Using satellite: $satelliteUrl');
+            
+            // Create layers for national radar composite (no locations layer)
+            final layers = RadarLayers(
+              backgroundUrl: RadarAssetsService.getBackgroundAssetPath('00', 'National') ?? 
+                  'https://www.bom.gov.au/products/radar_transparencies/IDE00035.background.png',
+              locationsUrl: null, // Remove location markers from National view
+              rangeUrl: 'https://www.bom.gov.au/scripts/radar/images/radar_trans_map_mask.png', // National uses different range system
+              topographyUrl: satelliteUrl, // Satellite imagery as topography layer
+              legendUrl: RadarAssetsService.getLegendAssetPath(),
+              radarDataUrl: radarDataUrl, // Main radar composite
+            );
+            
+            images.add(RadarImage(
+              siteId: 'NATIONAL',
+              timestamp: radarTime, // Use the actual radar timestamp
+              url: radarDataUrl,
+              range: 'National',
+              layers: layers,
+            ));
+          } else {
+            debugPrint('DEBUG: BomRadarService - National radar frame not available (${response.statusCode}): $radarDataUrl');
+          }
+        } catch (e) {
+          debugPrint('DEBUG: BomRadarService - Failed to check national radar at $radarTimeString: $e');
+          continue;
+        }
+      }
+      
+      // Return frames in chronological order (oldest first for proper animation)
+      images.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      
+      debugPrint('DEBUG: BomRadarService - Found ${images.length} national radar frames');
+      return images;
+    } catch (e) {
+      debugPrint('ERROR: BomRadarService - Failed to fetch national radar loop: $e');
+      return [];
+    }
+  }
+
+  /// Fetch single national radar composite image (fallback)
   Future<RadarImage?> _fetchNationalRadarImage() async {
     try {
       debugPrint('DEBUG: BomRadarService - Fetching national radar composite');
       
       final now = DateTime.now().toUtc();
       
-      // Try different timestamps to find the latest available image
-      for (int minutesBack = 0; minutesBack <= 60; minutesBack += 6) {
-        final checkTime = now.subtract(Duration(minutes: minutesBack));
-        final timeString = '${checkTime.year}'
-            '${checkTime.month.toString().padLeft(2, '0')}'
-            '${checkTime.day.toString().padLeft(2, '0')}'
-            '${checkTime.hour.toString().padLeft(2, '0')}'
-            '${checkTime.minute.toString().padLeft(2, '0')}';
+      // Try different timestamps for National radar (hourly updates)
+      for (int hoursBack = 0; hoursBack <= 12; hoursBack++) {
+        final checkTime = now.subtract(Duration(hours: hoursBack));
         
-        // National radar composite URL pattern
-        final radarDataUrl = 'https://www.bom.gov.au/radar/IDR00004.T.$timeString.png';
+        // National radar: hourly at 48 minutes (e.g., 0748, 0848, 0948, 1048)
+        var radarTime = DateTime(checkTime.year, checkTime.month, checkTime.day, checkTime.hour, 48);
+        
+        // If radar time is in the future, go back to previous hour
+        if (radarTime.isAfter(now)) {
+          radarTime = radarTime.subtract(const Duration(hours: 1));
+          debugPrint('DEBUG: BomRadarService - Adjusted future radarTime to previous hour: ${radarTime.toIso8601String()}');
+        }
+        
+        final radarTimeString = '${radarTime.year}'
+            '${radarTime.month.toString().padLeft(2, '0')}'
+            '${radarTime.day.toString().padLeft(2, '0')}'
+            '${radarTime.hour.toString().padLeft(2, '0')}'
+            '${radarTime.minute.toString().padLeft(2, '0')}';
+        
+        // National radar composite URLs (hourly pattern)
+        final radarDataUrl = 'https://www.bom.gov.au/radar/IDR00004.T.$radarTimeString.png';
+        
+        // Find available satellite image with graceful fallback
+        final satelliteUrl = await _findAvailableSatelliteUrl(checkTime);
         
         try {
           final response = await http.head(
@@ -985,28 +1119,34 @@ class BomRadarService {
 
           if (response.statusCode == 200) {
             debugPrint('DEBUG: BomRadarService - Found national radar: $radarDataUrl');
+            debugPrint('DEBUG: BomRadarService - Satellite layer: $satelliteUrl');
             
-            // Create layers for national radar
-            // Using confirmed IDE00035 pattern for background layers
+            // Use local assets for National radar background layer
+            final backgroundUrl = RadarAssetsService.getBackgroundAssetPath('00', 'National') ?? 
+                'https://www.bom.gov.au/products/radar_transparencies/IDE00035.background.png';
+            
+            debugPrint('DEBUG: BomRadarService - National radar background: $backgroundUrl');
+            
+            // Create layers for national radar composite (no locations layer)
             final layers = RadarLayers(
-              backgroundUrl: 'https://www.bom.gov.au/products/radar_transparencies/IDE00035.background.png',
-              locationsUrl: 'https://www.bom.gov.au/products/radar_transparencies/IDE00035.locations.png',
-              rangeUrl: 'https://www.bom.gov.au/products/radar_transparencies/IDE00035.range.png',
-              topographyUrl: 'https://www.bom.gov.au/products/radar_transparencies/IDE00035.topography.png',
-              legendUrl: 'https://www.bom.gov.au/products/radar_transparencies/IDR.legend.0.png',
-              radarDataUrl: radarDataUrl,
+              backgroundUrl: backgroundUrl,
+              locationsUrl: null, // Remove location markers from National view
+              rangeUrl: 'https://www.bom.gov.au/scripts/radar/images/radar_trans_map_mask.png', // Map mask
+              topographyUrl: satelliteUrl, // Satellite imagery as topography layer
+              legendUrl: RadarAssetsService.getLegendAssetPath(),
+              radarDataUrl: radarDataUrl, // Main radar composite
             );
             
             return RadarImage(
               siteId: 'NATIONAL',
-              timestamp: checkTime,
+              timestamp: radarTime, // Use the actual radar timestamp
               url: radarDataUrl,
               range: 'National',
               layers: layers,
             );
           }
         } catch (e) {
-          debugPrint('DEBUG: BomRadarService - Failed to check national radar at $timeString: $e');
+          debugPrint('DEBUG: BomRadarService - Failed to check national radar at $radarTimeString: $e');
           continue;
         }
       }
@@ -1037,13 +1177,62 @@ class BomRadarService {
         final radarDataRegex = RegExp('$siteId\\.T\\.\\d{12}\\.png');
         final radarMatches = radarDataRegex.allMatches(html);
         
-        // BOM layer URLs use /products/radar_transparencies/ path
+        // Extract site ID and range from BOM site ID (e.g., "IDR714" -> siteId="71", range="4")
+        final siteIdMatch = RegExp(r'IDR(\d{2})(\d)').firstMatch(siteId);
+        String? baseSiteId;
+        String range = '256km'; // Default range
+        
+        if (siteIdMatch != null) {
+          baseSiteId = siteIdMatch.group(1);
+          final rangeDigit = siteIdMatch.group(2);
+          range = switch (rangeDigit) {
+            '4' => '64km',
+            '3' => '128km',
+            '2' => '256km',
+            '1' => '512km',
+            _ => '256km',
+          };
+        }
+        
+        // Use local assets for background, locations, and topography layers
+        String? backgroundUrl;
+        String? locationsUrl;
+        String? topographyUrl;
+        
+        if (baseSiteId != null) {
+          backgroundUrl = RadarAssetsService.getBackgroundAssetPath(baseSiteId, range);
+          locationsUrl = RadarAssetsService.getLocationsAssetPath(baseSiteId, range);
+          topographyUrl = RadarAssetsService.getTopographyAssetPath(baseSiteId, range);
+          
+          debugPrint('DEBUG: BomRadarService - Sydney $range layer paths:');
+          debugPrint('  Site ID: $baseSiteId → BOM ID: $siteId');
+          debugPrint('  Background: $backgroundUrl');
+          debugPrint('  Locations: $locationsUrl');
+          debugPrint('  Topography: $topographyUrl');
+          
+          // Test asset availability
+          final hasAssets = RadarAssetsService.hasLocalAssets(baseSiteId);
+          debugPrint('  Has local assets: $hasAssets');
+        }
+        
+        // Fallback to remote URLs if local assets not available
         final transparencyBaseUrl = 'https://www.bom.gov.au/products/radar_transparencies/';
-        final backgroundUrl = '${transparencyBaseUrl}$siteId.background.png';
-        final locationsUrl = '${transparencyBaseUrl}$siteId.locations.png';
-        final rangeUrl = '${transparencyBaseUrl}$siteId.range.png';
-        final topographyUrl = '${transparencyBaseUrl}$siteId.topography.png';
-        final legendUrl = '${transparencyBaseUrl}IDR.legend.0.png';
+        
+        backgroundUrl ??= '${transparencyBaseUrl}$siteId.background.png';
+        debugPrint('DEBUG: BomRadarService - Background URL: $backgroundUrl');
+        
+        locationsUrl ??= '${transparencyBaseUrl}$siteId.locations.png';
+        debugPrint('DEBUG: BomRadarService - Locations URL: $locationsUrl');
+        
+        topographyUrl ??= '${transparencyBaseUrl}$siteId.topography.png';
+        debugPrint('DEBUG: BomRadarService - Topography URL: $topographyUrl');
+        
+        // Use local range and legend assets
+        final rangeUrl = RadarAssetsService.getRangeAssetPath(range);
+        final legendUrl = RadarAssetsService.getLegendAssetPath();
+        
+        debugPrint('DEBUG: BomRadarService - Using local range: $rangeUrl');
+        debugPrint('DEBUG: BomRadarService - Using local legend: $legendUrl');
         
         final radarImages = <RadarImage>[];
         
@@ -1061,12 +1250,21 @@ class BomRadarService {
             radarDataUrl: radarDataUrl,
           );
           
+          // Debug final layer configuration
+          debugPrint('DEBUG: Final layer configuration for ${baseSiteId ?? siteId}:');
+          debugPrint('  Background: ${layers.backgroundUrl}');
+          debugPrint('  Topography: ${layers.topographyUrl}');
+          debugPrint('  Locations: ${layers.locationsUrl}');
+          debugPrint('  Range: ${layers.rangeUrl}');
+          debugPrint('  Legend: ${layers.legendUrl}');
+          debugPrint('  Radar Data: ${layers.radarDataUrl}');
+          
           radarImages.add(RadarImage(
-            siteId: siteId,
+            siteId: baseSiteId ?? siteId,
             timestamp: timestamp,
             url: radarDataUrl, // This is the working BOM radar image URL
-            range: '256km', // Default range, can be updated
-            layers: layers, // Now with correct transparency URLs!
+            range: range,
+            layers: layers, // Now with local assets for background and locations!
           ));
         }
             

@@ -112,7 +112,7 @@ class RadarImage {
 /// Represents the multiple layers that compose a BOM radar image
 class RadarLayers {
   final String backgroundUrl;     // IDR402.background.png
-  final String locationsUrl;      // IDR402.locations.png  
+  final String? locationsUrl;     // IDR402.locations.png (optional - can be null to hide locations)
   final String rangeUrl;          // IDR402.range.png
   final String topographyUrl;     // IDR402.topography.png
   final String legendUrl;         // IDR.legend.0.png
@@ -120,7 +120,7 @@ class RadarLayers {
 
   const RadarLayers({
     required this.backgroundUrl,
-    required this.locationsUrl,
+    this.locationsUrl,             // Made optional
     required this.rangeUrl,
     required this.topographyUrl,
     required this.legendUrl,
@@ -131,7 +131,7 @@ class RadarLayers {
   Map<String, dynamic> toJson() {
     return {
       'backgroundUrl': backgroundUrl,
-      'locationsUrl': locationsUrl,
+      'locationsUrl': locationsUrl, // Can be null
       'rangeUrl': rangeUrl,
       'topographyUrl': topographyUrl,
       'legendUrl': legendUrl,
@@ -143,7 +143,7 @@ class RadarLayers {
   factory RadarLayers.fromJson(Map<String, dynamic> json) {
     return RadarLayers(
       backgroundUrl: json['backgroundUrl'] as String,
-      locationsUrl: json['locationsUrl'] as String,
+      locationsUrl: json['locationsUrl'] as String?, // Handle nullable
       rangeUrl: json['rangeUrl'] as String,
       topographyUrl: json['topographyUrl'] as String,
       legendUrl: json['legendUrl'] as String,

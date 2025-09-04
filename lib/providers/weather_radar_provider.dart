@@ -21,13 +21,15 @@ class WeatherRadarProvider extends ChangeNotifier {
   DateTime? _lastRefresh;
   Timer? _animationTimer;
   List<String> _favoriteSiteIds = [];
+  bool _layersLoading = false;  // Track if layers are still loading
+  Timer? _loadingGraceTimer;    // Grace period for layer loading
 
   // Getters
   List<RadarSite> get availableSites => _availableSites;
   RadarSite? get selectedSite => _selectedSite;
   List<RadarImage> get currentRadarLoop => _currentRadarLoop;
   RadarImage? get currentImage => _currentImage;
-  bool get isLoading => _isLoading;
+  bool get isLoading => _isLoading || _layersLoading;
   String? get errorMessage => _errorMessage;
   String get selectedRange => _selectedRange;
   bool get isAnimating => _isAnimating;
@@ -165,6 +167,9 @@ class WeatherRadarProvider extends ChangeNotifier {
         _lastRefresh = DateTime.now().toUtc();
         _errorMessage = null;
         debugPrint('DEBUG: WeatherRadarProvider - Successfully loaded radar image: ${image.formattedTime}');
+        
+        // Start layers loading grace period for single images too
+        _startLayersLoadingGracePeriod();
       } else {
         _setError('No recent radar images available for ${_selectedSite!.name}');
       }
@@ -184,11 +189,20 @@ class WeatherRadarProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final images = await _radarService.fetchRadarLoop(
-        _selectedSite!.id,
-        range: _selectedRange,
-        frames: frames,
-      );
+      List<RadarImage> images;
+      
+      // Special handling for National radar - uses hourly loop structure
+      if (_selectedSite!.id == 'NATIONAL') {
+        debugPrint('DEBUG: WeatherRadarProvider - Fetching National radar hourly loop ($frames hourly frames)');
+        images = await _radarService.fetchNationalRadarLoop(frames: frames);
+      } else {
+        // Regular regional radar loop
+        images = await _radarService.fetchRadarLoop(
+          _selectedSite!.id,
+          range: _selectedRange,
+          frames: frames,
+        );
+      }
 
       if (images.isNotEmpty) {
         _currentRadarLoop = images;
@@ -202,6 +216,9 @@ class WeatherRadarProvider extends ChangeNotifier {
         for (int i = 0; i < images.length; i++) {
           debugPrint('DEBUG: Frame $i: ${images[i].formattedTime} UTC');
         }
+        
+        // Start layers loading grace period
+        _startLayersLoadingGracePeriod();
       } else {
         _setError('No radar loop data available for ${_selectedSite!.name}');
       }
@@ -219,6 +236,14 @@ class WeatherRadarProvider extends ChangeNotifier {
 
     debugPrint('DEBUG: WeatherRadarProvider - Starting radar animation');
     _isAnimating = true;
+    
+    // Cancel layers loading grace period since animation indicates readiness
+    if (_layersLoading) {
+      // Wait a bit before cancelling to let first frame properly load
+      Timer(const Duration(milliseconds: 1500), () {
+        _cancelLayersLoadingGracePeriod();
+      });
+    }
     
     // Start animation timer - advance frame every 800ms
     _animationTimer?.cancel();
@@ -325,10 +350,36 @@ class WeatherRadarProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Start layers loading grace period to avoid jumping
+  void _startLayersLoadingGracePeriod() {
+    debugPrint('DEBUG: WeatherRadarProvider - Starting layers loading grace period');
+    _layersLoading = true;
+    notifyListeners();
+    
+    // Cancel any existing timer
+    _loadingGraceTimer?.cancel();
+    
+    // Give layers 4 seconds to load before hiding loading indicator
+    _loadingGraceTimer = Timer(const Duration(seconds: 4), () {
+      debugPrint('DEBUG: WeatherRadarProvider - Layers loading grace period ended');
+      _layersLoading = false;
+      notifyListeners();
+    });
+  }
+
+  /// Cancel layers loading grace period (if layers load faster)
+  void _cancelLayersLoadingGracePeriod() {
+    debugPrint('DEBUG: WeatherRadarProvider - Cancelling layers loading grace period (layers ready)');
+    _loadingGraceTimer?.cancel();
+    _layersLoading = false;
+    notifyListeners();
+  }
+
   /// Dispose of resources
   @override
   void dispose() {
     _animationTimer?.cancel();
+    _loadingGraceTimer?.cancel();
     super.dispose();
   }
 

@@ -651,11 +651,12 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
           'Range Circles',
         ),
         
-        // Layer 4: Location labels (city names)
-        _buildRadarLayer(
-          layers.locationsUrl,
-          'Location Labels',
-        ),
+        // Layer 4: Location labels (city names) - only if URL provided
+        if (layers.locationsUrl != null)
+          _buildRadarLayer(
+            layers.locationsUrl!,
+            'Location Labels',
+          ),
         
         // Layer 5: Radar data (actual weather - this animates)
         _buildRadarLayer(
@@ -717,50 +718,76 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
   }
 
   /// Build individual radar layer with error handling
+  /// Supports both asset paths and network URLs
   Widget _buildRadarLayer(
-    String imageUrl, 
+    String imagePath, 
     String layerName, {
     Widget? fallback,
     bool showLoading = false,
     double? width,
     double? height,
   }) {
-    return Image.network(
-      imageUrl,
-      fit: BoxFit.contain,
-      width: width ?? double.infinity,
-      height: height ?? double.infinity,
-      loadingBuilder: showLoading ? (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / 
-                      loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading $layerName...',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      } : null,
-      errorBuilder: (context, error, stackTrace) {
-        debugPrint('DEBUG: Failed to load $layerName layer: $imageUrl - Error: $error');
-        // Return fallback or transparent container
-        return fallback ?? Container(
-          width: width ?? double.infinity,
-          height: height ?? double.infinity,
-          color: Colors.transparent,
-        );
-      },
-    );
+    // Check if this is an asset path or network URL
+    final isAsset = imagePath.startsWith('assets/');
+    
+    debugPrint('DEBUG: _buildRadarLayer - $layerName: ${isAsset ? "ASSET" : "NETWORK"} - $imagePath');
+    
+    if (isAsset) {
+      // Load from local assets
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.contain,
+        width: width ?? double.infinity,
+        height: height ?? double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('DEBUG: Failed to load $layerName asset: $imagePath - Error: $error');
+          // Return fallback or transparent container
+          return fallback ?? Container(
+            width: width ?? double.infinity,
+            height: height ?? double.infinity,
+            color: Colors.transparent,
+          );
+        },
+      );
+    } else {
+      // Load from network
+      return Image.network(
+        imagePath,
+        fit: BoxFit.contain,
+        width: width ?? double.infinity,
+        height: height ?? double.infinity,
+        loadingBuilder: showLoading ? (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading $layerName...',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          );
+        } : null,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('DEBUG: Failed to load $layerName layer: $imagePath - Error: $error');
+          // Return fallback or transparent container
+          return fallback ?? Container(
+            width: width ?? double.infinity,
+            height: height ?? double.infinity,
+            color: Colors.transparent,
+          );
+        },
+      );
+    }
   }
 }
 

@@ -52,4 +52,9 @@ flutter:
     - .env
     - assets/images/
     - UI Images from Stitch/
-    - assets/airport_data/250612_ersa/ 
+    - assets/airport_data/250612_ersa/
+    - assets/radar_layers/backgrounds/
+    - assets/radar_layers/locations/
+    - assets/radar_layers/topography/
+    - assets/radar_layers/common/ranges/
+    - assets/radar_layers/common/legend/
