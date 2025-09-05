@@ -45,6 +45,16 @@
 - [ ] Export radar images
 - [ ] Historical radar data access
 
+## OTHER COMPLETED FEATURES
+
+#### Charts Feature ✅ **PHASE 2 SUBSTANTIALLY COMPLETE**
+- ✅ NAIPS graphical charts integration
+- ✅ Full chart viewer with pinch-to-zoom
+- ✅ Chart categories: MSL, SIGWX, SIGMET, SATPIC, Grid Point Winds
+- ✅ Live validity display and countdown timers
+- ✅ PDF fallback and chart rotation
+- ✅ Professional UI with category icons
+
 ### TECHNICAL ARCHITECTURE
 
 #### Asset Management

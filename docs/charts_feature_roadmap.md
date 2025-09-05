@@ -1,47 +1,62 @@
 # Charts Feature Roadmap
 
+## STATUS: PHASE 2 SUBSTANTIALLY COMPLETE ✅
+
 ## Overview
 Add NAIPS graphical charts to the app via a new "More" entry point. Users can browse a curated list of AUS charts (MSL Analysis/Prognosis, SIGWX High/Mid, SIGMET, SATPIC, Grid Point Winds), inspect validity and download Hi‑Res images/PDFs with pinch‑to‑zoom, and quickly flip between valid times. All times shown in UTC.
 
-## Entry Point & Navigation
-- Bottom navigation: add fifth item "More".
-- Tapping More opens a modal sheet (sheet can expand to full‑screen) with additional areas:
-  - Charts (implemented in this feature)
-  - Placeholders for future: ERSA tools, NAIPS utilities, Previous Briefings shortcuts, Settings shortcuts.
-- Selecting Charts opens the Charts screen.
+## COMPLETED FEATURES ✅
 
-## Sources & Access
-- Primary: NAIPS Chart Directory (HTML) – requires NAIPS session for full fidelity.
-- If NAIPS credentials are missing/invalid:
-  - Show banner with link to Settings to add credentials.
-  - Optionally show publicly accessible directory subset if available; otherwise placeholder with guidance.
-- Reuse existing NAIPS cookie/session flow; add dedicated endpoints for chart directory + asset retrieval.
+### Phase 1: Directory + Curated List ✅
+- ✅ Bottom nav "More" tab with modal sheet
+- ✅ Charts entry in More sheet
+- ✅ `NaipsChartsService` with NAIPS authentication
+- ✅ Chart directory parsing and `ChartItem` model
+- ✅ `ChartsProvider` with catalog management
+- ✅ Custom product ordering and validity display
+- ✅ Live countdown timers and UTC time display
+- ✅ Missing credentials banner with Settings link
 
-## Product Scope (Phase 1 Curated)
-Order and grouping as listed by product owner:
-1) MSL Analysis
-2) MSL Prognosis
-3) SIGWX High Level
-4) SIGWX Mid Level
-5) SIGMET (Australia All/High/Low)
-6) SATPIC (Satellite imagery; visible/IR as provided)
-7) Grid Point Winds (AUS High‑Level at cycle times: 0000Z/0600Z/1200Z/1800Z)
+### Phase 2: Viewer + Core Functionality ✅
+- ✅ Full chart viewer with pinch-to-zoom
+- ✅ Page swipe between charts
+- ✅ PDF fallback action
+- ✅ Chart rotation functionality
+- ✅ Navigation arrows and controls
+- ✅ Validity status display
+- ✅ Category icons and color coding
 
-Exclude all other items for now (e.g., TEST, conversions, perm reference docs).
+## REMAINING FEATURES
 
-## UI/UX
-- Charts screen layout
-  - Tabs: Curated (default), All (for future expansion)
-  - Filters: time window (reuse NOTAM time filter component), level filter (for winds High/Mid levels)
-  - List cards show: Name, Valid From/Valid Till (UTC), countdown badge, source label, quick actions (View, Download)
-  - Sorting: order by curated priority; within each product, current‑valid first, then nearest upcoming validity
-- Chart viewer
-  - Prefer Hi‑Res image; show a secondary action to open PDF when present
-  - Pinch‑to‑zoom, pan, single‑tap controls, share/export
-  - Quick toggle/swipe to next/previous valid time within same product
-- Validity presentation
-  - Badge and text: "Valid 12:00–18:00Z" + live countdown (updates each minute)
-  - Color rules: green (currently valid, >2h left), amber (≤2h left), red (expired), grey (upcoming)
+### Phase 3: Advanced Features 📋
+- [ ] Download manager with atomic writes and verification
+- [ ] Cache management with TTL and retention policies
+- [ ] Offline support with client-side validity computation
+- [ ] Time and level filters
+- [ ] Pull-to-refresh and background updates
+- [ ] Enhanced error handling and retry policies
+
+### Phase 4: Polish & Testing 📋
+- [ ] Unit tests for parser and provider
+- [ ] Integration tests for NAIPS session flow
+- [ ] Telemetry and metrics collection
+- [ ] Documentation updates
+
+## TECHNICAL IMPLEMENTATION
+
+### Architecture ✅
+- **Service Layer**: `NaipsChartsService` with NAIPS authentication
+- **State Management**: `ChartsProvider` with catalog management
+- **Data Model**: `ChartItem` with validity and metadata
+- **UI Components**: `ChartsScreen`, `_ChartViewerScreen` with full viewer functionality
+- **Navigation**: Integrated via "More" tab in bottom navigation
+
+### Features Implemented ✅
+- **Chart Categories**: MSL Analysis/Prognosis, SIGWX High/Mid, SIGMET, SATPIC, Grid Point Winds
+- **Authentication**: NAIPS session management with credential validation
+- **Viewer**: Pinch-to-zoom, rotation, PDF fallback, page navigation
+- **Validity Display**: Live countdown timers, color-coded status
+- **UI/UX**: Professional interface with category icons and smooth navigation
 
 ## Downloads & Caching
 - Strategy
