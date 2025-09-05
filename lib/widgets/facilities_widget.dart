@@ -63,13 +63,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Airport Facilities'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: Consumer<FlightProvider>(
+    return Consumer<FlightProvider>(
         builder: (context, flightProvider, child) {
           final selectedAirport = flightProvider.selectedAirport;
           if (selectedAirport == null) {
@@ -116,7 +110,6 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
             },
           );
         },
-      ),
     );
   }
 
