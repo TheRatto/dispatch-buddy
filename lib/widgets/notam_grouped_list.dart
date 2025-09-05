@@ -377,6 +377,8 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
         return 'Instrument Procedures';
       case NotamGroup.airportServices:
         return 'Airport Services';
+      case NotamGroup.lighting:
+        return 'Lighting';
       case NotamGroup.hazards:
         return 'Hazards';
       case NotamGroup.admin:
@@ -396,12 +398,14 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
         return 3;
       case NotamGroup.airportServices:
         return 4;
-      case NotamGroup.hazards:
+      case NotamGroup.lighting:
         return 5;
-      case NotamGroup.admin:
+      case NotamGroup.hazards:
         return 6;
-      case NotamGroup.other:
+      case NotamGroup.admin:
         return 7;
+      case NotamGroup.other:
+        return 8;
     }
   }
 

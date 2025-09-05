@@ -333,6 +333,8 @@ class NotamGroupContent extends StatelessWidget {
         return 'PROC';
       case NotamGroup.airportServices:
         return 'SERV';
+      case NotamGroup.lighting:
+        return 'LGT';
       case NotamGroup.hazards:
         return 'HAZ';
       case NotamGroup.admin:
@@ -352,6 +354,8 @@ class NotamGroupContent extends StatelessWidget {
         return Colors.purple;
       case NotamGroup.airportServices:
         return Colors.orange;
+      case NotamGroup.lighting:
+        return Colors.yellow.shade700;
       case NotamGroup.hazards:
         return Colors.red;
       case NotamGroup.admin:

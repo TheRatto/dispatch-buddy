@@ -550,12 +550,14 @@ class AirportSystemAnalyzer {
         return 3;
       case NotamGroup.airportServices:
         return 4;
-      case NotamGroup.hazards:
+      case NotamGroup.lighting:
         return 5;
-      case NotamGroup.admin:
+      case NotamGroup.hazards:
         return 6;
-      case NotamGroup.other:
+      case NotamGroup.admin:
         return 7;
+      case NotamGroup.other:
+        return 8;
     }
   }
 

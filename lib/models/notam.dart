@@ -8,9 +8,10 @@ enum NotamGroup {
   taxiways,         // Group 2: Taxiways - closures, lighting, ACR/PCR
   instrumentProcedures, // Group 3: Navaids, SIDs, STARs, approaches, airspace
   airportServices,  // Group 4: ATC, fire, parking, PPR, curfew, fuel
-  hazards,          // Group 5: Obstacles, birds, misc lighting
-  admin,            // Group 6: OIP/AIP updates, administrative
-  other            // Group 7: Unmapped items
+  lighting,         // Group 5: All lighting facilities - approach, runway, taxiway, obstacle lights
+  hazards,          // Group 6: Obstacles, birds, warnings
+  admin,            // Group 7: OIP/AIP updates, administrative
+  other            // Group 8: Unmapped items
 }
 
 class Notam {
@@ -482,17 +483,22 @@ class Notam {
     }
     
     // Airport Services (Group 4) - ATC, facilities, fuel, etc.
-    if (['FA', 'FF', 'FU', 'FM', 'LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
-         'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
+    if (['FA', 'FF', 'FU', 'FM'].contains(subject)) {
       return NotamGroup.airportServices;
     }
     
-    // Hazards (Group 5) - Obstacles, safety issues, warnings
+    // Lighting Facilities (Group 5) - All lighting-related NOTAMs
+    if (['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
+         'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'].contains(subject)) {
+      return NotamGroup.lighting;
+    }
+    
+    // Hazards (Group 6) - Obstacles, safety issues, warnings
     if (['OB', 'OL', 'WA', 'WB', 'WC', 'WD', 'WE', 'WF', 'WG', 'WH', 'WJ', 'WL', 'WM', 'WP', 'WR', 'WS', 'WT', 'WU', 'WV', 'WW', 'WY', 'WZ'].contains(subject)) {
       return NotamGroup.hazards;
     }
     
-    // Admin (Group 6) - Administrative procedures
+    // Admin (Group 7) - Administrative procedures
     if (['PF', 'PL', 'PN', 'PO', 'PR', 'PT', 'PX', 'PZ'].contains(subject)) {
       return NotamGroup.admin;
     }

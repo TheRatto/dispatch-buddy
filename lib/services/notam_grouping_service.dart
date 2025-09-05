@@ -185,8 +185,88 @@ class NotamGroupingService {
       },
     ),
     NotamGroupMetadata(
-      group: NotamGroup.hazards,
+      group: NotamGroup.lighting,
       priority: 5,
+      keywords: [
+        'LIGHTING', 'LIGHTS', 'LIGHT', 'LGT', 'LGT U/S', 'LIGHT U/S', 'LIGHTING U/S',
+        'RUNWAY LIGHTING', 'RUNWAY LIGHTS', 'HIRL', 'HIGH INTENSITY RUNWAY LIGHTING',
+        'REIL', 'RUNWAY END IDENTIFIER LIGHTS', 'THRESHOLD LIGHTS', 'TOUCHDOWN ZONE LIGHTS',
+        'PAPI', 'PRECISION APPROACH PATH INDICATOR', 'VASI', 'VASIS',
+        'APPROACH LIGHTING', 'APPROACH LIGHTS', 'ALS', 'APPROACH LIGHTING SYSTEM',
+        'TAXIWAY LIGHTING', 'TAXIWAY LIGHTS', 'CENTERLINE LIGHTS', 'EDGE LIGHTS',
+        'CENTER LINE LIGHTS', 'CENTERLINE LIGHTING', 'EDGE LIGHTING',
+        'STOPWAY LIGHTS', 'STOPWAY LIGHTING', 'STOP LIGHTS',
+        'AERODROME BEACON', 'BEACON', 'ROTATING BEACON',
+        'PILOT CONTROLLED LIGHTING', 'PCL', 'PILOT CONTROLLED',
+        'SEQUENCED FLASHING LIGHTS', 'SFL', 'SEQUENCED FLASHING',
+        'LANDING DIRECTION INDICATOR', 'LDI', 'LANDING DIRECTION',
+        'RUNWAY ALIGNMENT INDICATOR', 'RAI', 'RUNWAY ALIGNMENT',
+        'HELICOPTER APPROACH PATH INDICATOR', 'HAPI', 'HELICOPTER APPROACH',
+        'HELIPORT LIGHTING', 'HELIPORT LIGHTS',
+        'LOW INTENSITY', 'MEDIUM INTENSITY', 'HIGH INTENSITY',
+        'CAT II', 'CAT III', 'CATEGORY II', 'CATEGORY III',
+        'LIGHT FAILURE', 'LIGHT OUT', 'LIGHTS OUT', 'LIGHTING FAILURE',
+        'TEMPORARY LIGHTING', 'TEMP LIGHTING', 'TEMP LIGHTS',
+        'BLUE LIGHTS', 'BLUE LIGHTING', 'YELLOW LIGHTS', 'YELLOW LIGHTING',
+        'WHITE LIGHTS', 'WHITE LIGHTING', 'RED LIGHTS', 'RED LIGHTING',
+        'GREEN LIGHTS', 'GREEN LIGHTING', 'AMBER LIGHTS', 'AMBER LIGHTING',
+      ],
+      weights: {
+        'RUNWAY LIGHTING': 8.0,
+        'RUNWAY LIGHTS': 8.0,
+        'HIRL': 7.0,
+        'HIGH INTENSITY RUNWAY LIGHTING': 7.0,
+        'PAPI': 6.0,
+        'PRECISION APPROACH PATH INDICATOR': 6.0,
+        'VASI': 6.0,
+        'VASIS': 6.0,
+        'REIL': 6.0,
+        'RUNWAY END IDENTIFIER LIGHTS': 6.0,
+        'APPROACH LIGHTING': 5.0,
+        'APPROACH LIGHTS': 5.0,
+        'ALS': 5.0,
+        'APPROACH LIGHTING SYSTEM': 5.0,
+        'TAXIWAY LIGHTING': 4.0,
+        'TAXIWAY LIGHTS': 4.0,
+        'CENTERLINE LIGHTS': 4.0,
+        'CENTER LINE LIGHTS': 4.0,
+        'EDGE LIGHTS': 4.0,
+        'AERODROME BEACON': 3.0,
+        'BEACON': 3.0,
+        'ROTATING BEACON': 3.0,
+        'PILOT CONTROLLED LIGHTING': 3.0,
+        'PCL': 3.0,
+        'SEQUENCED FLASHING LIGHTS': 3.0,
+        'SFL': 3.0,
+        'LANDING DIRECTION INDICATOR': 3.0,
+        'LDI': 3.0,
+        'RUNWAY ALIGNMENT INDICATOR': 3.0,
+        'RAI': 3.0,
+        'HELICOPTER APPROACH PATH INDICATOR': 3.0,
+        'HAPI': 3.0,
+        'HELIPORT LIGHTING': 3.0,
+        'HELIPORT LIGHTS': 3.0,
+        'LIGHT FAILURE': 2.0,
+        'LIGHT OUT': 2.0,
+        'LIGHTS OUT': 2.0,
+        'LIGHTING FAILURE': 2.0,
+        'TEMPORARY LIGHTING': 2.0,
+        'TEMP LIGHTING': 2.0,
+        'TEMP LIGHTS': 2.0,
+        'HIGH INTENSITY': 2.0,
+        'MEDIUM INTENSITY': 2.0,
+        'LOW INTENSITY': 2.0,
+        // Down-weight generic
+        'LIGHTING': 0.5,
+        'LIGHTS': 0.5,
+        'LIGHT': 0.5,
+        'LGT': 0.5,
+        'UNSERVICEABLE': 0.1,
+      },
+    ),
+    NotamGroupMetadata(
+      group: NotamGroup.hazards,
+      priority: 6,
       keywords: [
         'OBSTACLE', 'OBSTACLES', 'CRANE', 'CRANES', 'CONSTRUCTION', 'BUILDING',
         'TOWER', 'TOWERS', 'MAST', 'MASTS', 'ANTENNA', 'ANTENNAE',
@@ -219,7 +299,7 @@ class NotamGroupingService {
     ),
     NotamGroupMetadata(
       group: NotamGroup.admin,
-      priority: 6,
+      priority: 7,
       keywords: [
         'CURFEW', 'NOISE ABATEMENT', 'NOISE RESTRICTION',
         'PPR', 'PRIOR PERMISSION REQUIRED', 'SLOT', 'SLOTS', 'SLOT RESTRICTION',
@@ -258,7 +338,7 @@ class NotamGroupingService {
     ),
     NotamGroupMetadata(
       group: NotamGroup.other,
-      priority: 7,
+      priority: 8,
       keywords: [],
       weights: {},
     ),
@@ -366,6 +446,8 @@ class NotamGroupingService {
         return '📡 Instrument Procedures';
       case NotamGroup.airportServices:
         return '🏢 Airport Services';
+      case NotamGroup.lighting:
+        return '💡 Lighting';
       case NotamGroup.hazards:
         return '⚠️ Hazards';
       case NotamGroup.admin:
@@ -386,12 +468,14 @@ class NotamGroupingService {
         return 3;
       case NotamGroup.airportServices:
         return 4;
-      case NotamGroup.hazards:
+      case NotamGroup.lighting:
         return 5;
-      case NotamGroup.admin:
+      case NotamGroup.hazards:
         return 6;
-      case NotamGroup.other:
+      case NotamGroup.admin:
         return 7;
+      case NotamGroup.other:
+        return 8;
     }
   }
 
@@ -415,7 +499,9 @@ class NotamGroupingService {
                 'AA', 'AC', 'AD', 'AE', 'AF', 'AH', 'AL', 'AN', 'AO', 'AP', 'AR', 'AT', 'AU', 'AV', 'AX', 'AZ',
                 'RA', 'RD', 'RM', 'RO', 'RP', 'RR', 'RT', 'GA', 'GW'];
       case NotamGroup.airportServices:
-        return ['FA', 'FF', 'FU', 'FM', 'LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
+        return ['FA', 'FF', 'FU', 'FM'];
+      case NotamGroup.lighting:
+        return ['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LP', 
                 'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'];
       case NotamGroup.hazards:
         return ['OB', 'OL', 'WA', 'WB', 'WC', 'WD', 'WE', 'WF', 'WG', 'WH', 'WJ', 'WL', 'WM', 'WP', 'WR', 'WS', 'WT', 'WU', 'WV', 'WW', 'WY', 'WZ'];

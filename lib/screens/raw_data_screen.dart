@@ -1360,6 +1360,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         return const Color(0xFF8B5CF6); // Purple for procedures
       case NotamGroup.airportServices:
         return const Color(0xFF3B82F6); // Blue for services
+      case NotamGroup.lighting:
+        return const Color(0xFFEAB308); // Yellow for lighting
       case NotamGroup.hazards:
         return const Color(0xFFF59E0B); // Amber for hazards
       case NotamGroup.admin:
@@ -1379,6 +1381,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         return 'PROC';
       case NotamGroup.airportServices:
         return 'SVC';
+      case NotamGroup.lighting:
+        return 'LGT';
       case NotamGroup.hazards:
         return 'HAZ';
       case NotamGroup.admin:
