@@ -172,24 +172,10 @@ class NotamGroupHeader extends StatelessWidget {
   }
 
   Widget _buildGroupTrailing() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '${_getGroupPriority()}',
-          style: TextStyle(
-            color: Colors.grey.shade500,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Icon(
-          isExpanded ? Icons.expand_less : Icons.expand_more,
-          color: Colors.grey.shade600,
-          size: 20,
-        ),
-      ],
+    return Icon(
+      isExpanded ? Icons.expand_less : Icons.expand_more,
+      color: Colors.grey.shade600,
+      size: 20,
     );
   }
 

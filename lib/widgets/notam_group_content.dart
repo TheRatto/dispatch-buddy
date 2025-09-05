@@ -173,21 +173,46 @@ class NotamGroupContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (notam.fieldE.isNotEmpty)
-          Text(
-            notam.fieldE,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          )
+          _buildTruncatedText(notam.fieldE)
         else if (notam.rawText.isNotEmpty)
-          Text(
-            notam.displayRawText,
+          _buildTruncatedText(notam.displayRawText),
+        const SizedBox(height: 6),
+        _buildTimeRange(notam),
+      ],
+    );
+  }
+
+  Widget _buildTruncatedText(String text) {
+    // Simple heuristic: if text is longer than ~150 characters, it's likely truncated
+    // This is more efficient than TextPainter and works well for most cases
+    final isLikelyTruncated = text.length > 150;
+    
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            text,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
-        const SizedBox(height: 6),
-        _buildTimeRange(notam),
+        ),
+        if (isLikelyTruncated) ...[
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade100,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Icon(
+              Icons.expand_more,
+              size: 12,
+              color: Colors.blue.shade700,
+            ),
+          ),
+        ],
       ],
     );
   }
