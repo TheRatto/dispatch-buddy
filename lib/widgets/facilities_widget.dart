@@ -1049,75 +1049,508 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
 
   /// Show runway NOTAMs in a modal
   void _showRunwayNotams(String runwayId, List<Notam> notams) {
-    showModalBottomSheet(
+    if (notams.isEmpty) {
+      showDialog(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'NOTAMs for Runway $runwayId',
-              style: Theme.of(context).textTheme.titleLarge,
+        builder: (context) => AlertDialog(
+          title: Text('NOTAMs for Runway $runwayId'),
+          content: const Text('No NOTAMs affecting this runway'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
             ),
-            const SizedBox(height: 16),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (notams.length == 1) {
+      // Single NOTAM - show directly
+      _showNotamDetail(notams.first);
+    } else {
+      // Multiple NOTAMs - show with swipe functionality
+      _showNotamSwipeView(notams, 'Runway $runwayId');
+    }
+  }
+
+  /// Show multiple NOTAMs with swipe functionality
+  void _showNotamSwipeView(List<Notam> notams, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => NotamSwipeView(
+        notams: notams,
+        title: title,
+        onClose: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
+
+  /// Show detailed NOTAM information
+  void _showNotamDetail(Notam notam) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
             Expanded(
-              child: ListView.builder(
-                itemCount: notams.length,
-                itemBuilder: (context, index) {
-                  final notam = notams[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(notam.rawText),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.copy, size: 18),
-                            onPressed: () {
-                              Clipboard.setData(ClipboardData(text: notam.rawText));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('NOTAM copied to clipboard'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            tooltip: 'Copy NOTAM text',
-                          ),
-                        ],
-                      ),
-                      subtitle: notam.qCode != null 
-                        ? Row(
-                            children: [
-                              Expanded(
-                                child: Text('Q-Code: ${notam.qCode}'),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 16),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: notam.qCode!));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Q-Code copied to clipboard'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy Q-Code',
-                              ),
-                            ],
-                          )
-                        : null,
-                    ),
-                  );
-                },
+              child: Text(
+                'NOTAM ${notam.id}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getCategoryColor(notam.group),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getCategoryLabel(notam.group),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
         ),
+        content: SingleChildScrollView(
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+              // Validity Section (Prominent)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Absolute validity times
+                    Text(
+                      'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : '${_formatDateTime(notam.validTo)} UTC'}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Relative status + countdown - match raw data page styling
+                    Row(
+                      children: [
+                        // Left side: Start time or Active status (orange)
+                        Expanded(
+                          child: Text(
+                            _getLeftSideText(notam),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: const Color(0xFFF59E0B), // Orange to match list view
+                              fontWeight: FontWeight.w400, // No bold
+                            ),
+                          ),
+                        ),
+                        // Right side: End time (green)
+                        Text(
+                          _getRightSideText(notam),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade600, // Green to match list view
+                            fontWeight: FontWeight.w400, // No bold
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Schedule Information (Field D) - only show if present
+              if (notam.fieldD.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: Colors.grey.shade600,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Schedule: ${notam.fieldD}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // NOTAM Text (Main Content) - Field E + Altitude Info (Fields F & G)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Main NOTAM text (Field E)
+                    Text(
+                      notam.fieldE.isNotEmpty ? notam.fieldE : notam.rawText,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    
+                    // Altitude information (Fields F & G) - only show if present
+                    if (notam.fieldF.isNotEmpty || notam.fieldG.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatAltitudeInfo(notam.fieldF, notam.fieldG),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Metadata Footer (Single line, small, muted)
+              Text(
+                'Q: ${notam.qCode ?? 'N/A'} • Type: ${notam.type.name} • Group: ${notam.group.name}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final utc = dateTime.toUtc();
+    return '${utc.day.toString().padLeft(2, '0')}/${utc.month.toString().padLeft(2, '0')} ${utc.hour.toString().padLeft(2, '0')}:${utc.minute.toString().padLeft(2, '0')}Z';
+  }
+
+  String _getLeftSideText(Notam notam) {
+    final now = DateTime.now().toUtc();
+    final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+    final isFutureActive = notam.validFrom.isAfter(now);
+
+    if (isCurrentlyActive) {
+      return 'Active';
+    } else if (isFutureActive) {
+      final timeUntilStart = notam.validFrom.difference(now);
+      if (timeUntilStart.inDays > 0) {
+        return 'Starts in ${timeUntilStart.inDays}d ${timeUntilStart.inHours % 24}h';
+      } else if (timeUntilStart.inHours > 0) {
+        return 'Starts in ${timeUntilStart.inHours}h ${timeUntilStart.inMinutes % 60}m';
+      } else if (timeUntilStart.inMinutes > 0) {
+        return 'Starts in ${timeUntilStart.inMinutes}m';
+      } else {
+        return 'Starts soon';
+      }
+    } else {
+      final timeSinceExpiry = now.difference(notam.validTo);
+      if (timeSinceExpiry.inDays > 0) {
+        return 'Expired ${timeSinceExpiry.inDays}d ${timeSinceExpiry.inHours % 24}h ago';
+      } else if (timeSinceExpiry.inHours > 0) {
+        return 'Expired ${timeSinceExpiry.inHours}h ${timeSinceExpiry.inMinutes % 60}m ago';
+      } else if (timeSinceExpiry.inMinutes > 0) {
+        return 'Expired ${timeSinceExpiry.inMinutes}m ago';
+      } else {
+        return 'Expired just now';
+      }
+    }
+  }
+
+  String _getRightSideText(Notam notam) {
+    // Check if this is a permanent NOTAM
+    if (notam.isPermanent) {
+      return 'PERM';
+    }
+    
+    final now = DateTime.now().toUtc();
+    final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+    final isFutureActive = notam.validFrom.isAfter(now);
+
+    if (isCurrentlyActive) {
+      final timeUntilEnd = notam.validTo.difference(now);
+      if (timeUntilEnd.inDays > 0) {
+        return 'Ends in ${timeUntilEnd.inDays}d ${timeUntilEnd.inHours % 24}h';
+      } else if (timeUntilEnd.inHours > 0) {
+        return 'Ends in ${timeUntilEnd.inHours}h ${timeUntilEnd.inMinutes % 60}m';
+      } else if (timeUntilEnd.inMinutes > 0) {
+        return 'Ends in ${timeUntilEnd.inMinutes}m';
+      } else {
+        return 'Ends soon';
+      }
+    } else if (isFutureActive) {
+      final timeUntilEnd = notam.validTo.difference(now);
+      if (timeUntilEnd.inDays > 0) {
+        return 'Ends in ${timeUntilEnd.inDays}d ${timeUntilEnd.inHours % 24}h';
+      } else if (timeUntilEnd.inHours > 0) {
+        return 'Ends in ${timeUntilEnd.inHours}h ${timeUntilEnd.inMinutes % 60}m';
+      } else if (timeUntilEnd.inMinutes > 0) {
+        return 'Ends in ${timeUntilEnd.inMinutes}m';
+      } else {
+        return 'Ends soon';
+      }
+    } else {
+      return ''; // No end time for expired NOTAMs
+    }
+  }
+
+  String _formatAltitudeInfo(String fieldF, String fieldG) {
+    if (fieldF.isNotEmpty && fieldG.isNotEmpty) {
+      return '$fieldF TO $fieldG';
+    } else if (fieldF.isNotEmpty) {
+      return fieldF;
+    } else if (fieldG.isNotEmpty) {
+      return fieldG;
+    }
+    return '';
+  }
+
+  Color _getCategoryColor(NotamGroup group) {
+    switch (group) {
+      case NotamGroup.runways:
+        return Colors.red;
+      case NotamGroup.instrumentProcedures:
+        return Colors.blue;
+      case NotamGroup.lighting:
+        return Colors.yellow.shade700;
+      case NotamGroup.hazards:
+        return Colors.orange;
+      case NotamGroup.other:
+        return Colors.grey;
+      case NotamGroup.admin:
+        return Colors.purple;
+      case NotamGroup.taxiways:
+        return Colors.cyan;
+      case NotamGroup.airportServices:
+        return Colors.teal;
+    }
+  }
+
+  String _getCategoryLabel(NotamGroup group) {
+    switch (group) {
+      case NotamGroup.runways:
+        return 'RWY';
+      case NotamGroup.instrumentProcedures:
+        return 'NAV';
+      case NotamGroup.lighting:
+        return 'LGT';
+      case NotamGroup.hazards:
+        return 'HAZ';
+      case NotamGroup.other:
+        return 'OTH';
+      case NotamGroup.admin:
+        return 'ADM';
+      case NotamGroup.taxiways:
+        return 'TWY';
+      case NotamGroup.airportServices:
+        return 'SVC';
+    }
+  }
+
+  /// Build a NOTAM card in the same format as Raw Data screen
+  Widget _buildNotamCard(Notam notam) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // NOTAM Header with ID and category badge
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'NOTAM ${notam.id}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getCategoryColor(notam.group),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _getCategoryLabel(notam.group),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                          ),
+                        ],
+                      ),
+          const SizedBox(height: 12),
+          
+          // Validity Section
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : '${_formatDateTime(notam.validTo)} UTC'}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                            children: [
+                              Expanded(
+                      child: Text(
+                        _getLeftSideText(notam),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: const Color(0xFFF59E0B),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _getRightSideText(notam),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green.shade600,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Schedule Information (if present)
+          if (notam.fieldD.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.schedule,
+                    color: Colors.grey.shade600,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Schedule: ${notam.fieldD}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade700,
+                      ),
+              ),
+            ),
+          ],
+        ),
+            ),
+          ],
+          
+          // NOTAM Text
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  notam.fieldE.isNotEmpty ? notam.fieldE : notam.rawText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                if (notam.fieldF.isNotEmpty || notam.fieldG.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _formatAltitudeInfo(notam.fieldF, notam.fieldG),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // Metadata Footer
+          const SizedBox(height: 8),
+          Text(
+            'Q: ${notam.qCode ?? 'N/A'} • Type: ${notam.type.name} • Group: ${notam.group.name}',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey.shade500,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1257,83 +1690,30 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
 
   /// Show NAVAID NOTAMs in a modal
   void _showNavaidNotams(String navaidId, List<Notam> notams) {
-    showModalBottomSheet(
+    if (notams.isEmpty) {
+      showDialog(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'NOTAMs for $navaidId',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: notams.length,
-                itemBuilder: (context, index) {
-                  final notam = notams[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              notam.rawText,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.copy, size: 18),
-                            onPressed: () {
-                              Clipboard.setData(ClipboardData(text: notam.rawText));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('NOTAM copied to clipboard'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            tooltip: 'Copy NOTAM text',
-                          ),
-                        ],
-                      ),
-                      subtitle: notam.qCode != null 
-                        ? Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Q-Code: ${notam.qCode}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 16),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: notam.qCode!));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Q-Code copied to clipboard'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy Q-Code',
-                              ),
-                            ],
-                          )
-                        : null,
-                    ),
-                  );
-                },
-              ),
+        builder: (context) => AlertDialog(
+          title: Text('NOTAMs for $navaidId'),
+          content: const Text('No NOTAMs affecting this NAVAID'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
             ),
           ],
         ),
-      ),
-    );
+      );
+      return;
+    }
+
+    if (notams.length == 1) {
+      // Single NOTAM - show directly
+      _showNotamDetail(notams.first);
+    } else {
+      // Multiple NOTAMs - show with swipe functionality
+      _showNotamSwipeView(notams, navaidId);
+    }
   }
 
   /// Analyze lighting status based on NOTAMs
@@ -1345,9 +1725,9 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     final groupedNotams = _groupingService.groupNotams(filteredNotams);
     
     // Extract lighting-specific NOTAMs from the grouped results
-    // Note: Some lighting NOTAMs might be in airportServices group
-    final lightingGroupNotams = (groupedNotams[NotamGroup.airportServices] ?? []) + 
-                                (groupedNotams[NotamGroup.runways] ?? []);
+    // Look in lighting group first, then check runway group for lighting-related NOTAMs
+    final lightingGroupNotams = (groupedNotams[NotamGroup.lighting] ?? []) + 
+                                (groupedNotams[NotamGroup.airportServices] ?? []);
     final lightingNotams = _getLightingNotams(runwayEnd, lightingGroupNotams);
     
     if (lightingNotams.isEmpty) {
@@ -1409,10 +1789,21 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
       final text = notam.rawText.toUpperCase();
       final runwayEndUpper = runwayEnd.toUpperCase();
       
-      // Check if the NOTAM mentions this specific runway end
-      return text.contains('RWY $runwayEndUpper') || 
+      // Check if the NOTAM mentions this specific runway end AND contains lighting-related keywords
+      final mentionsRunway = text.contains('RWY $runwayEndUpper') || 
              text.contains('RUNWAY $runwayEndUpper') ||
              text.contains(runwayEndUpper);
+      
+      if (!mentionsRunway) return false;
+      
+      // Check for lighting-related keywords
+      final lightingKeywords = [
+        'LIGHT', 'LGT', 'LIGHTING', 'MIRL', 'HIRL', 'PAPI', 'RCLL', 'RTZL', 'HIAL',
+        'APPROACH LIGHT', 'RUNWAY LIGHT', 'TAXIWAY LIGHT', 'EDGE LIGHT',
+        'CENTERLINE LIGHT', 'THRESHOLD LIGHT', 'END LIGHT', 'BOUNDARY LIGHT'
+      ];
+      
+      return lightingKeywords.any((keyword) => text.contains(keyword));
     }).toList();
   }
 
@@ -1425,8 +1816,8 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     final groupedNotams = _groupingService.groupNotams(filteredNotams);
     
     // Extract lighting-specific NOTAMs from the grouped results
-    final lightingGroupNotams = (groupedNotams[NotamGroup.airportServices] ?? []) + 
-                                (groupedNotams[NotamGroup.runways] ?? []);
+    final lightingGroupNotams = (groupedNotams[NotamGroup.lighting] ?? []) + 
+                                (groupedNotams[NotamGroup.airportServices] ?? []);
     
     // Look for NOTAMs that specifically mention this lighting component
     final componentNotams = lightingGroupNotams.where((notam) {
@@ -1581,83 +1972,473 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
 
   /// Show lighting NOTAMs in a modal
   void _showLightingNotams(String runwayEnd, List<Notam> notams) {
-    showModalBottomSheet(
+    if (notams.isEmpty) {
+      showDialog(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'NOTAMs for RWY $runwayEnd Lighting',
-              style: Theme.of(context).textTheme.titleLarge,
+        builder: (context) => AlertDialog(
+          title: Text('NOTAMs for RWY $runwayEnd Lighting'),
+          content: const Text('No NOTAMs affecting this lighting system'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: notams.length,
-                itemBuilder: (context, index) {
-                  final notam = notams[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              notam.rawText,
-                              style: Theme.of(context).textTheme.bodyMedium,
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (notams.length == 1) {
+      // Single NOTAM - show directly
+      _showNotamDetail(notams.first);
+    } else {
+      // Multiple NOTAMs - show with swipe functionality
+      _showNotamSwipeView(notams, 'RWY $runwayEnd Lighting');
+    }
+  }
+}
+
+/// Widget for swiping between multiple NOTAMs
+class NotamSwipeView extends StatefulWidget {
+  final List<Notam> notams;
+  final String title;
+  final VoidCallback onClose;
+
+  const NotamSwipeView({
+    Key? key,
+    required this.notams,
+    required this.title,
+    required this.onClose,
+  }) : super(key: key);
+
+  @override
+  State<NotamSwipeView> createState() => _NotamSwipeViewState();
+}
+
+class _NotamSwipeViewState extends State<NotamSwipeView> {
+  late PageController _pageController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Container(
+        width: double.maxFinite,
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Column(
+          children: [
+            // Header with title, page indicator, and close button
+            Container(
+        padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (widget.notams.length > 1)
+                          Text(
+                            '${_currentIndex + 1} of ${widget.notams.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.copy, size: 18),
-                            onPressed: () {
-                              Clipboard.setData(ClipboardData(text: notam.rawText));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('NOTAM copied to clipboard'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            tooltip: 'Copy NOTAM text',
-                          ),
-                        ],
-                      ),
-                      subtitle: notam.qCode != null 
-                        ? Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Q-Code: ${notam.qCode}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 16),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: notam.qCode!));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Q-Code copied to clipboard'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy Q-Code',
-                              ),
-                            ],
-                          )
-                        : null,
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    onPressed: widget.onClose,
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            
+            // PageView for swiping between NOTAMs
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemCount: widget.notams.length,
+                itemBuilder: (context, index) {
+                  final notam = widget.notams[index];
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildNotamContent(notam),
                   );
                 },
               ),
             ),
+            
+            // Navigation buttons (if multiple NOTAMs)
+            if (widget.notams.length > 1)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      onPressed: _currentIndex > 0
+                          ? () {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          : null,
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    Text(
+                      'Swipe to view other NOTAMs',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _currentIndex < widget.notams.length - 1
+                          ? () {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          : null,
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildNotamContent(Notam notam) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // NOTAM Header with ID and category badge
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'NOTAM ${notam.id}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getCategoryColor(notam.group),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getCategoryLabel(notam.group),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+                          ),
+                        ],
+                      ),
+        const SizedBox(height: 12),
+        
+        // Validity Section
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : '${_formatDateTime(notam.validTo)} UTC'}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _getLeftSideText(notam),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: const Color(0xFFF59E0B),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _getRightSideText(notam),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade600,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        
+        // Schedule Information (if present)
+        if (notam.fieldD.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.schedule,
+                  color: Colors.grey.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Schedule: ${notam.fieldD}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        
+        // NOTAM Text
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                notam.fieldE.isNotEmpty ? notam.fieldE : notam.rawText,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              if (notam.fieldF.isNotEmpty || notam.fieldG.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _formatAltitudeInfo(notam.fieldF, notam.fieldG),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        
+        // Metadata Footer
+        const SizedBox(height: 8),
+        Text(
+          'Q: ${notam.qCode ?? 'N/A'} • Type: ${notam.type.name} • Group: ${notam.group.name}',
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey.shade500,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper methods (same as in the main widget)
+  String _formatDateTime(DateTime dateTime) {
+    final utc = dateTime.toUtc();
+    return '${utc.day.toString().padLeft(2, '0')}/${utc.month.toString().padLeft(2, '0')} ${utc.hour.toString().padLeft(2, '0')}:${utc.minute.toString().padLeft(2, '0')}Z';
+  }
+
+  String _getLeftSideText(Notam notam) {
+    final now = DateTime.now().toUtc();
+    final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+    final isFutureActive = notam.validFrom.isAfter(now);
+
+    if (isCurrentlyActive) {
+      return 'Active';
+    } else if (isFutureActive) {
+      final timeUntilStart = notam.validFrom.difference(now);
+      if (timeUntilStart.inDays > 0) {
+        return 'Starts in ${timeUntilStart.inDays}d ${timeUntilStart.inHours % 24}h';
+      } else if (timeUntilStart.inHours > 0) {
+        return 'Starts in ${timeUntilStart.inHours}h ${timeUntilStart.inMinutes % 60}m';
+      } else if (timeUntilStart.inMinutes > 0) {
+        return 'Starts in ${timeUntilStart.inMinutes}m';
+      } else {
+        return 'Starts soon';
+      }
+    } else {
+      final timeSinceExpiry = now.difference(notam.validTo);
+      if (timeSinceExpiry.inDays > 0) {
+        return 'Expired ${timeSinceExpiry.inDays}d ${timeSinceExpiry.inHours % 24}h ago';
+      } else if (timeSinceExpiry.inHours > 0) {
+        return 'Expired ${timeSinceExpiry.inHours}h ${timeSinceExpiry.inMinutes % 60}m ago';
+      } else if (timeSinceExpiry.inMinutes > 0) {
+        return 'Expired ${timeSinceExpiry.inMinutes}m ago';
+      } else {
+        return 'Expired just now';
+      }
+    }
+  }
+
+  String _getRightSideText(Notam notam) {
+    if (notam.isPermanent) {
+      return 'PERM';
+    }
+    
+    final now = DateTime.now().toUtc();
+    final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
+    final isFutureActive = notam.validFrom.isAfter(now);
+
+    if (isCurrentlyActive) {
+      final timeUntilEnd = notam.validTo.difference(now);
+      if (timeUntilEnd.inDays > 0) {
+        return 'Ends in ${timeUntilEnd.inDays}d ${timeUntilEnd.inHours % 24}h';
+      } else if (timeUntilEnd.inHours > 0) {
+        return 'Ends in ${timeUntilEnd.inHours}h ${timeUntilEnd.inMinutes % 60}m';
+      } else if (timeUntilEnd.inMinutes > 0) {
+        return 'Ends in ${timeUntilEnd.inMinutes}m';
+      } else {
+        return 'Ends soon';
+      }
+    } else if (isFutureActive) {
+      final timeUntilEnd = notam.validTo.difference(now);
+      if (timeUntilEnd.inDays > 0) {
+        return 'Ends in ${timeUntilEnd.inDays}d ${timeUntilEnd.inHours % 24}h';
+      } else if (timeUntilEnd.inHours > 0) {
+        return 'Ends in ${timeUntilEnd.inHours}h ${timeUntilEnd.inMinutes % 60}m';
+      } else if (timeUntilEnd.inMinutes > 0) {
+        return 'Ends in ${timeUntilEnd.inMinutes}m';
+      } else {
+        return 'Ends soon';
+      }
+    } else {
+      return '';
+    }
+  }
+
+  String _formatAltitudeInfo(String fieldF, String fieldG) {
+    if (fieldF.isNotEmpty && fieldG.isNotEmpty) {
+      return '$fieldF TO $fieldG';
+    } else if (fieldF.isNotEmpty) {
+      return fieldF;
+    } else if (fieldG.isNotEmpty) {
+      return fieldG;
+    }
+    return '';
+  }
+
+  Color _getCategoryColor(NotamGroup group) {
+    switch (group) {
+      case NotamGroup.runways:
+        return Colors.red;
+      case NotamGroup.instrumentProcedures:
+        return Colors.blue;
+      case NotamGroup.lighting:
+        return Colors.yellow.shade700;
+      case NotamGroup.hazards:
+        return Colors.orange;
+      case NotamGroup.other:
+        return Colors.grey;
+      case NotamGroup.admin:
+        return Colors.purple;
+      case NotamGroup.taxiways:
+        return Colors.cyan;
+      case NotamGroup.airportServices:
+        return Colors.teal;
+    }
+  }
+
+  String _getCategoryLabel(NotamGroup group) {
+    switch (group) {
+      case NotamGroup.runways:
+        return 'RWY';
+      case NotamGroup.instrumentProcedures:
+        return 'NAV';
+      case NotamGroup.lighting:
+        return 'LGT';
+      case NotamGroup.hazards:
+        return 'HAZ';
+      case NotamGroup.other:
+        return 'OTH';
+      case NotamGroup.admin:
+        return 'ADM';
+      case NotamGroup.taxiways:
+        return 'TWY';
+      case NotamGroup.airportServices:
+        return 'SVC';
+    }
   }
 }
 
