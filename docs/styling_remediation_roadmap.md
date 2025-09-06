@@ -192,13 +192,18 @@ This document outlines the comprehensive remediation plan to bring Dispatch Budd
   - Implement exact component spacing from screenshots
   - Use exact safe area specifications
 
-- [ ] **Fix layout issues**
-  - Ensure exact content margins from screenshots
-  - Implement exact section spacing from specifications
-  - Fix overlapping elements using exact spacing
-  - Ensure exact list item spacing from screenshots
+- [x] **Fix layout issues** ✅ COMPLETED
+  - ✅ Fixed NOTAM modal spacing consistency across all display methods
+  - ✅ Removed unnecessary spacing between validity and text sections
+  - ✅ Aligned facilities modal with raw data modal appearance
+  - ✅ Ensured consistent spacing in swipe view NOTAM cards
+  - [ ] Ensure exact content margins from screenshots
+  - [ ] Implement exact section spacing from specifications
+  - [ ] Fix overlapping elements using exact spacing
+  - [ ] Ensure exact list item spacing from screenshots
 
 #### Files to Update:
+- ✅ `lib/widgets/facilities_widget.dart` - Fixed NOTAM modal spacing consistency
 - All screen files with custom spacing
 - Create `lib/constants/spacing.dart`
 

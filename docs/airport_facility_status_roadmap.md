@@ -455,8 +455,29 @@ class AirportSystemAnalyzer {
 - 🎨 **Consistent UX** - Same design pattern can be applied to Facilities popup
 - 📱 **Mobile-optimized** - Clean, scannable layout for mobile devices
 
+#### **Task 8.2: Facilities NOTAM Modal Consistency** ✅ COMPLETED
+**Responsibility**: Align facilities NOTAM modals with raw data modal design
+
+**Implementation**:
+- ✅ **Fixed spacing gap** - Removed unnecessary spacing between validity and text sections
+- ✅ **Restored swipe functionality** - Fixed structural issues in NotamSwipeView widget
+- ✅ **Consistent layout** - All NOTAM display methods now have identical spacing
+- ✅ **Visual alignment** - Facilities modal matches raw data modal appearance
+- ✅ **Swipe view consistency** - Individual NOTAM cards in swipe view match single modal layout
+
+**Technical Changes**:
+- ✅ **Removed SizedBox spacing** - Eliminated gap between validity and NOTAM text containers
+- ✅ **Fixed NotamSwipeView structure** - Corrected missing brackets and indentation issues
+- ✅ **Unified display methods** - _showNotamDetail, _buildNotamContent, and raw data all consistent
+- ✅ **Maintained functionality** - Swipe between multiple NOTAMs working correctly
+
+**Benefits**:
+- 🎨 **Visual Consistency** - All NOTAM modals look identical
+- 🔄 **Restored Functionality** - Swipe between multiple NOTAMs working properly
+- 📱 **Better UX** - Consistent spacing and layout across all NOTAM displays
+- 🛠️ **Maintainable Code** - Unified display logic across all modal types
+
 **Next Steps**:
-- Apply same design to Facilities popup for consistency
 - Implement time filter synchronization between screens
 
 ### **Phase 8: Testing & Refinement** ⏳ PENDING

@@ -9,8 +9,10 @@ import 'screens/summary_screen.dart';
 import 'screens/airport_detail_screen.dart';
 import 'screens/raw_data_screen.dart';
 import 'screens/decoded_screen.dart';
+import 'screens/ai_briefing_screen.dart';
 import 'providers/flight_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/ai_briefing_provider.dart';
 import 'screens/briefing_tabs_screen.dart';
 import 'providers/charts_provider.dart';
 import 'providers/weather_radar_provider.dart';
@@ -29,6 +31,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => SettingsProvider()..initialize(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AIBriefingProvider(),
         ),
         ChangeNotifierProvider(
           lazy: true,
@@ -77,6 +82,7 @@ class MyApp extends StatelessWidget {
         '/airports': (context) => const AirportDetailScreen(),
         '/raw': (context) => const RawDataScreen(),
         '/decoded': (context) => const DecodedScreen(),
+        '/ai-briefing': (context) => const AIBriefingScreen(),
       },
       home: const SplashScreen(),
     );

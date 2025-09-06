@@ -112,6 +112,15 @@ class GlobalDrawer extends StatelessWidget {
             subtitle: Text('NOTAMs, METARs, TAFs'),
             onTap: () => navigateToBriefingTab(2),
           ),
+          ListTile(
+            leading: Icon(Icons.psychology),
+            title: Text('AI Briefing'),
+            subtitle: Text('AI-powered flight briefings'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed('/ai-briefing');
+            },
+          ),
           Divider(),
           ListTile(
             leading: Icon(Icons.settings),

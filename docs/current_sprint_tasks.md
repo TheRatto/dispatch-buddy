@@ -813,6 +813,44 @@ Airport Status Page → Select Airport → View System Status → Navigate to Sy
 - ✅ Cleaned up import statements
 - ✅ Improved code organization and readability
 
+### Task 27: NOTAM Modal Spacing and Swipe Functionality Fixes ✅ COMPLETED
+**Goal**: Fix NOTAM modal spacing consistency and restore swipe functionality
+
+**Files Modified:**
+- ✅ `lib/widgets/facilities_widget.dart`
+
+**Issues Addressed:**
+- ✅ **Linter Error**: Fixed "Expected to find ']'" error in `_buildNotamContent` method
+- ✅ **Spacing Gap**: Removed unnecessary spacing between validity and NOTAM text sections
+- ✅ **Swipe Functionality**: Fixed structural issues in `NotamSwipeView` widget
+- ✅ **Visual Consistency**: Aligned all NOTAM display methods to have identical spacing
+
+**Technical Changes:**
+- ✅ **Fixed Linter Error**: Added missing closing parentheses and brackets
+- ✅ **Removed SizedBox Spacing**: Eliminated gap between validity and text containers
+- ✅ **Fixed NotamSwipeView Structure**: Corrected missing brackets and indentation issues
+- ✅ **Unified Display Methods**: Made `_showNotamDetail`, `_buildNotamContent`, and raw data consistent
+
+**Features Restored:**
+- ✅ **Swipe Between NOTAMs**: Multiple NOTAMs affecting same facility can be swiped through
+- ✅ **Consistent Layout**: All NOTAM modals now have identical spacing and appearance
+- ✅ **Visual Alignment**: Facilities modal matches raw data modal design exactly
+- ✅ **Swipe View Consistency**: Individual NOTAM cards in swipe view match single modal layout
+
+**Benefits:**
+- ✅ **Visual Consistency**: All NOTAM modals look identical across the app
+- ✅ **Restored Functionality**: Swipe between multiple NOTAMs working properly
+- ✅ **Better UX**: Consistent spacing and layout across all NOTAM displays
+- ✅ **Maintainable Code**: Unified display logic across all modal types
+- ✅ **Professional Appearance**: Clean, consistent NOTAM presentation
+
+**Testing Results:**
+- ✅ Linter error resolved
+- ✅ Spacing gap eliminated between validity and text sections
+- ✅ Swipe functionality working for multiple NOTAMs
+- ✅ All NOTAM display methods have consistent layout
+- ✅ Visual alignment matches raw data modal exactly
+
 ## 🎯 **Next Steps**
 
 ### Task 16: Complete Navigation Refactoring ✅ COMPLETED
