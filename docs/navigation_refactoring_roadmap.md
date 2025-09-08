@@ -303,6 +303,11 @@ Implement nested navigation so that system status pages (Runways, Taxiways, etc.
 
 The navigation refactoring has been **successfully completed** with an elegant solution that exceeded the original roadmap expectations:
 
+## 🔗 **Related Roadmaps**
+
+- **Flight Plan Details Enhancement**: See `docs/flight_plan_details_roadmap.md` for improvements to the flight plan entry area
+- **Current Sprint Tasks**: See `docs/current_sprint_tasks.md` for ongoing development priorities
+
 ### **✅ What Was Achieved:**
 - **Widget-Based System Pages**: All system pages are now embedded widgets within AirportDetailScreen
 - **Persistent Bottom Navigation**: Bottom nav remains visible on all pages through BriefingTabsScreen

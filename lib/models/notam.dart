@@ -57,11 +57,7 @@ class Notam {
     final qCodeRegex = RegExp(r'\bQ[A-Z]{4}\b', caseSensitive: false);
     final match = qCodeRegex.firstMatch(text.toUpperCase());
     
-    if (match != null) {
-      debugPrint('DEBUG: 🔍 Q code extracted: ${match.group(0)} from text: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
-    } else {
-      debugPrint('DEBUG: 🔍 No Q code found in text: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
-    }
+    // Q code extraction logging removed to focus on TAF parsing
     
     return match?.group(0);
   }
@@ -644,21 +640,7 @@ class Notam {
       throw Exception('Invalid NOTAM data: notam object is null');
     }
 
-    // Debug: Log the complete raw NOTAM JSON structure
-    debugPrint(' COMPLETE RAW NOTAM JSON for ${notam['number']}:');
-    debugPrint('${'=' * 80}');
-    debugPrint('NOTAM OBJECT:');
-    debugPrint(notam.toString());
-    debugPrint('${'=' * 80}');
-    debugPrint('CORE NOTAM DATA:');
-    debugPrint(coreNotamData.toString());
-    debugPrint('${'=' * 80}');
-    debugPrint('PROPERTIES:');
-    debugPrint(properties.toString());
-    debugPrint('${'=' * 80}');
-    debugPrint('COMPLETE JSON:');
-    debugPrint(json.toString());
-    debugPrint('${'=' * 80}');
+    // Verbose NOTAM logging removed to focus on TAF parsing
 
     // Safely parse dates, providing defaults if they are null.
     final validFromStr = notam['effectiveStart'];
@@ -694,16 +676,13 @@ class Notam {
     String completeIcaoText = '';
     final translations = coreNotamData['notamTranslation'] as List?;
     if (translations != null) {
-      debugPrint('DEBUG: 🔍 Found ${translations.length} translations for ${notam['number']}');
+      // Translation logging removed to focus on TAF parsing
       for (final translation in translations) {
-        debugPrint('DEBUG: 🔍 Translation type: ${translation['type']}');
         if (translation['type'] == 'ICAO') {
           final formattedText = translation['formattedText'] as String?;
           if (formattedText != null) {
-            debugPrint('DEBUG: 🔍 ICAO formatted text: $formattedText');
             completeIcaoText = formattedText;
             qCode = extractQCode(formattedText);
-            debugPrint('DEBUG: 🔍 Extracted Q code: $qCode');
             if (qCode != null) break;
           }
         }
@@ -712,7 +691,6 @@ class Notam {
     
     // Fallback to text field if no Q code found in translations
     if (qCode == null) {
-      debugPrint('DEBUG: 🔍 No Q code found in translations, trying text field');
       qCode = extractQCode(notam['text'] ?? '');
     }
     
@@ -724,7 +702,6 @@ class Notam {
     final schedule = notam['schedule'] as String?;
     if (schedule != null && schedule.isNotEmpty) {
       fieldD = schedule;
-      debugPrint('DEBUG: 🔍 Using FAA API schedule: "$fieldD"');
     }
     
     // Extract altitude/limit information for Fields F and G
@@ -737,34 +714,23 @@ class Notam {
     
     if (lowerLimit != null && lowerLimit.isNotEmpty) {
       fieldF = lowerLimit;
-      debugPrint('DEBUG: 🔍 Using FAA API lowerLimit: "$fieldF"');
     }
     
     if (upperLimit != null && upperLimit.isNotEmpty) {
       fieldG = upperLimit;
-      debugPrint('DEBUG: 🔍 Using FAA API upperLimit: "$fieldG"');
     }
     
     // Only fall back to ICAO F) and G) fields if FAA API doesn't have them
     if (fieldF.isEmpty && fieldG.isEmpty && completeIcaoText.isNotEmpty) {
-      debugPrint('DEBUG: 🔍 No FAA API altitude fields, trying ICAO F) and G)');
       final fields = _extractIcaoFields(completeIcaoText);
       fieldF = fields['F'] ?? '';
       fieldG = fields['G'] ?? '';
-      debugPrint('DEBUG: 🔍 Extracted from ICAO - F: "$fieldF", G: "$fieldG"');
     }
     
     // Use the original FAA API text as rawText (no enhancement needed)
     String rawText = fieldE;
     
-    // Debug: Log the parsed NOTAM fields
-    debugPrint(' PARSED NOTAM FIELDS for ${notam['number']}:');
-    debugPrint('${'=' * 80}');
-    debugPrint('Field D (Schedule): $fieldD');
-    debugPrint('Field E (Main): $fieldE');
-    debugPrint('Field F (Lower): $fieldF');
-    debugPrint('Field G (Upper): $fieldG');
-    debugPrint('${'=' * 80}');
+    // Verbose NOTAM field logging removed to focus on TAF parsing
     
     // Determine NOTAM type - prefer Q code over text-based classification
     NotamType type = determineTypeFromQCode(qCode);

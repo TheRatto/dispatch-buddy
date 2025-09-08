@@ -214,6 +214,36 @@ class DecoderService {
           final end = nextMatch?.start ?? rawText.length;
           final periodText = rawText.substring(start, end).trim();
           
+          // For INTER periods, ensure we capture the complete weather data including cloud info
+          // that might be on the same line or following lines
+          String adjustedPeriodText = periodText;
+          if (currentMatch.group(0)!.startsWith('INTER')) {
+            // Look ahead to see if there's more weather data that should be part of this INTER period
+            // Check if the next period is also INTER and if there might be missing cloud data
+            if (nextMatch != null && nextMatch.group(0)!.startsWith('INTER')) {
+              // Look for cloud patterns that might be part of the current INTER period
+              final cloudPattern = RegExp(r'\b(SCT|BKN|OVC|FEW|CB|TCU|CU|SC|ST|AC|AS|NS|CI|CC|CS)\d*[A-Z]*\b');
+              final currentClouds = cloudPattern.allMatches(periodText);
+              final nextClouds = cloudPattern.allMatches(rawText.substring(nextMatch.start, nextMatch.start + 50));
+              
+              // If current period has incomplete cloud data and next period starts with cloud data,
+              // it might be continuation of the current INTER period
+              if (currentClouds.length > 0 && nextClouds.length > 0) {
+                final lastCloudInCurrent = currentClouds.last;
+                final firstCloudInNext = nextClouds.first;
+                
+                // Check if there's a gap that suggests the cloud data was split
+                final gap = nextMatch.start - (currentMatch.start + lastCloudInCurrent.end);
+                if (gap < 20) { // Small gap suggests it's part of the same period
+                  // Extend the current period to include the cloud data
+                  final extendedEnd = nextMatch.start + firstCloudInNext.end;
+                  adjustedPeriodText = rawText.substring(start, extendedEnd).trim();
+                  debugPrint('DEBUG: 🔍 Extended INTER period to include cloud data: "${adjustedPeriodText}"');
+                }
+              }
+            }
+          }
+          
           // Determine period type
           String periodType = 'UNKNOWN';
           final matchedText = currentMatch.group(0)!;
@@ -242,7 +272,7 @@ class DecoderService {
           
           debugPrint('DEBUG: 🔍 Creating section for period: $periodType');
           debugPrint('DEBUG:   - Matched text: "$matchedText"');
-          debugPrint('DEBUG:   - Period text: "${periodText.substring(0, periodText.length > 100 ? 100 : periodText.length)}..."');
+          debugPrint('DEBUG:   - Period text: "${adjustedPeriodText.substring(0, adjustedPeriodText.length > 100 ? 100 : adjustedPeriodText.length)}..."');
           
           // Determine if it's baseline or concurrent
           final isBaseline = periodType == 'FM' || periodType == 'BECMG' || periodType == 'INITIAL';
@@ -250,7 +280,7 @@ class DecoderService {
           sections.add({
             'start': start,
             'end': end,
-            'text': periodText,
+            'text': adjustedPeriodText,
             'type': isBaseline ? 'baseline' : 'concurrent',
             'periodType': periodType,
           });
@@ -736,7 +766,28 @@ class DecoderService {
     formatted = formatted.replaceAll(' BECMG', '\nBECMG');
     formatted = formatted.replaceAll(' PROB30', '\nPROB30');
     formatted = formatted.replaceAll(' PROB40', '\nPROB40');
-    formatted = formatted.replaceAll(' INTER', '\nINTER');
+    
+    // Special handling for INTER periods to avoid splitting weather data
+    // Only add line break before INTER if it's not preceded by weather data on the same line
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'(\s+)(INTER\s+\d{4}/\d{4})'),
+      (match) {
+        final space = match.group(1)!;
+        final interPart = match.group(2)!;
+        
+        // Check if the space is preceded by weather data (cloud codes, etc.)
+        final beforeSpace = formatted.substring(0, match.start);
+        final lastWord = beforeSpace.split(RegExp(r'\s+')).last;
+        
+        // If the last word before INTER is a weather code, don't add line break
+        if (RegExp(r'^(SCT|BKN|OVC|FEW|CB|TCU|CU|SC|ST|AC|AS|NS|CI|CC|CS)\d*[A-Z]*$').hasMatch(lastWord)) {
+          return space + interPart; // Keep on same line
+        } else {
+          return '\n' + interPart; // Add line break
+        }
+      }
+    );
+    
     formatted = formatted.replaceAll(' RMK', '\nRMK');
     // Ensure TAF version markers like TAF3 are visible on their own line
     formatted = formatted.replaceAll(' TAF3', '\nTAF3');

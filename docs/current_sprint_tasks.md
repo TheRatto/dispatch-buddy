@@ -110,7 +110,7 @@
 
 **Files Modified:**
 - `lib/providers/flight_provider.dart` - Added `refreshCurrentData()` method
-- `lib/screens/decoded_screen.dart` - Updated RefreshIndicator callbacks
+- `lib/screens/decoded_screen.dart` - **REMOVED** (deprecated TAF implementation)
 - `lib/screens/alternate_data_screen.dart` - Updated RefreshIndicator callbacks
 - `lib/screens/summary_screen.dart` - Updated RefreshIndicator callbacks
 - `lib/screens/airport_detail_screen.dart` - Updated RefreshIndicator callbacks
@@ -852,6 +852,51 @@ Airport Status Page → Select Airport → View System Status → Navigate to Sy
 - ✅ Visual alignment matches raw data modal exactly
 
 ## 🎯 **Next Steps**
+
+### Task 28: Flight Plan Details Enhancement 🎯 **NEW PRIORITY**
+**Goal**: Enhance the Flight Plan Details entry area with smart validation and improved UX
+
+**Current State:**
+- ✅ **Route input** with basic validation
+- ✅ **Time format toggle** (Local/Zulu) 
+- ✅ **ETD picker** with dual time display
+- ✅ **Flight Level input** with validation
+- ✅ **Clean card-based layout**
+
+**Proposed Enhancements:**
+- [ ] **Smart Route Input**: Real-time ICAO validation, autocomplete, route parsing
+- [ ] **Route History**: Learn from previous briefings, suggest common routes
+- [ ] **Enhanced Time Management**: Smart time input, duration estimation, ETA calculation
+- [ ] **Smart Flight Level Input**: Validation, suggestions, altitude unit toggle
+- [ ] **Airport Data Integration**: Show airport info as user types, distance calculation
+- [ ] **UI/UX Improvements**: Better visual design, accessibility, loading states
+
+**Files to Create:**
+- [ ] `lib/services/route_validation_service.dart` - ICAO validation and route parsing
+- [ ] `lib/services/route_history_service.dart` - Route history and suggestions
+- [ ] `lib/services/flight_duration_service.dart` - Duration calculation and ETA
+- [ ] `lib/services/flight_level_service.dart` - Flight level validation and suggestions
+- [ ] `lib/widgets/route_suggestions_widget.dart` - Route suggestion dropdown
+- [ ] `lib/widgets/airport_info_widget.dart` - Airport information display
+
+**Files to Modify:**
+- [ ] `lib/widgets/flight_plan_form_card.dart` - Main form enhancements
+- [ ] `lib/providers/flight_provider.dart` - State management updates
+- [ ] `lib/models/flight.dart` - Enhanced flight model
+
+**Benefits:**
+- [ ] **Faster Input**: Autocomplete and suggestions speed up data entry
+- [ ] **Fewer Errors**: Real-time validation prevents invalid data
+- [ ] **Better Guidance**: Smart suggestions help users make better decisions
+- [ ] **Professional Feel**: Enhanced validation and feedback
+
+**Out of Scope (Future Consideration):**
+- [ ] Aircraft performance integration
+- [ ] Fuel planning calculations
+- [ ] Route optimization suggestions
+- [ ] Flight plan templates and history
+
+**Detailed Roadmap**: See `docs/flight_plan_details_roadmap.md` for complete implementation plan
 
 ### Task 16: Complete Navigation Refactoring ✅ COMPLETED
 **Goal**: Finish bottom navigation integration and tab state persistence

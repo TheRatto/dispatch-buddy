@@ -290,6 +290,10 @@ class _RawTafCardState extends State<RawTafCard> {
     final lines = formattedText.split('\n');
     final children = <TextSpan>[];
     
+    // Track if we're currently in a highlighted period to handle continuation lines
+    bool inHighlightedPeriod = false;
+    Color? currentHighlightColor;
+    
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       final isLastLine = i == lines.length - 1;
@@ -301,6 +305,8 @@ class _RawTafCardState extends State<RawTafCard> {
           text: line + (isLastLine ? '' : '\n'),
           style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
         ));
+        inHighlightedPeriod = false;
+        currentHighlightColor = null;
         continue;
       }
       
@@ -408,6 +414,27 @@ class _RawTafCardState extends State<RawTafCard> {
         }
         
         if (shouldHighlight) break; // Use first match
+      }
+      
+      // Check if this line is a continuation of a highlighted period
+      if (highlightColor == null && inHighlightedPeriod && currentHighlightColor != null) {
+        // This line doesn't start a new period but we're in a highlighted period
+        // Check if it's a continuation line (not empty and not starting with a period indicator)
+        final trimmedLine = line.trim();
+        if (trimmedLine.isNotEmpty && !trimmedLine.startsWith(RegExp(r'^(FM|TEMPO|BECMG|PROB30|PROB40|INTER|RMK|TAF3)'))) {
+          highlightColor = currentHighlightColor;
+          debugPrint('DEBUG: Highlighting continuation line: "$line"');
+        }
+      }
+      
+      // Update highlighting state
+      if (highlightColor != null) {
+        inHighlightedPeriod = true;
+        currentHighlightColor = highlightColor;
+      } else if (line.trim().startsWith(RegExp(r'^(FM|TEMPO|BECMG|PROB30|PROB40|INTER|RMK|TAF3)'))) {
+        // This line starts a new period, reset highlighting state
+        inHighlightedPeriod = false;
+        currentHighlightColor = null;
       }
       
       // Add the line with or without highlighting

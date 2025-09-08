@@ -86,7 +86,7 @@ class _InputScreenState extends State<InputScreen> {
           ),
         ],
       ),
-      endDrawer: const GlobalDrawer(currentScreen: '/decoded'),
+      endDrawer: const GlobalDrawer(currentScreen: '/raw'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

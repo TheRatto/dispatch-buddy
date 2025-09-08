@@ -23,12 +23,25 @@
 - Parser hardening process
   - Build and maintain a corpus of NAIPS outputs (TAF/METAR/ATIS) with variants (COR, AUTO, AMD, TAF3, spacing) and keep an acceptance matrix.
   - Add targeted debug logs (e.g., TAF regex match counts) to validate changes quickly without flooding logs.
+  - **Debugging Strategy**: When investigating parsing issues, remove verbose logging from other components (e.g., NOTAM processing) to focus on the specific problem area. Use targeted test files to isolate regex patterns without Flutter dependencies.
+
+- TAF Priority Logic Debugging (January 2025)
+  - **Problem**: NAIPs TAF parsing was working (confirmed by logs), but UI still showed API TAFs
+  - **Root Cause**: Merge logic used "newest wins" - API TAFs had newer timestamps than NAIPs TAFs
+  - **Debugging Process**: 
+    1. Removed verbose NOTAM logging to see TAF logs clearly
+    2. Confirmed NAIPs TAFs were being parsed successfully (`source=naips`)
+    3. Identified that API TAFs were winning the merge due to newer timestamps
+    4. Fixed by prioritizing NAIPs TAFs regardless of timestamp
+  - **Solution**: Add NAIPs TAFs first, then only add API TAFs as fallback if no NAIPs TAF exists for that airport
+  - **Key Lesson**: When parsing works but wrong data is displayed, check the merge/priority logic, not just the parsing
 
 - Pitfalls we hit
-  - Accidentally overwriting full raw TAF with compact text caused “first‑line only” rendering.
+  - Accidentally overwriting full raw TAF with compact text caused "first‑line only" rendering.
   - Assuming `Z` had no space before it; NAIPS occasionally inserts optional spaces.
   - Using fetch time for ATIS led to incorrect ages and dedupe order.
-  - A tie‑blind “NAIPS over API” merge allowed older NAIPS to suppress newer API; a naive “newest‑wins” then suppressed NAIPS too aggressively. The 2‑minute NAIPS preference is a pragmatic balance.
+  - A tie‑blind "NAIPS over API" merge allowed older NAIPS to suppress newer API; a naive "newest‑wins" then suppressed NAIPS too aggressively. The 2‑minute NAIPS preference is a pragmatic balance.
+  - **TAF Priority Logic Regression (January 2025)**: After fixing NAIPs TAF parsing regex, the merge logic was still using "newest wins" which caused API TAFs to override NAIPs TAFs due to newer timestamps. **Solution**: Prioritize NAIPs TAFs regardless of timestamp - add NAIPs TAFs first, then only add API TAFs as fallback if no NAIPs TAF exists for that airport.
 
 ## Lessons learned – NAIPS Charts directory and viewer
 

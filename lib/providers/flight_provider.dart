@@ -683,6 +683,14 @@ class FlightProvider with ChangeNotifier {
         weather: allWeather,
       );
       
+      // Clear UI caches after successful data refresh to force UI update
+      debugPrint('DEBUG: 🔄 Data refresh successful, clearing UI caches');
+      final tafStateManager = TafStateManager();
+      tafStateManager.clearCache();
+      final cacheManager = CacheManager();
+      cacheManager.clearPrefix('taf_');
+      cacheManager.clearPrefix('weather_');
+      
       // Ensure system status is recalculated after data refresh
       _updateAllAirportSystemStatus();
 

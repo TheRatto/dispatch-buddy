@@ -967,52 +967,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     debugPrint('DEBUG: Filter end time: ${filterEndTime.toIso8601String()}');
     debugPrint('DEBUG: Filter duration: ${filterDuration.inHours} hours');
     
-    // Only log NOTAMs occasionally to reduce console spam
-    if (activeNotams.length <= 5) {
-      // Log all NOTAMs if there are 5 or fewer
-      for (int i = 0; i < activeNotams.length; i++) {
-        final notam = activeNotams[i];
-        final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
-        final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
-        final passesFilter = isCurrentlyActive || isFutureActive;
-        
-        debugPrint('DEBUG: NOTAM ${i + 1}/${activeNotams.length}: ${notam.id} (${notam.icao})');
-        debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
-        debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
-        debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
-        debugPrint('DEBUG:   Future active: $isFutureActive');
-        debugPrint('DEBUG:   Passes filter: $passesFilter');
-      }
-    } else {
-      // Log only first 3 and last 3 NOTAMs if there are more than 5
-      for (int i = 0; i < 3; i++) {
-        final notam = activeNotams[i];
-        final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
-        final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
-        final passesFilter = isCurrentlyActive || isFutureActive;
-        
-        debugPrint('DEBUG: NOTAM ${i + 1}/${activeNotams.length}: ${notam.id} (${notam.icao})');
-        debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
-        debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
-        debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
-        debugPrint('DEBUG:   Future active: $isFutureActive');
-        debugPrint('DEBUG:   Passes filter: $passesFilter');
-      }
-      debugPrint('DEBUG: ... (${activeNotams.length - 6} more NOTAMs) ...');
-      for (int i = activeNotams.length - 3; i < activeNotams.length; i++) {
-        final notam = activeNotams[i];
-        final isCurrentlyActive = notam.validFrom.isBefore(now) && notam.validTo.isAfter(now);
-        final isFutureActive = notam.validFrom.isAfter(now) && notam.validFrom.isBefore(filterEndTime);
-        final passesFilter = isCurrentlyActive || isFutureActive;
-        
-        debugPrint('DEBUG: NOTAM ${i + 1}/${activeNotams.length}: ${notam.id} (${notam.icao})');
-        debugPrint('DEBUG:   Valid from: ${notam.validFrom.toIso8601String()}');
-        debugPrint('DEBUG:   Valid to: ${notam.validTo.toIso8601String()}');
-        debugPrint('DEBUG:   Currently active: $isCurrentlyActive');
-        debugPrint('DEBUG:   Future active: $isFutureActive');
-        debugPrint('DEBUG:   Passes filter: $passesFilter');
-      }
-    }
+    // Reduced NOTAM logging to focus on TAF parsing
+    debugPrint('DEBUG: Processing ${activeNotams.length} NOTAMs for time filter...');
     
     final filteredNotams = activeNotams.where((notam) {
       // Show NOTAMs that are either:

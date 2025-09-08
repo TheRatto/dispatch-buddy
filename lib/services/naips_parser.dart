@@ -19,10 +19,16 @@ class NAIPSParser {
         if (content.isEmpty) continue;
         
         debugPrint('DEBUG: NAIPSParser - Processing pre content: ${content.substring(0, content.length > 200 ? 200 : content.length)}...');
+        debugPrint('DEBUG: NAIPSParser - Full pre content length: ${content.length}');
+        debugPrint('DEBUG: NAIPSParser - Content contains TAF: ${content.contains('TAF')}');
+        debugPrint('DEBUG: NAIPSParser - Content contains METAR: ${content.contains('METAR')}');
+        debugPrint('DEBUG: NAIPSParser - Content contains ATIS: ${content.contains('ATIS')}');
         
         // Parse TAFs (guard parsing so one failure doesn't drop all prior results)
         try {
+          debugPrint('DEBUG: NAIPSParser - Starting TAF parsing for content length: ${content.length}');
           final tafs = _parseTAFs(content);
+          debugPrint('DEBUG: NAIPSParser - TAF parsing completed, found ${tafs.length} TAFs');
           weatherList.addAll(tafs);
         } catch (e) {
           debugPrint('DEBUG: NAIPSParser - TAF parsing error (continuing): $e');
@@ -85,14 +91,30 @@ class NAIPSParser {
   static List<Weather> _parseTAFs(String content) {
     final List<Weather> tafs = [];
     
-    // Find TAF sections
-    // Allow indentation before TAF and optional AMD/COR marker; capture until next section
+    // Find TAF sections using a flexible pattern that works with both individual TAFs and multi-line content
+    // This pattern works better with actual NAIPs data format
     final tafRegex = RegExp(
-      r'(?:^|\n)\s*TAF(?:\s+(?:AMD|COR|TAF3))?\s+([A-Z]{4})\s+(\d{6})\s*Z\s+(\d{4})/(\d{4})\s+([\s\S]*?)(?=\n\s*(?:TAF\s|METAR|SPECI|ATIS|NOTAM|$))',
+      r'TAF(?:\s+(?:AMD|COR|TAF3))?\s+([A-Z]{4})\s+(\d{6})\s*Z\s+(\d{4})/(\d{4})\s+([\s\S]*?)(?=(?:\n\s*(?:TAF\s|METAR|SPECI|ATIS|NOTAM)|$))',
       dotAll: true,
     );
     final tafMatches = tafRegex.allMatches(content);
     debugPrint('DEBUG: NAIPSParser - TAF regex found ${taMatchesCount(tafMatches)} matches');
+    
+    // Debug: Show content preview to help diagnose regex issues
+    if (tafMatches.isEmpty && content.contains('TAF')) {
+      debugPrint('DEBUG: NAIPSParser - Content contains TAF but regex found no matches');
+      debugPrint('DEBUG: NAIPSParser - Content preview: ${content.substring(0, content.length > 300 ? 300 : content.length)}...');
+      
+      // Try to find TAF patterns manually
+      final tafLines = content.split('\n').where((line) => line.contains('TAF')).toList();
+      debugPrint('DEBUG: NAIPSParser - Lines containing TAF: $tafLines');
+      
+      // Test the regex pattern on individual lines
+      for (final line in tafLines) {
+        final testMatch = tafRegex.firstMatch(line);
+        debugPrint('DEBUG: NAIPSParser - Testing regex on line: "$line" -> match: ${testMatch != null}');
+      }
+    }
     
     for (final match in tafMatches) {
       final icao = match.group(1) ?? '';
@@ -119,8 +141,10 @@ class NAIPSParser {
         String displayTafText = 'TAF ' + icao + ' ' + issueTime + 'Z ' + validityStart + '/' + validityEnd + '\n' + joined;
 
         try {
+          debugPrint('DEBUG: NAIPSParser - Creating compact TAF text: "$compactTafText"');
           final decoderService = decoder.DecoderService();
           final decodedWeather = decoderService.decodeTaf(compactTafText);
+          debugPrint('DEBUG: NAIPSParser - TAF decoding successful for $icao');
 
           final weather = Weather(
             icao: icao,
@@ -141,9 +165,10 @@ class NAIPSParser {
           );
 
           tafs.add(weather);
-          debugPrint('DEBUG: NAIPSParser - Parsed TAF for ' + icao);
+          debugPrint('DEBUG: NAIPSParser - Successfully created TAF Weather object for $icao with source: naips');
         } catch (e) {
           debugPrint('DEBUG: NAIPSParser - Error parsing TAF for ' + icao + ': ' + e.toString());
+          debugPrint('DEBUG: NAIPSParser - Compact TAF text that failed: "$compactTafText"');
         }
       }
     }

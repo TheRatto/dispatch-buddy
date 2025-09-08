@@ -8,7 +8,6 @@ import 'screens/home_screen.dart';
 import 'screens/summary_screen.dart';
 import 'screens/airport_detail_screen.dart';
 import 'screens/raw_data_screen.dart';
-import 'screens/decoded_screen.dart';
 import 'screens/ai_briefing_screen.dart';
 import 'providers/flight_provider.dart';
 import 'providers/settings_provider.dart';
@@ -81,7 +80,6 @@ class MyApp extends StatelessWidget {
         '/summary': (context) => const SummaryScreen(),
         '/airports': (context) => const AirportDetailScreen(),
         '/raw': (context) => const RawDataScreen(),
-        '/decoded': (context) => const DecodedScreen(),
         '/ai-briefing': (context) => const AIBriefingScreen(),
       },
       home: const SplashScreen(),

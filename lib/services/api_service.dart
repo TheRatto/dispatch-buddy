@@ -9,6 +9,8 @@ import '../services/naips_service.dart';
 import '../services/naips_parser.dart';
 import '../providers/settings_provider.dart';
 import '../services/decoder_service.dart';
+import '../services/taf_state_manager.dart';
+import '../services/cache_manager.dart';
 
 import 'dart:async';
 
@@ -159,14 +161,14 @@ class ApiService {
                 debugPrint('DEBUG: Q CODE SUBJECT: ${Notam.getQCodeSubjectDescription(notam.qCode)}');
                 debugPrint('DEBUG: Q CODE STATUS: ${Notam.getQCodeStatusDescription(notam.qCode)}');
               }
-              // Debug: Print all NOTAM IDs to see what we're getting
-              debugPrint('DEBUG: Processing NOTAM: ${notam.id}');
+              // Reduced NOTAM logging to focus on TAF parsing
+              // debugPrint('DEBUG: Processing NOTAM: ${notam.id}');
               if (!seenNotamIds.contains(notam.id)) {
                 seenNotamIds.add(notam.id);
                 pageNotams.add(notam);
                 newNotamsInPage++;
               } else {
-                debugPrint('DEBUG: 🔍 Skipping duplicate NOTAM: ${notam.id}');
+                // debugPrint('DEBUG: 🔍 Skipping duplicate NOTAM: ${notam.id}');
               }
             }
             
@@ -394,10 +396,22 @@ class ApiService {
           final List<Weather> aggregated = [];
           for (final icao in icaos) {
             try {
+              debugPrint('DEBUG: 🔍 Fetching NAIPS data for $icao...');
               final html = await naipsService.requestLocationBriefing(icao);
+              debugPrint('DEBUG: 🔍 NAIPS HTML for $icao: ${html.length} characters');
+              debugPrint('DEBUG: 🔍 NAIPS HTML preview: ${html.substring(0, html.length > 300 ? 300 : html.length)}...');
+              
               final weatherList = NAIPSParser.parseWeatherFromHTML(html);
-              final tafOnly = weatherList.where((w) => w.type == 'TAF');
+              debugPrint('DEBUG: 🔍 NAIPS $icao -> ${weatherList.length} total weather items');
+              
+              final tafOnly = weatherList.where((w) => w.type == 'TAF').toList();
               debugPrint('DEBUG: 🔍 NAIPS $icao -> ${tafOnly.length} TAF items');
+              
+              // Debug each TAF item
+              for (final taf in tafOnly) {
+                debugPrint('DEBUG: 🔍   - TAF ${taf.icao}: source=${taf.source}, rawText=${taf.rawText.substring(0, taf.rawText.length > 100 ? 100 : taf.rawText.length)}...');
+              }
+              
               aggregated.addAll(tafOnly);
             } catch (e) {
               debugPrint('DEBUG: 🔍 NAIPS TAF fetch failed for $icao: $e');
@@ -405,6 +419,17 @@ class ApiService {
           }
 
           naipsTafs = aggregated.where((w) => icaos.contains(w.icao)).toList();
+          debugPrint('DEBUG: 🔍 NAIPS TAFs after filtering: ${naipsTafs.length} items');
+          debugPrint('DEBUG: 🔍 API TAFs: ${apiTafs.length} items');
+          
+          // Debug: Show source of each TAF
+          for (final taf in naipsTafs) {
+            debugPrint('DEBUG: 🔍 NAIPS TAF ${taf.icao}: source=${taf.source}');
+          }
+          for (final taf in apiTafs) {
+            debugPrint('DEBUG: 🔍 API TAF ${taf.icao}: source=${taf.source}');
+          }
+          
           // Merge by freshest timestamp per ICAO (independent per type)
           if (naipsTafs.isNotEmpty || apiTafs.isNotEmpty) {
             final Map<String, Weather> mergedByIcao = {};
@@ -443,12 +468,32 @@ class ApiService {
               }
             }
 
-            // Evaluate both sets
+            // Prioritize NAIPs TAFs over API TAFs regardless of timestamp
             for (final w in naipsTafs) consider(w);
-            for (final w in apiTafs) consider(w);
+            // Only add API TAFs if no NAIPs TAF exists for that airport
+            for (final w in apiTafs) {
+              if (!mergedByIcao.containsKey(w.icao)) {
+                consider(w);
+              }
+            }
 
             final merged = mergedByIcao.values.toList();
-            debugPrint('DEBUG: 🔍 Returning merged TAF data (newest wins, NAIPS +2min advantage): API=${apiTafs.length}, NAIPS=${naipsTafs.length}, merged=${merged.length}');
+            debugPrint('DEBUG: 🔍 Returning merged TAF data (NAIPS prioritized over API): API=${apiTafs.length}, NAIPS=${naipsTafs.length}, merged=${merged.length}');
+            
+            // Debug each final TAF
+            for (final taf in merged) {
+              debugPrint('DEBUG: 🔍 Final TAF ${taf.icao}: source=${taf.source}, rawText=${taf.rawText.substring(0, taf.rawText.length > 100 ? 100 : taf.rawText.length)}...');
+            }
+            
+            // Clear UI cache after successful NAIPs TAF parsing to force UI refresh
+            if (naipsTafs.isNotEmpty) {
+              debugPrint('DEBUG: 🔍 NAIPs TAFs found, clearing UI cache to force refresh');
+              final tafStateManager = TafStateManager();
+              tafStateManager.clearCache();
+              final cacheManager = CacheManager();
+              cacheManager.clearPrefix('taf_');
+            }
+            
             return merged;
           }
           debugPrint('DEBUG: 🔍 No TAF data from NAIPS or API');
