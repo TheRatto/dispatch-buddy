@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:19:27.336566",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YIVL",
+    "name": "INVERELL",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -29.8883,
+    "longitude": 151.1442,
+    "elevation": 2669,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 2300,
+        "width": 18,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "16/34",
+        "length": 6900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "IVL",
+        "freq": 260.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "16/34",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

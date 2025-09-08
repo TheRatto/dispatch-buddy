@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:24:15.022826",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPED",
+    "name": "EDINBURGH",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -34.7025,
+    "longitude": 138.6208,
+    "elevation": 67,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2130-1330 UTC; 2130-0730 UTC"
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 9700,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "18": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          },
+          "36": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IED",
+        "freq": 110.7,
+        "runway": "18"
+      },
+      {
+        "type": "TAC",
+        "ident": "EDN",
+        "freq": 112.7
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "18",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "18",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "36",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:25:18.222964",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPTN",
+    "name": "TINDAL",
+    "state": "NT",
+    "country": "AU",
+    "latitude": -14.5211,
+    "longitude": 132.3778,
+    "elevation": 443,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 11000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "14": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          },
+          "32": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "ITN",
+        "freq": 110.7,
+        "runway": "14"
+      },
+      {
+        "type": "TAC",
+        "ident": "TDL",
+        "freq": 112.3
+      },
+      {
+        "type": "NDB",
+        "ident": "TN",
+        "freq": 356.0
+      },
+      {
+        "type": "VOR",
+        "ident": "TN",
+        "freq": 112.3
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "32",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

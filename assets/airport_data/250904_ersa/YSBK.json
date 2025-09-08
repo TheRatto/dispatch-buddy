@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:25:57.206357",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSBK",
+    "name": "SYDNEY/BANKSTOWN",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.9244,
+    "longitude": 150.9883,
+    "elevation": 34,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11C/29C",
+        "length": 4600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "PTBL",
+          "RTIL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "11L/29R",
+        "length": 3600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "11R/29L",
+        "length": 3400,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "BK",
+        "freq": 416.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11C/29C",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11C/29C",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "11C/29C",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "11C/29C",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "11L/29R",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

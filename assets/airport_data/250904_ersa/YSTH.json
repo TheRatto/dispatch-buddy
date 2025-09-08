@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:27:04.678754",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSTH",
+    "name": "SAINT HELENS",
+    "state": "TAS",
+    "country": "AU",
+    "latitude": -41.3367,
+    "longitude": 148.2819,
+    "elevation": 158,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 3500,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "SGE",
+        "freq": 383.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:27:26.940347",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTAM",
+    "name": "TAROOM",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -25.8019,
+    "longitude": 149.8994,
+    "elevation": 786,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

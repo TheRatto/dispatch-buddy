@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:14:25.236264",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBMA",
+    "name": "MOUNT ISA",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -20.6639,
+    "longitude": 139.4886,
+    "elevation": 1121,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "16/34",
+        "length": 8400,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "MA",
+        "freq": 117.5
+      },
+      {
+        "type": "NDB",
+        "ident": "MA",
+        "freq": 338.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "16/34",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

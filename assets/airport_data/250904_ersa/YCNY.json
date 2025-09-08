@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:16:19.025929",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCNY",
+    "name": "CENTURY MINE",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -18.7533,
+    "longitude": 138.7067,
+    "elevation": 416,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 5700,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

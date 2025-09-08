@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:20:22.245744",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YKWA",
+    "name": "KARLAWINDA MINE",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -23.7811,
+    "longitude": 120.135,
+    "elevation": 1928,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "01/19",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "01/19",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

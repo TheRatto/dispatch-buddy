@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:22:09.157441",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMMI",
+    "name": "MURRIN MURRIN",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -28.7053,
+    "longitude": 121.8906,
+    "elevation": 1535,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

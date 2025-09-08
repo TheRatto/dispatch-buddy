@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:26:49.392871",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSPE",
+    "name": "STANTHORPE",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -28.6203,
+    "longitude": 151.9906,
+    "elevation": 2934,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 5600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

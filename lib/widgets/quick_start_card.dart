@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'airport_selection_modal.dart';
 
 class QuickStartCard extends StatelessWidget {
   final bool isLoading;
-  final VoidCallback onGenerateMockBriefing1;
-  final VoidCallback onGenerateMockBriefing2;
+  final Function(List<String>) onAirportsSelected;
 
   const QuickStartCard({
     super.key,
     required this.isLoading,
-    required this.onGenerateMockBriefing1,
-    required this.onGenerateMockBriefing2,
+    required this.onAirportsSelected,
   });
 
   @override
@@ -29,39 +28,46 @@ class QuickStartCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Generate a sample briefing with realistic data for testing',
+              'Select airports from your history or by state to generate a briefing',
               style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading ? null : onGenerateMockBriefing1,
-                    icon: const Icon(Icons.flight),
-                    label: const Text('YPPH → YSSY (Sample)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isLoading ? null : () => _showAirportSelectionModal(context),
+                icon: const Icon(Icons.airplanemode_active),
+                label: const Text('Select Airports'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading ? null : onGenerateMockBriefing2,
-                    icon: const Icon(Icons.flight),
-                    label: const Text('YMML → YBBN (Sample)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAirportSelectionModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        minChildSize: 0.6,
+        expand: false,
+        builder: (context, scrollController) {
+          return AirportSelectionModal(
+            onAirportsSelected: onAirportsSelected,
+          );
+        },
       ),
     );
   }

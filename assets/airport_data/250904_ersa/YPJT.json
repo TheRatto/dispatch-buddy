@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:24:27.319197",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPJT",
+    "name": "PERTH/JANDAKOT",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -32.0975,
+    "longitude": 115.8811,
+    "elevation": 99,
+    "firefighting": {
+      "category": null,
+      "availability": "SAT-SUN 0000-1000 UTC; SAT-SUN 0000-1000 UTC; MON-FRI 2300-1430 UTC; SAT-SUN 0000-1000 UTC"
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 4900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "JT",
+        "freq": 281.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "MIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

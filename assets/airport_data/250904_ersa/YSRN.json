@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:27:02.396092",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSRN",
+    "name": "STRAHAN",
+    "state": "TAS",
+    "country": "AU",
+    "latitude": -24.3564,
+    "longitude": 143.2914,
+    "elevation": 66,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 4000,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

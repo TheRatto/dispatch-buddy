@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:14:57.852804",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBTH",
+    "name": "BATHURST",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.4094,
+    "longitude": 149.6519,
+    "elevation": 2435,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 4300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 5600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {
+          "35": {}
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "BTH",
+        "freq": 383.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "17/35",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

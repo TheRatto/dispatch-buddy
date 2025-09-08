@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:28:46.381430",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWDG",
+    "name": "WINDARLING",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -30.0319,
+    "longitude": 119.3872,
+    "elevation": 1502,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 6100,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "04/22",
+        "length": 4500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "WDH",
+        "freq": 407.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

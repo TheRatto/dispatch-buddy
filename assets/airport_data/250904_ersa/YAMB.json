@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:13:05.730262",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YAMB",
+    "name": "AMBERLEY",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -27.6406,
+    "longitude": 152.7119,
+    "elevation": 91,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2200-1300 UTC"
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 5000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "15/33",
+        "length": 10000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "15": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          },
+          "33": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IAM",
+        "freq": 110.7,
+        "runway": "15"
+      },
+      {
+        "type": "TAC",
+        "ident": "AMB",
+        "freq": 112.5
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "15",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "15",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "33",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:14:40.007039",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBRK",
+    "name": "ROCKHAMPTON",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -23.3819,
+    "longitude": 150.4753,
+    "elevation": 36,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "1945-1125 UTC; 2015-1125 UTC; 2045-1125 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 3900,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "15/33",
+        "length": 8600,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {
+          "15": {
+            "RTIL": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "RK",
+        "freq": 116.9
+      },
+      {
+        "type": "NDB",
+        "ident": "RK",
+        "freq": 257.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "15/33",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "15",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

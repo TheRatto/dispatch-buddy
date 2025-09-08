@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:15:37.614550",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCDU",
+    "name": "CEDUNA",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -32.1306,
+    "longitude": 133.7097,
+    "elevation": 77,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 5700,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 3300,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "CDU",
+        "freq": 293.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

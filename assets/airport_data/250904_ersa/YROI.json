@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:25:44.840458",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YROI",
+    "name": "ROBINVALE",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -18.8486,
+    "longitude": 143.7111,
+    "elevation": 284,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "01/19",
+        "length": 3700,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 3900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "01/19",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "01/19",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

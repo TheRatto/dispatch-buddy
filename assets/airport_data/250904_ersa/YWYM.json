@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:29:55.646005",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWYM",
+    "name": "WYNDHAM",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -36.0589,
+    "longitude": 143.2433,
+    "elevation": 15,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 2400,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 3400,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 5300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:17:43.766613",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YFTA",
+    "name": "FORRESTANIA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -32.5783,
+    "longitude": 119.7067,
+    "elevation": 1362,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "15/33",
+        "length": 5000,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "15/33",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

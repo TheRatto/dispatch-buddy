@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:13:05.736673",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YABA",
+    "name": "ALBANY",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -34.9433,
+    "longitude": 117.8089,
+    "elevation": 233,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 3600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "14": {
+            "PAPI": true
+          },
+          "32": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "ABA",
+        "freq": 109.7
+      },
+      {
+        "type": "NDB",
+        "ident": "ABA",
+        "freq": 240.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "32",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:23:07.844590",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YNRC",
+    "name": "NARACOORTE",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -36.9853,
+    "longitude": 140.725,
+    "elevation": 169,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "02/20",
+        "length": 4400,
+        "width": 23,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "08/26",
+        "length": 3400,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:15:36.630983",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCDO",
+    "name": "CONDOBOLIN",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.0644,
+    "longitude": 147.2092,
+    "elevation": 654,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "01/19",
+        "length": 4500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "10/28",
+        "length": 3900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "01/19",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

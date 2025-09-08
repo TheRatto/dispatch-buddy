@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:29:01.826908",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWHC",
+    "name": "WHITE CLIFFS",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -30.8514,
+    "longitude": 143.0733,
+    "elevation": 536,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "02/20",
+        "length": 2800,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 3500,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

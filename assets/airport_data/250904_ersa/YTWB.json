@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:28:31.146870",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTWB",
+    "name": "TOOWOOMBA",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -27.5414,
+    "longitude": 151.9125,
+    "elevation": 2087,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 2200,
+        "width": 18,
+        "surface": "Pavement",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 4000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

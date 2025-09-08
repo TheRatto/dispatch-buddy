@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:24:49.651876",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPLU",
+    "name": "PLUTONIC",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -25.3167,
+    "longitude": 119.4233,
+    "elevation": 1896,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 6800,
+        "width": 30,
+        "surface": "Sealed",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

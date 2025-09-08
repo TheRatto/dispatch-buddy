@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:13:43.560447",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBCS",
+    "name": "CAIRNS/CAIRNS INTL",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -32.2803,
+    "longitude": 125.4778,
+    "elevation": 10,
+    "firefighting": {
+      "category": "CAT 8",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "15/33",
+        "length": 10500,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL"
+        ],
+        "ends": {
+          "15": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          },
+          "33": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "ICS",
+        "freq": 109.9,
+        "runway": "15"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "CS",
+        "freq": 113.0
+      },
+      {
+        "type": "NDB",
+        "ident": "CS",
+        "freq": 364.0
+      },
+      {
+        "type": "DME",
+        "ident": "ICN",
+        "freq": 109.5
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "15/33",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "15",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "15",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "33",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

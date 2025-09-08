@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:22:29.076226",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMOR",
+    "name": "MOREE",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -29.4989,
+    "longitude": 149.8447,
+    "elevation": 701,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "01/19",
+        "length": 5300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "05/23",
+        "length": 3200,
+        "width": 23,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "MOR",
+        "freq": 392.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "01/19",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "01/19",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:17:07.552516",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YDMG",
+    "name": "DOOMADGEE",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -19.6017,
+    "longitude": 146.8417,
+    "elevation": 160,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 5400,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

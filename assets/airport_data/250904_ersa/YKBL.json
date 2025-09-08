@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:19:45.742417",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YKBL",
+    "name": "KAMBALDA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -31.1906,
+    "longitude": 121.5983,
+    "elevation": 1059,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 3700,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "16/34",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

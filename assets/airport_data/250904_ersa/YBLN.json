@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:14:12.574487",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBLN",
+    "name": "BUSSELTON",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -33.6872,
+    "longitude": 115.4003,
+    "elevation": 56,
+    "firefighting": {
+      "category": "CAT 8",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 8100,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "BLN",
+        "freq": 386.0,
+        "runway": "21"
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

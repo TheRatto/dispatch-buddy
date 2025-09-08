@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:24:39.940241",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPKU",
+    "name": "KUNUNURRA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -10.2267,
+    "longitude": 142.2236,
+    "elevation": 145,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 6000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "AT-VASIS",
+          "T-VASIS"
+        ],
+        "ends": {
+          "12": {},
+          "30": {}
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "KU",
+        "freq": 116.5
+      },
+      {
+        "type": "NDB",
+        "ident": "KU",
+        "freq": 221.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "AT-VASIS",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "T-VASIS",
+        "end": "both"
+      }
+    ]
+  }
+}

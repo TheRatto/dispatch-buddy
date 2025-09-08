@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:26:23.403618",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSHT",
+    "name": "SHEPPARTON",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -36.4289,
+    "longitude": 145.3925,
+    "elevation": 375,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 1400,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 4300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {
+          "18": {
+            "PAPI": true
+          },
+          "36": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "SHT",
+        "freq": 212.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "36",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

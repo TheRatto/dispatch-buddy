@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:25:02.455520",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPMP",
+    "name": "PORMPURAAW",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -36.7178,
+    "longitude": 146.89,
+    "elevation": 11,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 4500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:15:30.374320",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCCA",
+    "name": "CHINCHILLA",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -26.7694,
+    "longitude": 150.6167,
+    "elevation": 1030,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 1900,
+        "width": 18,
+        "surface": "Clay",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 3500,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

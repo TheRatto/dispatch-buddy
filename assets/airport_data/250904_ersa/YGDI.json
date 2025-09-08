@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:18:05.769043",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YGDI",
+    "name": "GOONDIWINDI",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -28.5214,
+    "longitude": 150.3203,
+    "elevation": 714,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 4400,
+        "width": 30,
+        "surface": "Concrete",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 2600,
+        "width": 30,
+        "surface": "Clay",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

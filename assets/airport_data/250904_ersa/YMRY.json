@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:22:41.184827",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMRY",
+    "name": "MORUYA",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -16.6578,
+    "longitude": 139.1611,
+    "elevation": 19,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 5000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "04/22",
+        "length": 2700,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 5000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:16:34.659175",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCRG",
+    "name": "CORRYONG",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -36.1828,
+    "longitude": 147.8878,
+    "elevation": 963,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 4600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "04/22",
+        "length": 3900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 3500,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 4800,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "06/24",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

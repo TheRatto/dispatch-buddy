@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:26:36.346670",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSNW",
+    "name": "NOWRA",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -34.9489,
+    "longitude": 150.5369,
+    "elevation": 399,
+    "firefighting": {
+      "category": "CAT 5",
+      "availability": "2300-1300 UTC; 2300-0600 UTC; 2200-1300 UTC; 2200-0500 UTC"
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 6700,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "03": {
+            "PAPI": true
+          },
+          "21": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "08/26",
+        "length": 6900,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "08": {
+            "PAPI": true
+          },
+          "26": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "INA",
+        "freq": 108.5,
+        "runway": "21"
+      },
+      {
+        "type": "NDB",
+        "ident": "NWA",
+        "freq": 359.0
+      },
+      {
+        "type": "TAC",
+        "ident": "NWR",
+        "freq": 112.4
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "03",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "21",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "21",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "08",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "26",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:20:58.030693",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLST",
+    "name": "LEINSTER",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -27.8433,
+    "longitude": 120.7033,
+    "elevation": 1631,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "LEC",
+        "freq": 287.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

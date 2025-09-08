@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:25:03.372447",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPPD",
+    "name": "PORT HEDLAND",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -20.3778,
+    "longitude": 118.6264,
+    "elevation": 33,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2315-1130 UTC; 2315-0500 UTC; 0415-1130 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 8200,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "PD",
+        "freq": 114.1
+      },
+      {
+        "type": "NDB",
+        "ident": "PD",
+        "freq": 260.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

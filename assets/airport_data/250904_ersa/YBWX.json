@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:15:15.599846",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBWX",
+    "name": "BARROW ISLAND",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -20.8644,
+    "longitude": 115.4061,
+    "elevation": 24,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 6200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

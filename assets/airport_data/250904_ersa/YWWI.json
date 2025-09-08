@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:29:45.597830",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWWI",
+    "name": "WOODIE WOODIE",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -26.2842,
+    "longitude": 151.8614,
+    "elevation": 889,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "parsingConfidence": 50.0,
+    "lastUpdated": "2025-09-08T10:28:02.795291",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTMU",
+    "name": "TUMUT",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -35.2628,
+    "longitude": 148.2408,
+    "elevation": 863,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "17/35",
+        "length": 3500,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": []
+  }
+}

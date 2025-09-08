@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:14:16.695918",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBLT",
+    "name": "BALLARAT",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -20.1483,
+    "longitude": 127.9739,
+    "elevation": 1433,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "15/33",
+        "length": 5300,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "05/23",
+        "length": 4200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "13/31",
+        "length": 1900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "15/33",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

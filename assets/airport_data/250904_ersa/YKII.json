@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:19:57.559030",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YKII",
+    "name": "KING ISLAND",
+    "state": "TAS",
+    "country": "AU",
+    "latitude": -15.9311,
+    "longitude": 136.4819,
+    "elevation": 132,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 5200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 3600,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "KII",
+        "freq": 332.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "10/28",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

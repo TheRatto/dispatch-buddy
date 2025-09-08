@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:24:26.939793",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPKA",
+    "name": "KARRATHA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -20.7122,
+    "longitude": 116.7733,
+    "elevation": 33,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2300-1145 UTC; 2300-1215 UTC; 2300-1235 UTC; 2300-1125 UTC; 0030-0915 UTC; 0700-1125 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 7500,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "KA",
+        "freq": 117.3
+      },
+      {
+        "type": "NDB",
+        "ident": "KA",
+        "freq": 404.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

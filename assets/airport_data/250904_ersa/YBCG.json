@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:13:36.633597",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBCG",
+    "name": "GOLD COAST",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -28.1644,
+    "longitude": 153.5047,
+    "elevation": 21,
+    "firefighting": {
+      "category": "CAT 8",
+      "availability": "1945-1235 UTC; 1945-1220 UTC",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 8200,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL",
+          "RTIL"
+        ],
+        "ends": {
+          "14": {
+            "PAPI": true
+          },
+          "32": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "17/35",
+        "length": 1900,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "ICG",
+        "freq": 111.1,
+        "runway": "14"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "CG",
+        "freq": 112.3
+      },
+      {
+        "type": "NDB",
+        "ident": "CG",
+        "freq": 278.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "32",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:22:16.538259",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMNG",
+    "name": "MANGALORE",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -36.8883,
+    "longitude": 145.1842,
+    "elevation": 467,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 2900,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3400,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "05/23",
+        "length": 6700,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR",
+        "ident": "MNG",
+        "freq": 113.2
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

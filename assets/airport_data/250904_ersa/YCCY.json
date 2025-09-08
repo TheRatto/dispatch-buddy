@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:15:36.675271",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCCY",
+    "name": "CLONCURRY",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -20.6686,
+    "longitude": 140.5044,
+    "elevation": 613,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 3800,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "CCY",
+        "freq": 264.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:24:43.051448",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPLC",
+    "name": "PORT LINCOLN",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -34.6053,
+    "longitude": 135.8803,
+    "elevation": 36,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "01/19",
+        "length": 4900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "05/23",
+        "length": 4200,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "15/33",
+        "length": 4800,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "PLC",
+        "freq": 389.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "01/19",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "01/19",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

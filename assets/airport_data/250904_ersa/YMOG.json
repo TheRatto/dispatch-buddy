@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:22:29.034932",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMOG",
+    "name": "MOUNT MAGNET",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -28.1161,
+    "longitude": 117.8417,
+    "elevation": 1354,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "16/34",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "MOG",
+        "freq": 395.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "16/34",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

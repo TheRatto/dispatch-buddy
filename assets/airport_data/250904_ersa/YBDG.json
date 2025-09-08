@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:13:46.386075",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBDG",
+    "name": "BENDIGO",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -36.7392,
+    "longitude": 144.3297,
+    "elevation": 710,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 2500,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 5200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "17/35",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

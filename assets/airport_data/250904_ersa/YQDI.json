@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:25:29.514192",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YQDI",
+    "name": "QUIRINDI",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -31.4986,
+    "longitude": 150.5181,
+    "elevation": 1058,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 3600,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 5800,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:17:32.210130",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YEWA",
+    "name": "ELIWANA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -22.4289,
+    "longitude": 116.8872,
+    "elevation": 1576,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 8200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "10/28",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "10/28",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:22:10.325613",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMML",
+    "name": "MELBOURNE",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -37.6733,
+    "longitude": 144.8433,
+    "elevation": 434,
+    "firefighting": {
+      "category": "CAT 9",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 7500,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {
+          "27": {
+            "HIAL": "HIAL-CAT III",
+            "RTZL": true
+          }
+        }
+      },
+      {
+        "designation": "16/34",
+        "length": 12000,
+        "width": 60,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PAPI",
+          "RCLL"
+        ],
+        "ends": {
+          "16": {
+            "HIAL": "HIAL-CAT III",
+            "RTZL": true
+          },
+          "34": {
+            "RTIL": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IMS",
+        "freq": 109.7,
+        "runway": "16"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IMW",
+        "freq": 109.3,
+        "runway": "27"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "ML",
+        "freq": 114.1
+      },
+      {
+        "type": "GBAS",
+        "ident": "G09A",
+        "freq": 21118,
+        "runway": "09"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G16A",
+        "freq": 21940,
+        "runway": "16"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G27A",
+        "freq": 21529,
+        "runway": "27"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G34A",
+        "freq": 20707,
+        "runway": "34"
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "09/27",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "27",
+        "type": "HIAL-CAT III",
+        "end": "both"
+      },
+      {
+        "runway": "27",
+        "type": "RTZL",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "16",
+        "type": "HIAL-CAT III",
+        "end": "both"
+      },
+      {
+        "runway": "16",
+        "type": "RTZL",
+        "end": "both"
+      },
+      {
+        "runway": "34",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

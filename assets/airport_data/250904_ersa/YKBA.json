@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:19:45.092460",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YKBA",
+    "name": "KENS BORE",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -22.1569,
+    "longitude": 116.1572,
+    "elevation": 709,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 6900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:23:30.725042",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YNWN",
+    "name": "NEWMAN",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -32.9203,
+    "longitude": 151.7297,
+    "elevation": 1724,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "MON 2245-1130 UTC; TUE 2240-1130 UTC"
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 6800,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "NWN",
+        "freq": 117.2
+      },
+      {
+        "type": "NDB",
+        "ident": "NWN",
+        "freq": 233.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

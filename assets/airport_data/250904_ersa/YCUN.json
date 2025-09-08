@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:16:44.502199",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCUN",
+    "name": "CUNDERDIN",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -34.2528,
+    "longitude": 135.7133,
+    "elevation": 705,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 6000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 5000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "CUN",
+        "freq": 293.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

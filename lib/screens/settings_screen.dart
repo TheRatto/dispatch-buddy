@@ -1,11 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/naips_service.dart';
+import '../services/api_service.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -91,7 +98,15 @@ class SettingsScreen extends StatelessWidget {
                     // About Section
                     _buildSectionHeader('About'),
                     _buildAboutSettings(),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
+                    
+                    // Debug Tools Section (only in debug mode)
+                    if (kDebugMode) ...[
+                      _buildSectionHeader('Debug Tools'),
+                      _buildDebugTools(),
+                      const SizedBox(height: 40),
+                    ] else
+                      const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -517,6 +532,121 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               // TODO: Show help and support
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugTools() {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.wifi_find, color: Colors.orange),
+            title: const Text('Network Test'),
+            subtitle: const Text('Test internet connectivity and API access'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => _runNetworkDiagnostics(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.science, color: Colors.purple),
+            title: const Text('FAA API Test'),
+            subtitle: const Text('Test FAA NOTAM API parameters'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => _testFaaApiParameters(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _runNetworkDiagnostics() async {
+    try {
+      final apiService = ApiService();
+      
+      // Test basic connectivity
+      final basicConnectivity = await apiService.testNetworkConnectivity();
+      
+      // Test FAA API access
+      final faaAccess = await apiService.testFaaApiAccess();
+      
+      // Test a simple NOTAM fetch
+      final testNotams = await apiService.fetchNotamsWithSatcomFallback('KJFK');
+      
+      String message = 'Network Diagnostics Results:\n\n';
+      message += 'Basic Internet: ${basicConnectivity ? "✅ Working" : "❌ Failed"}\n';
+      message += 'FAA API Health: ${faaAccess ? "✅ Accessible" : "❌ Blocked/Unreachable"}\n';
+      message += 'NOTAM Fetch: ${testNotams.isNotEmpty ? "✅ Success (${testNotams.length} NOTAMs)" : "❌ Failed"}\n\n';
+      
+      if (!basicConnectivity) {
+        message += 'SATCOM Issue: No basic internet connectivity detected.\n';
+      } else if (!faaAccess) {
+        message += 'SATCOM Issue: FAA API is blocked or unreachable via SATCOM.\n';
+      } else if (testNotams.isEmpty) {
+        message += 'SATCOM Issue: NOTAM API accessible but no data returned.\n';
+      } else {
+        message += '✅ All systems working normally!\n';
+      }
+      
+      _showDebugResult(basicConnectivity && faaAccess, message);
+    } catch (e) {
+      _showDebugResult(false, 'Diagnostic failed: $e');
+    }
+  }
+
+  void _testFaaApiParameters() async {
+    try {
+      final apiService = ApiService();
+      
+      // Test FAA NOTAM API parameters with a known airport
+      final results = await apiService.testFaaNotamApiParameters('YPPH');
+      
+      String message = 'FAA API Parameter Test Results:\n\n';
+      
+      for (final entry in results.entries) {
+        final testName = entry.key;
+        final result = entry.value as Map<String, dynamic>;
+        
+        if (result['status'] == 'success') {
+          message += '✅ $testName: ${result['notamCount']} NOTAMs (total: ${result['totalCount']})\n';
+        } else {
+          message += '❌ $testName: ${result['error']}\n';
+        }
+      }
+      
+      message += '\nCheck console for detailed logs.';
+      
+      _showDebugResult(true, message);
+    } catch (e) {
+      _showDebugResult(false, 'Parameter test failed: $e');
+    }
+  }
+
+  void _showDebugResult(bool success, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: success ? Colors.green : Colors.red,
+            ),
+            const SizedBox(width: 8),
+            Text(success ? 'Debug Test Results' : 'Debug Test Failed'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            message,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
           ),
         ],
       ),

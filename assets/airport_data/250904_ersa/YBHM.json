@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:14:00.150042",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBHM",
+    "name": "HAMILTON ISLAND",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -20.3581,
+    "longitude": 148.9517,
+    "elevation": 15,
+    "firefighting": {
+      "category": "CAT 7",
+      "availability": "2200-0545 UTC; 2200-0645 UTC",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 5800,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "14": {
+            "PAPI": true
+          },
+          "32": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "32",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

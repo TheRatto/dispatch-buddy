@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:23:07.564499",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YNPE",
+    "name": "NORTHERN PENINSULA",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -10.9508,
+    "longitude": 142.4594,
+    "elevation": 34,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "13/31",
+        "length": 6000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "13/31",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

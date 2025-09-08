@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:20:45.602034",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLLE",
+    "name": "BALLERA",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -27.4083,
+    "longitude": 141.8083,
+    "elevation": 385,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

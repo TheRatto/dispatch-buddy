@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:23:33.761456",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YOEN",
+    "name": "OENPELLI",
+    "state": "NT",
+    "country": "AU",
+    "latitude": -12.3253,
+    "longitude": 133.0056,
+    "elevation": 30,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 4300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "07/25",
+        "length": 6100,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "07/25",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

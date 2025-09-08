@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:21:07.651218",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMAY",
+    "name": "ALBURY",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -36.0678,
+    "longitude": 146.9581,
+    "elevation": 539,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 6200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "RTIL"
+        ],
+        "ends": {
+          "07": {
+            "PAPI": true
+          },
+          "25": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "ABA",
+        "freq": 109.7
+      },
+      {
+        "type": "NDB",
+        "ident": "ABA",
+        "freq": 240.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "07/25",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "07",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "25",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

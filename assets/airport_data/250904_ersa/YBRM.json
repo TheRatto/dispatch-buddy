@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:14:40.388616",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBRM",
+    "name": "BROOME/INTL",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -17.9494,
+    "longitude": 122.2278,
+    "elevation": 57,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2145-1115 UTC; 2321-1115 UTC; 2245-1115 UTC",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 7900,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "BRM",
+        "freq": 115.3
+      },
+      {
+        "type": "NDB",
+        "ident": "BRM",
+        "freq": 320.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "10/28",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

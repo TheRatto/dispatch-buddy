@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:27:03.801162",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSTA",
+    "name": "ST ARNAUD",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -24.1303,
+    "longitude": 148.0867,
+    "elevation": 640,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 1800,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3300,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

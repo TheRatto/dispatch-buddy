@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:22:12.007780",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMND",
+    "name": "MAITLAND (NSW)",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -29.4536,
+    "longitude": 153.2014,
+    "elevation": 95,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 4000,
+        "width": 15,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "08/26",
+        "length": 3300,
+        "width": 10,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 1600,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

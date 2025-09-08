@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:18:54.392889",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YHLC",
+    "name": "HALLS CREEK",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -23.4506,
+    "longitude": 131.8514,
+    "elevation": 1346,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 4800,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "08/26",
+        "length": 3100,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "HLC",
+        "freq": 245.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

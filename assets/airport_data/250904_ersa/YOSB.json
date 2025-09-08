@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:23:50.486155",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YOSB",
+    "name": "OSBORNE MINE",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -32.7917,
+    "longitude": 138.6667,
+    "elevation": 935,
+    "firefighting": {
+      "category": "CAT 5",
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 5500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 5300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "PBO",
+        "freq": 116.9
+      },
+      {
+        "type": "NDB",
+        "ident": "PBO",
+        "freq": 278.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

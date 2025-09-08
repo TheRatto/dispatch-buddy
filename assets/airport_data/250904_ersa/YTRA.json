@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:28:17.380995",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTRA",
+    "name": "TROPICANA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -29.1867,
+    "longitude": 124.5503,
+    "elevation": 1104,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "14/32",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "14": {
+            "PAPI": true
+          },
+          "32": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "09/27",
+        "length": 6900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

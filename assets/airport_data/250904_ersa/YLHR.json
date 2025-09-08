@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:20:46.166574",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLHR",
+    "name": "LOCKHART RIVER",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -14.6728,
+    "longitude": 145.4542,
+    "elevation": 77,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 4900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL",
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "LHR",
+        "freq": 392.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

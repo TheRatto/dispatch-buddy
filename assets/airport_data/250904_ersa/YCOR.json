@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:16:28.852489",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCOR",
+    "name": "COROWA",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -35.9903,
+    "longitude": 146.3514,
+    "elevation": 469,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 5000,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 4200,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "COR",
+        "freq": 380.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

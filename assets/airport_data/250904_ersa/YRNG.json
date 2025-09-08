@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:25:43.328974",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YRNG",
+    "name": "RAMINGINING",
+    "state": "NT",
+    "country": "AU",
+    "latitude": -12.3564,
+    "longitude": 134.8975,
+    "elevation": 216,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 5500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 3900,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "06/24",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:20:45.467183",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLHI",
+    "name": "LORD HOWE ISLAND",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -31.5383,
+    "longitude": 159.0772,
+    "elevation": 17,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 2900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "LRE",
+        "freq": 353.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:22:55.187631",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YNGU",
+    "name": "NGUKURR",
+    "state": "NT",
+    "country": "AU",
+    "latitude": -14.7228,
+    "longitude": 134.7475,
+    "elevation": 45,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 5000,
+        "width": 18,
+        "surface": "Sealed",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

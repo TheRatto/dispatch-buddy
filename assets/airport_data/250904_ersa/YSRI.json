@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:26:50.761781",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSRI",
+    "name": "RICHMOND (NSW)",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.6006,
+    "longitude": 150.7808,
+    "elevation": 67,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "CAT 6: 2100-1300 UTC"
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 7000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PTBL"
+        ],
+        "ends": {
+          "10": {
+            "PAPI": true
+          },
+          "28": {
+            "HIAL": "HIAL-CAT I",
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IRI",
+        "freq": 111.9,
+        "runway": "28"
+      },
+      {
+        "type": "NDB",
+        "ident": "RIC",
+        "freq": 347.0
+      },
+      {
+        "type": "TAC",
+        "ident": "RIC",
+        "freq": 110.7
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "10/28",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "10",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "28",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "28",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

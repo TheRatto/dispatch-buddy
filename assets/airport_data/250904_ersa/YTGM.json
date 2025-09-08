@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:27:48.449103",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTGM",
+    "name": "THARGOMINDAH",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -27.9864,
+    "longitude": 143.8108,
+    "elevation": 433,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 5000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 2600,
+        "width": 30,
+        "surface": "Clay",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "04/22",
+        "length": 2800,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "13/31",
+        "length": 4800,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "10/28",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "13/31",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

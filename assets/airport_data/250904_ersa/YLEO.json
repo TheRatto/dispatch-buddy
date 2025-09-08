@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:20:34.379769",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLEO",
+    "name": "LEONORA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -38.4956,
+    "longitude": 145.8597,
+    "elevation": 1217,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 3000,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "04": {
+            "PAPI": true
+          },
+          "22": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "18/36",
+        "length": 2200,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 3700,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "LEO",
+        "freq": 377.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "22",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

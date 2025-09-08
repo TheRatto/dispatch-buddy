@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:21:57.847234",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMLS",
+    "name": "MILES",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -26.8061,
+    "longitude": 150.1697,
+    "elevation": 1002,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 5200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IMI",
+        "freq": 110.9,
+        "runway": "09"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "MIA",
+        "freq": 113.7
+      },
+      {
+        "type": "NDB",
+        "ident": "MIA",
+        "freq": 272.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

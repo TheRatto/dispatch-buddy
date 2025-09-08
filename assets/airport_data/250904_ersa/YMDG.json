@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "parsingConfidence": 50.0,
+    "lastUpdated": "2025-09-08T10:21:21.572337",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMDG",
+    "name": "MUDGEE",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -16.9783,
+    "longitude": 130.555,
+    "elevation": 1545,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 5700,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": []
+  }
+}

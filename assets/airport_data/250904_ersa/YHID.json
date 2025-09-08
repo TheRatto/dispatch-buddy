@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:18:54.922289",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YHID",
+    "name": "HORN ISLAND",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -10.5864,
+    "longitude": 142.29,
+    "elevation": 43,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "01/19",
+        "length": 3600,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "08/26",
+        "length": 1600,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 4100,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "HID",
+        "freq": 356.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "01/19",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

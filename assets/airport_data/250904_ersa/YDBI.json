@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:16:51.564828",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YDBI",
+    "name": "DIRRANBANDI",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -28.5917,
+    "longitude": 148.2167,
+    "elevation": 567,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 6000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "06/24",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -5,7 +5,7 @@ import '../models/airport_infrastructure.dart';
 /// Service for handling ERSA (En Route Supplement Australia) data
 /// Provides airport infrastructure data for Australian airports (ICAO starting with Y)
 class ERSADataService {
-  static const String _ersaDataPath = 'assets/airport_data/250612_ersa/';
+  static const String _ersaDataPath = 'assets/airport_data/250904_ersa/';
   static Map<String, dynamic>? _ersaCache;
   static bool _isLoadingCache = false;
   
@@ -52,8 +52,15 @@ class ERSADataService {
       
       print('ERSADataService: Found data for $upperIcao, converting...');
       
+      // The new JSON structure has the airport data in the 'data' field
+      final airportInfo = airportData['data'];
+      if (airportInfo == null) {
+        print('ERSADataService: No data field found for $upperIcao');
+        return null;
+      }
+      
       // Convert ERSA data to AirportInfrastructure format
-      return _convertERSADataToInfrastructure(airportData);
+      return _convertERSADataToInfrastructure(airportInfo);
       
     } catch (e) {
       print('ERSADataService: Error loading airport $upperIcao: $e');
@@ -91,8 +98,6 @@ class ERSADataService {
         }
       }
       
-      print('ERSADataService: Loaded ${_ersaCache!.length} airports from ERSA data');
-      
     } catch (e) {
       print('ERSADataService: Error loading ERSA cache: $e');
       _ersaCache = {};
@@ -109,25 +114,24 @@ class ERSADataService {
   }
   
   /// Convert ERSA data format to AirportInfrastructure
-  static AirportInfrastructure _convertERSADataToInfrastructure(Map<String, dynamic> ersaData) {
-    final data = ersaData['data'];
-    final icao = data['icao'];
+  static AirportInfrastructure _convertERSADataToInfrastructure(Map<String, dynamic> airportData) {
+    final icao = airportData['icao'];
     
     print('ERSADataService: Converting airport $icao');
-    print('ERSADataService: Navaids data: ${data['navaids']}');
+    print('ERSADataService: Navaids data: ${airportData['navaids']}');
     
     // Convert runways
     final List<Runway> runways = [];
-    if (data['runways'] != null) {
-      for (final runwayData in data['runways']) {
+    if (airportData['runways'] != null) {
+      for (final runwayData in airportData['runways']) {
         runways.add(_convertERSARunway(runwayData));
       }
     }
     
     // Convert navaids
     final List<Navaid> navaids = [];
-    if (data['navaids'] != null) {
-      for (final navaidData in data['navaids']) {
+    if (airportData['navaids'] != null) {
+      for (final navaidData in airportData['navaids']) {
         navaids.add(_convertERSANavaid(navaidData));
       }
     }
@@ -136,8 +140,8 @@ class ERSADataService {
     
     // Convert lighting
     final List<Lighting> lighting = [];
-    if (data['lighting'] != null) {
-      for (final lightingData in data['lighting']) {
+    if (airportData['lighting'] != null) {
+      for (final lightingData in airportData['lighting']) {
         lighting.add(_convertERSALighting(lightingData));
       }
     }
@@ -281,5 +285,114 @@ class ERSADataService {
     final now = DateTime.now();
     return now.isAfter(validityPeriod['start']!) && 
            now.isBefore(validityPeriod['end']!);
+  }
+
+  /// Get all Australian states from the loaded data
+  static Future<List<String>> getAllStates() async {
+    // Ensure cache is loaded
+    if (_ersaCache == null && !_isLoadingCache) {
+      await _loadERSACache();
+    }
+    
+    // Wait if cache is currently loading
+    while (_isLoadingCache) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    
+    if (_ersaCache == null) return [];
+    
+    final states = <String>{};
+    for (final airportData in _ersaCache!.values) {
+      final state = airportData['data']['state'];
+      if (state != null && state is String) {
+        states.add(state);
+      }
+    }
+    
+    final stateList = states.toList();
+    stateList.sort();
+    return stateList;
+  }
+
+  /// Get airports for a specific state
+  static Future<List<String>> getAirportsForState(String state) async {
+    // Ensure cache is loaded
+    if (_ersaCache == null && !_isLoadingCache) {
+      await _loadERSACache();
+    }
+    
+    // Wait if cache is currently loading
+    while (_isLoadingCache) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    
+    if (_ersaCache == null) return [];
+    
+    final airports = <String>[];
+    for (final entry in _ersaCache!.entries) {
+      final icao = entry.key;
+      final airportData = entry.value;
+      
+      if (airportData['data']['state'] == state) {
+        airports.add(icao);
+      }
+    }
+    
+    airports.sort();
+    return airports;
+  }
+
+  /// Get state for a specific airport
+  static Future<String?> getStateForAirport(String icao) async {
+    // Ensure cache is loaded
+    if (_ersaCache == null && !_isLoadingCache) {
+      await _loadERSACache();
+    }
+    
+    // Wait if cache is currently loading
+    while (_isLoadingCache) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    
+    if (_ersaCache == null) return null;
+    
+    final airportData = _ersaCache![icao.toUpperCase()];
+    return airportData?['data']['state'];
+  }
+
+  /// Check if an airport is Australian
+  static Future<bool> isAustralianAirport(String icao) async {
+    // Ensure cache is loaded
+    if (_ersaCache == null && !_isLoadingCache) {
+      await _loadERSACache();
+    }
+    
+    // Wait if cache is currently loading
+    while (_isLoadingCache) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    
+    if (_ersaCache == null) return false;
+    
+    return _ersaCache!.containsKey(icao.toUpperCase());
+  }
+
+  /// Get all Australian airports
+  static Future<List<String>> getAllAirports() async {
+    // Ensure cache is loaded
+    if (_ersaCache == null && !_isLoadingCache) {
+      await _loadERSACache();
+    }
+    
+    // Wait if cache is currently loading
+    while (_isLoadingCache) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    
+    if (_ersaCache == null) return [];
+    
+    final airports = _ersaCache!.keys.toList();
+    airports.sort();
+    return airports;
   }
 } 

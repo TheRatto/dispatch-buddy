@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:25:18.193964",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPWR",
+    "name": "WOOMERA",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -31.1442,
+    "longitude": 136.8169,
+    "elevation": 549,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 7800,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "WR",
+        "freq": 248.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

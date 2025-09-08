@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 50.0,
+    "lastUpdated": "2025-09-08T10:28:02.285666",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTIB",
+    "name": "TIBOOBURRA",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -26.0933,
+    "longitude": 143.4525,
+    "elevation": 584,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "02/20",
+        "length": 3300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "15/33",
+        "length": 5000,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": []
+  }
+}

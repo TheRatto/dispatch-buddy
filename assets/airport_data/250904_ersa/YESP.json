@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:17:32.330807",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YESP",
+    "name": "ESPERANCE",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -26.2625,
+    "longitude": 132.1817,
+    "elevation": 471,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "11": {
+            "PAPI": true
+          },
+          "29": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "ESP",
+        "freq": 114.2
+      },
+      {
+        "type": "NDB",
+        "ident": "ESP",
+        "freq": 326.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "29",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

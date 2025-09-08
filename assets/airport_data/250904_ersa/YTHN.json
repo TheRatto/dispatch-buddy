@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:27:48.386122",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTHN",
+    "name": "THUNDERBOX",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -28.1539,
+    "longitude": 120.9392,
+    "elevation": 1704,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 6200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

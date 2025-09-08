@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:15:57.955377",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCKI",
+    "name": "CROKER ISLAND",
+    "state": "NT",
+    "country": "AU",
+    "latitude": -11.1653,
+    "longitude": 132.4839,
+    "elevation": 51,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "13/31",
+        "length": 4700,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "13/31",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

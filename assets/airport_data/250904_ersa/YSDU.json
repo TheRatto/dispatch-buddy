@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:26:08.284067",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSDU",
+    "name": "DUBBO",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -15.7131,
+    "longitude": 126.3814,
+    "elevation": 935,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 5600,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 3500,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "DU",
+        "freq": 251.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

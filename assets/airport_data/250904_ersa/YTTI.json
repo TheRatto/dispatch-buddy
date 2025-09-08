@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:28:29.892451",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YTTI",
+    "name": "TROUGHTON ISLAND",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -13.7517,
+    "longitude": 126.1483,
+    "elevation": 27,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 6900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 3200,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:23:47.279369",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YORG",
+    "name": "ORANGE",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -27.56,
+    "longitude": 135.445,
+    "elevation": 3112,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 2700,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "13/31",
+        "length": 4200,
+        "width": 23,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 7300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

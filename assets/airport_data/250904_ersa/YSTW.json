@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:27:12.832846",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSTW",
+    "name": "TAMWORTH",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -24.8389,
+    "longitude": 146.2931,
+    "elevation": 1335,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 2800,
+        "width": 30,
+        "surface": "Other",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "12L/30R",
+        "length": 7200,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "12R/30L",
+        "length": 3600,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 3300,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "ITW",
+        "freq": 109.9,
+        "runway": "30R"
+      },
+      {
+        "type": "VOR/DME",
+        "ident": "TW",
+        "freq": 116.0
+      },
+      {
+        "type": "NDB",
+        "ident": "TW",
+        "freq": 341.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "12L/30R",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "12L/30R",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

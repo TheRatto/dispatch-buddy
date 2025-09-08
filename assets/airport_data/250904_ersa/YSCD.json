@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:25:56.458397",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSCD",
+    "name": "CAROSUE DAM",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -30.1736,
+    "longitude": 122.3222,
+    "elevation": 1291,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "06/24",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

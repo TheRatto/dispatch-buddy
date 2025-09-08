@@ -16,9 +16,7 @@ import '../models/briefing.dart';
 import '../services/api_service.dart';
 import '../services/airport_database.dart';
 import '../services/briefing_storage_service.dart';
-import '../services/briefing_conversion_service.dart';
-import '../services/briefing_refresh_service.dart';
-import '../services/data_freshness_service.dart';
+import '../services/airport_selection_service.dart';
 import 'briefing_tabs_screen.dart';
 import 'package:flutter/foundation.dart';
 
@@ -110,11 +108,10 @@ class _InputScreenState extends State<InputScreen> {
               
               const SizedBox(height: 24),
               
-              // Quick Start with Mock Data
+              // Quick Start with Airport Selection
               QuickStartCard(
                 isLoading: _isLoading,
-                onGenerateMockBriefing1: _generateMockBriefing,
-                onGenerateMockBriefing2: _generateMockBriefing2,
+                onAirportsSelected: _handleAirportSelection,
               ),
               
               const SizedBox(height: 24),
@@ -148,42 +145,6 @@ class _InputScreenState extends State<InputScreen> {
               
               const SizedBox(height: 16),
               
-              // Debug Buttons Row
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _runNetworkDiagnostics,
-                      icon: const Icon(Icons.wifi_find, size: 16),
-                      label: const Text('Network Test', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _testFaaApiParameters,
-                      icon: const Icon(Icons.science, size: 16),
-                      label: const Text('FAA API Test', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -330,20 +291,68 @@ class _InputScreenState extends State<InputScreen> {
     }
   }
 
-  void _generateMockBriefing() {
-    // This is now a shortcut for a real flight
-    _routeController.text = 'YPPH YSSY';
-    _selectedDateTime = DateTime.now().add(const Duration(hours: 2));
-    _flightLevelController.text = 'FL350';
-    _generateBriefing();
-  }
-
-  void _generateMockBriefing2() {
-    // This is now a shortcut for a real flight
-    _routeController.text = 'YMML YBBN';
-    _selectedDateTime = DateTime.now().add(const Duration(hours: 3));
-    _flightLevelController.text = 'FL380';
-    _generateBriefing();
+  /// Handle airport selection from Quick Start modal
+  Future<void> _handleAirportSelection(List<String> airports) async {
+    if (airports.isEmpty) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      debugPrint('InputScreen: Handling airport selection: $airports');
+      
+      // Get flight provider
+      final flightProvider = context.read<FlightProvider>();
+      
+      // Generate briefing from selected airports
+      final success = await AirportSelectionService.generateBriefingFromAirports(
+        airports,
+        flightProvider,
+      );
+      
+      if (success) {
+        debugPrint('InputScreen: Briefing generated successfully, navigating to results');
+        
+        // Navigate to briefing results
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BriefingTabsScreen(),
+            ),
+          );
+        }
+      } else {
+        debugPrint('InputScreen: Failed to generate briefing');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to generate briefing. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('InputScreen: Error handling airport selection: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   /// Auto-save briefing to storage with smart naming
@@ -466,105 +475,6 @@ class _InputScreenState extends State<InputScreen> {
     }
   }
 
-  void _runNetworkDiagnostics() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      final apiService = ApiService();
-      
-      // Test basic connectivity
-      final basicConnectivity = await apiService.testNetworkConnectivity();
-      
-      // Test FAA API access
-      final faaAccess = await apiService.testFaaApiAccess();
-      
-      // Test a simple NOTAM fetch
-      final testNotams = await apiService.fetchNotamsWithSatcomFallback('KJFK');
-      
-      String message = 'Network Diagnostics Results:\n\n';
-      message += 'Basic Internet: ${basicConnectivity ? "✅ Working" : "❌ Failed"}\n';
-      message += 'FAA API Health: ${faaAccess ? "✅ Accessible" : "❌ Blocked/Unreachable"}\n';
-      message += 'NOTAM Fetch: ${testNotams.isNotEmpty ? "✅ Success (${testNotams.length} NOTAMs)" : "❌ Failed"}\n\n';
-      
-      if (!basicConnectivity) {
-        message += 'SATCOM Issue: No basic internet connectivity detected.\n';
-      } else if (!faaAccess) {
-        message += 'SATCOM Issue: FAA API is blocked or unreachable via SATCOM.\n';
-      } else if (testNotams.isEmpty) {
-        message += 'SATCOM Issue: NOTAM API accessible but no data returned.\n';
-      } else {
-        message += '✅ All systems working normally!\n';
-      }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 8),
-          backgroundColor: basicConnectivity && faaAccess ? Colors.green : Colors.orange,
-          action: SnackBarAction(
-            label: 'Dismiss',
-            onPressed: () {},
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Diagnostic failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _testFaaApiParameters() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      final apiService = ApiService();
-      
-      // Test FAA NOTAM API parameters with a known airport
-      final results = await apiService.testFaaNotamApiParameters('YPPH');
-      
-      String message = 'FAA API Parameter Test Results:\n\n';
-      
-      for (final entry in results.entries) {
-        final testName = entry.key;
-        final result = entry.value as Map<String, dynamic>;
-        
-        if (result['status'] == 'success') {
-          message += '✅ $testName: ${result['notamCount']} NOTAMs (total: ${result['totalCount']})\n';
-        } else {
-          message += '❌ $testName: ${result['error']}\n';
-        }
-      }
-      
-      message += '\nCheck console for detailed logs.';
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 12),
-          backgroundColor: Colors.blue,
-          action: SnackBarAction(
-            label: 'Dismiss',
-            onPressed: () {},
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Parameter test failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
 
   @override
   void dispose() {

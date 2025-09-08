@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:25:45.636293",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YROM",
+    "name": "ROMA",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -26.5453,
+    "longitude": 148.775,
+    "elevation": 1027,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 4900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "ROM",
+        "freq": 377.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

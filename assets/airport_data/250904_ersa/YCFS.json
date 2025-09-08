@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:15:47.232676",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCFS",
+    "name": "COFFS HARBOUR",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -34.5889,
+    "longitude": 135.505,
+    "elevation": 18,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2000-1120 UTC; 2015-1120 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 6800,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "10/28",
+        "length": 2800,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "CFS",
+        "freq": 117.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03/21",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

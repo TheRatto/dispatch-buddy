@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:18:18.052506",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YGIG",
+    "name": "GINGIN",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -31.4653,
+    "longitude": 115.8633,
+    "elevation": 247,
+    "firefighting": {
+      "category": "CAT 4",
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 6000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "GIG",
+        "freq": 372.0
+      },
+      {
+        "type": "TAC",
+        "ident": "PEA",
+        "freq": 112.8
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "08/26",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

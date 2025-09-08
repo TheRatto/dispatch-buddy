@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:29:44.448084",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWUD",
+    "name": "WUDINNA",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -16.6581,
+    "longitude": 144.0008,
+    "elevation": 310,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 3100,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 5000,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:17:02.290732",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YDKG",
+    "name": "DUKETON GOLD",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -27.6019,
+    "longitude": 122.3339,
+    "elevation": 1770,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 6600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "18/36",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

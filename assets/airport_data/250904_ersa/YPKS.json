@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:24:37.095062",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPKS",
+    "name": "PARKES",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.1314,
+    "longitude": 148.2392,
+    "elevation": 1069,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 5500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 5300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "PKS",
+        "freq": 112.0
+      },
+      {
+        "type": "NDB",
+        "ident": "PKS",
+        "freq": 242.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

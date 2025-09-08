@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:13:24.645309",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YAYE",
+    "name": "AYERS ROCK/CONNELLAN",
+    "state": "NT",
+    "country": "AU",
+    "latitude": -25.1861,
+    "longitude": 130.9756,
+    "elevation": 1626,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "MON - FRI 2230-0730 UTC",
+      "radio_frequency": "131.0 MHz"
+    },
+    "runways": [
+      {
+        "designation": "13/31",
+        "length": 8500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "AYE",
+        "freq": 117.1
+      },
+      {
+        "type": "NDB",
+        "ident": "AYE",
+        "freq": 233.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "13/31",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "13/31",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:29:29.957042",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWRN",
+    "name": "WARREN",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -36.3211,
+    "longitude": 142.4194,
+    "elevation": 669,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 4500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 2500,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "03/21",
+        "length": 3400,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "09/27",
+        "length": 3900,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

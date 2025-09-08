@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:28:32.639249",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWBR",
+    "name": "WARBURTON",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -26.1283,
+    "longitude": 126.5833,
+    "elevation": 1510,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "18/36",
+        "length": 5200,
+        "width": 23,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "WBR",
+        "freq": 218.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "18/36",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

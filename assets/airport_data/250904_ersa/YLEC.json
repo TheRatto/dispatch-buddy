@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:20:33.674263",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YLEC",
+    "name": "LEIGH CREEK",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -22.2192,
+    "longitude": 114.1031,
+    "elevation": 856,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "02/20",
+        "length": 4000,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "11/29",
+        "length": 5600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "LEC",
+        "freq": 287.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11/29",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

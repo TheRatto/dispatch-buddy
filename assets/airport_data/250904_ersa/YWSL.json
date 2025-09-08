@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:29:30.916149",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YWSL",
+    "name": "WEST SALE",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -38.0917,
+    "longitude": 146.9653,
+    "elevation": 93,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 1600,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "09/27",
+        "length": 5900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 2300,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

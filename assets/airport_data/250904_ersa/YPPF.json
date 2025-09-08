@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:25:11.497442",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YPPF",
+    "name": "ADELAIDE/PARAFIELD",
+    "state": "SA",
+    "country": "AU",
+    "latitude": -34.9383,
+    "longitude": 138.5983,
+    "elevation": 57,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "03L/21R",
+        "length": 4400,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "03L": {}
+        }
+      },
+      {
+        "designation": "03R/21L",
+        "length": 4200,
+        "width": 18,
+        "surface": "Sealed",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "08L/26R",
+        "length": 3100,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "08R/26L",
+        "length": 3300,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "PF",
+        "freq": 416.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "03L/21R",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

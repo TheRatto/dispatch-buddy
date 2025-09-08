@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:13:56.814080",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBHI",
+    "name": "BROKEN HILL",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -32.0014,
+    "longitude": 141.4717,
+    "elevation": 959,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 8200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 3300,
+        "width": 30,
+        "surface": "Sand",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "BHI",
+        "freq": 114.2
+      },
+      {
+        "type": "NDB",
+        "ident": "BHI",
+        "freq": 332.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

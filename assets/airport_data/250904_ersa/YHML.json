@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:19:03.795514",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YHML",
+    "name": "HAMILTON",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -37.6489,
+    "longitude": 142.0653,
+    "elevation": 803,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 4000,
+        "width": 30,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 5500,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "17": {
+            "PAPI": true
+          },
+          "35": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "HML",
+        "freq": 203.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "17/35",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "35",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

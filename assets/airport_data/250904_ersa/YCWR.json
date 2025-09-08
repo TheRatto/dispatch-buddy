@@ -1,0 +1,111 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:16:50.047104",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCWR",
+    "name": "COWRA",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.8447,
+    "longitude": 148.6489,
+    "elevation": 973,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04/22",
+        "length": 3900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "LIRL",
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "12/30",
+        "length": 3500,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 4800,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "03/21",
+        "length": 3800,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "15/33",
+        "length": 5300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "CWR",
+        "freq": 299.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "04/22",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "04/22",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "12/30",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PTBL",
+        "end": "both"
+      },
+      {
+        "runway": "15/33",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

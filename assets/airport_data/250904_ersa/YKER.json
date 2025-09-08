@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:19:57.072723",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YKER",
+    "name": "KERANG",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -35.7514,
+    "longitude": 143.9394,
+    "elevation": 255,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 2300,
+        "width": 18,
+        "surface": "Sand",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 3500,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:17:00.974737",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YDGU",
+    "name": "DEGRUSSA",
+    "state": "WA",
+    "country": "AU",
+    "latitude": -24.1456,
+    "longitude": 141.1122,
+    "elevation": 1823,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "09/27",
+        "length": 6300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "09/27",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "09/27",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

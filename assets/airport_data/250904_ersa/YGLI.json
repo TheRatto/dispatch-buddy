@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:18:28.439357",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YGLI",
+    "name": "GLEN INNES",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -29.675,
+    "longitude": 151.6894,
+    "elevation": 3431,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "10/28",
+        "length": 3900,
+        "width": 30,
+        "surface": "Other",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 4900,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR",
+        "ident": "GLA",
+        "freq": 116.3
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "LIRL",
+        "end": "both"
+      }
+    ]
+  }
+}

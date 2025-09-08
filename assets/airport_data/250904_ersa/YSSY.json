@@ -1,0 +1,248 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:26:58.401382",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSSY",
+    "name": "SYDNEY/KINGSFORD SMITH",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -33.9461,
+    "longitude": 151.1772,
+    "elevation": 21,
+    "firefighting": {
+      "category": "CAT 10",
+      "availability": "H24",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "07/25",
+        "length": 8300,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PAPI"
+        ],
+        "ends": {
+          "07": {
+            "RTIL": true
+          },
+          "25": {}
+        }
+      },
+      {
+        "designation": "16L/34R",
+        "length": 8000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "PAPI",
+          "RCLL"
+        ],
+        "ends": {
+          "16L": {
+            "HIAL": "HIAL-CAT I"
+          },
+          "34R": {
+            "HIAL": "HIAL-CAT II",
+            "RTZL": true
+          }
+        }
+      },
+      {
+        "designation": "16R/34L",
+        "length": 13000,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "HIRL",
+          "MIRL",
+          "PAPI",
+          "RCLL",
+          "RTZL"
+        ],
+        "ends": {
+          "16R": {
+            "HIAL": "HIAL-CAT II"
+          },
+          "34L": {
+            "HIAL": "HIAL-CAT II"
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "ILS/DME",
+        "ident": "IKN",
+        "freq": 109.3,
+        "runway": "34R"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "IKS",
+        "freq": 109.5,
+        "runway": "16R"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "ISN",
+        "freq": 110.1,
+        "runway": "34L"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "ISS",
+        "freq": 110.9,
+        "runway": "16L"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "ISW",
+        "freq": 109.7,
+        "runway": "25"
+      },
+      {
+        "type": "ILS/DME",
+        "ident": "ISY",
+        "freq": 109.9,
+        "runway": "07"
+      },
+      {
+        "type": "DME",
+        "ident": "SY",
+        "freq": 112.1
+      },
+      {
+        "type": "GBAS",
+        "ident": "G07A",
+        "freq": 22790,
+        "runway": "07"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G16A",
+        "freq": 21146,
+        "runway": "16R"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G16B",
+        "freq": 20735,
+        "runway": "16L"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G25A",
+        "freq": 21557,
+        "runway": "25"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G34A",
+        "freq": 21968,
+        "runway": "34L"
+      },
+      {
+        "type": "GBAS",
+        "ident": "G34B",
+        "freq": 22379,
+        "runway": "34R"
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "07/25",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "07/25",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "07",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "16L/34R",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16L/34R",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "16L/34R",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "16L",
+        "type": "HIAL-CAT I",
+        "end": "both"
+      },
+      {
+        "runway": "34R",
+        "type": "HIAL-CAT II",
+        "end": "both"
+      },
+      {
+        "runway": "34R",
+        "type": "RTZL",
+        "end": "both"
+      },
+      {
+        "runway": "16R/34L",
+        "type": "HIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16R/34L",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16R/34L",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "16R/34L",
+        "type": "RCLL",
+        "end": "both"
+      },
+      {
+        "runway": "16R/34L",
+        "type": "RTZL",
+        "end": "both"
+      },
+      {
+        "runway": "16R",
+        "type": "HIAL-CAT II",
+        "end": "both"
+      },
+      {
+        "runway": "34L",
+        "type": "HIAL-CAT II",
+        "end": "both"
+      }
+    ]
+  }
+}

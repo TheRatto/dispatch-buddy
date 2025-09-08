@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:18:42.807316",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YGTH",
+    "name": "GRIFFITH",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -34.2508,
+    "longitude": 146.0672,
+    "elevation": 439,
+    "firefighting": {
+      "category": "CAT 3",
+      "availability": "2100-0400 UTC"
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 5600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "18/36",
+        "length": 2000,
+        "width": 18,
+        "surface": "Gravel",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "GTH",
+        "freq": 305.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "06/24",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

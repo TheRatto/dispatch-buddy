@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:26:08.688545",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSCO",
+    "name": "SCONE",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -32.0372,
+    "longitude": 150.8322,
+    "elevation": 745,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 4600,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "11": {
+            "PAPI": true
+          },
+          "29": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "29",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:13:19.543289",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YARM",
+    "name": "ARMIDALE",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -30.4064,
+    "longitude": 139.3467,
+    "elevation": 3556,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "05/23",
+        "length": 5700,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "RTIL"
+        ],
+        "ends": {
+          "05": {
+            "PAPI": true
+          },
+          "23": {
+            "PAPI": true
+          }
+        }
+      },
+      {
+        "designation": "09/27",
+        "length": 3700,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "ARM",
+        "freq": 112.6
+      },
+      {
+        "type": "NDB",
+        "ident": "ARM",
+        "freq": 401.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "05/23",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "05/23",
+        "type": "RTIL",
+        "end": "both"
+      },
+      {
+        "runway": "05",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "23",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:19:03.764810",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YHOT",
+    "name": "MOUNT HOTHAM",
+    "state": "VIC",
+    "country": "AU",
+    "latitude": -37.0483,
+    "longitude": 147.3342,
+    "elevation": 4260,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "11/29",
+        "length": 4800,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "11": {
+            "PAPI": true
+          },
+          "29": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "11/29",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "11",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "29",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

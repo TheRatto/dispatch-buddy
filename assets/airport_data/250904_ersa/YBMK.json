@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:14:25.114557",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBMK",
+    "name": "MACKAY",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -21.1714,
+    "longitude": 149.1797,
+    "elevation": 19,
+    "firefighting": {
+      "category": "CAT 7",
+      "availability": "MON-SAT 1930-1140 UTC; SUN 2030-1145 UTC; MON-FRI 2020-1020 UTC; SAT-SUN 2020-0930 UTC",
+      "radio_frequency": "131.0 MHz",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "15/33",
+        "length": 1400,
+        "width": 15,
+        "surface": "Asphalt",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "14/32",
+        "length": 6500,
+        "width": 45,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI"
+        ],
+        "ends": {
+          "14": {
+            "RTIL": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "VOR/DME",
+        "ident": "MK",
+        "freq": 112.7
+      },
+      {
+        "type": "NDB",
+        "ident": "MK",
+        "freq": 308.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "14/32",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "14/32",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "14",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

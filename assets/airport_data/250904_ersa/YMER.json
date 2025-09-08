@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:21:32.415023",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMER",
+    "name": "MERIMBULA",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -31.9775,
+    "longitude": 115.8414,
+    "elevation": 8,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "03/21",
+        "length": 5300,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "03": {
+            "PAPI": true
+          },
+          "21": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "DME",
+        "ident": "MER",
+        "freq": 117.7
+      },
+      {
+        "type": "NDB",
+        "ident": "MER",
+        "freq": 395.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "03/21",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "03",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "21",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

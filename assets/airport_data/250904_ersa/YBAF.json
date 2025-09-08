@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:13:25.653822",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBAF",
+    "name": "BRISBANE/ARCHERFIELD",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -27.5703,
+    "longitude": 153.0081,
+    "elevation": 65,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "04L/22R",
+        "length": 4100,
+        "width": 30,
+        "surface": "Sealed",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "04R/22L",
+        "length": 3600,
+        "width": 30,
+        "surface": "Sealed",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "10L/28R",
+        "length": 5200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "10R/28L",
+        "length": 3600,
+        "width": 30,
+        "surface": "Sealed",
+        "lighting": [],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "10L/28R",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "10L/28R",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "10L/28R",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}

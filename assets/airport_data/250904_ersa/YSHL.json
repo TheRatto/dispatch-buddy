@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "parsingConfidence": 83.3,
+    "lastUpdated": "2025-09-08T10:26:22.572714",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YSHL",
+    "name": "SHELLHARBOUR AIRPORT",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -34.5611,
+    "longitude": 150.7886,
+    "elevation": 31,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "08/26",
+        "length": 4400,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {}
+      },
+      {
+        "designation": "16/34",
+        "length": 6000,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL"
+        ],
+        "ends": {
+          "16": {
+            "PAPI": true
+          },
+          "34": {
+            "PAPI": true
+          }
+        }
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "WOL",
+        "freq": 239.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "08/26",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16/34",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "16",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "34",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

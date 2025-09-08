@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:16:08.296472",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YCMW",
+    "name": "CAMOOWEAL",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -19.9117,
+    "longitude": 138.125,
+    "elevation": 780,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "13/31",
+        "length": 4100,
+        "width": 18,
+        "surface": "Asphalt",
+        "lighting": [
+          "PTBL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "13/31",
+        "type": "PTBL",
+        "end": "both"
+      }
+    ]
+  }
+}

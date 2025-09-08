@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "parsingConfidence": 66.7,
+    "lastUpdated": "2025-09-08T10:22:53.194205",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YMYB",
+    "name": "MARYBOROUGH (QLD)",
+    "state": "QLD",
+    "country": "AU",
+    "latitude": -25.5133,
+    "longitude": 152.715,
+    "elevation": 38,
+    "firefighting": {
+      "category": null,
+      "availability": null
+    },
+    "runways": [
+      {
+        "designation": "12/30",
+        "length": 2900,
+        "width": 30,
+        "surface": "Grass",
+        "lighting": [],
+        "ends": {}
+      },
+      {
+        "designation": "17/35",
+        "length": 5200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "LIRL",
+          "PAPI"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [],
+    "lighting": [
+      {
+        "runway": "17/35",
+        "type": "LIRL",
+        "end": "both"
+      },
+      {
+        "runway": "17/35",
+        "type": "PAPI",
+        "end": "both"
+      }
+    ]
+  }
+}

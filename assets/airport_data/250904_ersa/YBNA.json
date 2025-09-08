@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "parsingConfidence": 100.0,
+    "lastUpdated": "2025-09-08T10:14:26.414684",
+    "validityPeriod": {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-11-27T00:00:00"
+    },
+    "validityDate": "04SEP2025",
+    "source": "ERSA",
+    "version": "1.0"
+  },
+  "data": {
+    "icao": "YBNA",
+    "name": "BALLINA/BYRON GATEWAY",
+    "state": "NSW",
+    "country": "AU",
+    "latitude": -30.5933,
+    "longitude": 116.78,
+    "elevation": 7,
+    "firefighting": {
+      "category": "CAT 6",
+      "availability": "2015-1115 UTC",
+      "water_rescue": true
+    },
+    "runways": [
+      {
+        "designation": "06/24",
+        "length": 6200,
+        "width": 30,
+        "surface": "Asphalt",
+        "lighting": [
+          "MIRL",
+          "PAPI",
+          "RTIL"
+        ],
+        "ends": {}
+      }
+    ],
+    "navaids": [
+      {
+        "type": "NDB",
+        "ident": "BNA",
+        "freq": 206.0
+      }
+    ],
+    "lighting": [
+      {
+        "runway": "06/24",
+        "type": "MIRL",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "PAPI",
+        "end": "both"
+      },
+      {
+        "runway": "06/24",
+        "type": "RTIL",
+        "end": "both"
+      }
+    ]
+  }
+}
