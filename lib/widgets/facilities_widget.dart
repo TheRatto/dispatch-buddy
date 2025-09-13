@@ -1342,7 +1342,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
                   children: [
                     // Absolute validity times
                     Text(
-                      'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : '${_formatDateTime(notam.validTo)} UTC'}',
+                      'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : _formatDateTime(notam.validTo)}',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -1387,25 +1387,13 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        color: Colors.grey.shade600,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Schedule: ${notam.fieldD}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    notam.fieldD,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade700,
+                    ),
                   ),
                 ),
               ],
@@ -2328,7 +2316,7 @@ class _NotamSwipeViewState extends State<NotamSwipeView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : '${_formatDateTime(notam.validTo)} UTC'}',
+                'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : _formatDateTime(notam.validTo)}',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -2372,25 +2360,13 @@ class _NotamSwipeViewState extends State<NotamSwipeView> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  color: Colors.grey.shade600,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Schedule: ${notam.fieldD}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.orange.shade700,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              notam.fieldD,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange.shade700,
+              ),
             ),
           ),
         ],

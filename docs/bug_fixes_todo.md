@@ -131,7 +131,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 2.3: NOTAM Modal Valid Time Shows Both Z and UTC
 **Priority**: LOW | **Estimated Time**: 30 minutes
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - NOTAM modal shows "03/09 03:01Z - 19/09 07:00Z UTC"
@@ -139,19 +139,19 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 - Should show only one format
 
 **Files to Modify**:
-- `lib/widgets/notam_modal.dart`
-- `lib/models/notam.dart`
+- `lib/widgets/facilities_widget.dart`
+- `lib/screens/raw_data_screen.dart`
 
 **Acceptance Criteria**:
-- [ ] Remove redundant time format display
-- [ ] Show only "Z" or "UTC" format consistently
-- [ ] Maintain time accuracy and readability
+- [x] Remove redundant time format display
+- [x] Show only "Z" format consistently (UTC removed)
+- [x] Maintain time accuracy and readability
 
 ---
 
 ### Bug 2.4: Remove "Schedule" Word from NOTAM Modal
 **Priority**: LOW | **Estimated Time**: 30 minutes
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - NOTAM modal shows "Schedule: MON-FRI 2100 TO 0700"
@@ -159,12 +159,14 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 - Should show "MON-FRI 2100 TO 0700" only
 
 **Files to Modify**:
-- `lib/widgets/notam_modal.dart`
+- `lib/widgets/facilities_widget.dart`
+- `lib/screens/raw_data_screen.dart`
 
 **Acceptance Criteria**:
-- [ ] "Schedule:" text removed
-- [ ] Schedule times still displayed clearly
-- [ ] Layout remains clean and readable
+- [x] "Schedule:" text removed
+- [x] Schedule times still displayed clearly
+- [x] Layout remains clean and readable
+- [x] Clock icon removed for cleaner appearance
 
 ---
 
@@ -698,8 +700,8 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 ### LOW PRIORITY (Fix Last)
 1. **Bug 1.1**: Shrink Banner and Change Heading
 2. **Bug 1.3**: Change Flag to Star on Previous Briefings
-3. **Bug 2.3**: NOTAM Modal Valid Time Shows Both Z and UTC
-4. **Bug 2.4**: Remove "Schedule" Word from NOTAM Modal
+3. **Bug 2.3**: NOTAM Modal Valid Time Shows Both Z and UTC ✅
+4. **Bug 2.4**: Remove "Schedule" Word from NOTAM Modal ✅
 5. **Bug 2.9**: Consider Switching Tab Order (Raw Data)
 6. **Bug 3.2**: Airport Title Too Large
 7. **Bug 3.4**: Change "Unserviceable" to "U/S"
