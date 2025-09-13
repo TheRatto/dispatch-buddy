@@ -13,8 +13,7 @@
   "data": {
     "icao": "YBWW",
     "name": "BRISBANE WEST WELLCAMP",
-    "state": "QLD",
-    "country": "AU",
+    "state": "QLD",    "country": "AU",
     "latitude": -27.5586,
     "longitude": 151.7942,
     "elevation": 1509,

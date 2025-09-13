@@ -640,26 +640,26 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
           'Topography',
         ),
         
-        // Layer 3: Range circles (distance references)
-        _buildRadarLayer(
-          layers.rangeUrl,
-          'Range Circles',
-        ),
-        
-        // Layer 4: Location labels (city names) - only if URL provided
-        if (layers.locationsUrl != null)
-          _buildRadarLayer(
-            layers.locationsUrl!,
-            'Location Labels',
-          ),
-        
-        // Layer 5: Radar data (actual weather - this animates)
+        // Layer 3: Radar data (actual weather - this animates)
         _buildRadarLayer(
           layers.radarDataUrl,
           'Radar Data',
           showLoading: true,
           fallback: _buildMockRadarDisplay(provider.selectedSite!, provider.selectedRange),
         ),
+        
+        // Layer 4: Range circles (distance references) - ABOVE weather data
+        _buildRadarLayer(
+          layers.rangeUrl,
+          'Range Circles',
+        ),
+        
+        // Layer 5: Location labels (city names) - ABOVE weather data - only if URL provided
+        if (layers.locationsUrl != null)
+          _buildRadarLayer(
+            layers.locationsUrl!,
+            'Location Labels',
+          ),
         
         // Layer 6: Legend overlay (positioned to align transparent part with radar layers)
         Positioned(
@@ -846,11 +846,6 @@ class RadarRangeOverlayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // BOM images already include range circles, so keep overlay minimal
     // Only add subtle range indicators if needed
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-
     // Most BOM radar images already have proper range circles
     // This painter is available for future enhancements
   }

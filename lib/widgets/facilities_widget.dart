@@ -185,7 +185,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
   }
 
   Widget _buildRunwaySection(AirportInfrastructure airportData, FlightProvider flightProvider) {
-    final runways = airportData.runways ?? [];
+    final runways = airportData.runways;
     debugPrint('DEBUG: FacilitiesWidget - Runway data received: ${runways.length} runways');
     
     for (int i = 0; i < runways.length; i++) {
@@ -198,7 +198,6 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     final Set<String> processedRunways = {};
 
     for (final runway in runways) {
-      if (runway is! Runway) continue;
       
       final identifier = runway.identifier;
       if (processedRunways.contains(identifier)) continue;
@@ -207,7 +206,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
       final oppositeIdentifier = _getOppositeRunwayEnd(identifier);
       Runway? oppositeRunway;
       try {
-        oppositeRunway = runways.where((r) => r is Runway && r.identifier == oppositeIdentifier).first;
+        oppositeRunway = runways.where((r) => r.identifier == oppositeIdentifier).first;
       } catch (e) {
         oppositeRunway = null;
       }
@@ -285,68 +284,11 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  Widget _buildRunwayItem(dynamic runway) {
-    // Handle both string runways (from OpenAIP) and object runways
-    String identifier;
-    String details = '';
-    
-    if (runway is String) {
-      identifier = runway;
-      // Check if it's a runway pair (e.g., "17/35")
-      if (identifier.contains('/')) {
-        details = 'Rwy $identifier';
-        // Add length if available (for now, show placeholder)
-        details += ' (length data not available)';
-      } else {
-        details = 'Rwy $identifier';
-      }
-    } else if (runway is Runway) {
-      identifier = runway.identifier;
-      final length = runway.length;
-      final surface = runway.surface;
-      
-      if (length > 0) {
-        // Convert meters to feet and format as "10,800ft"
-        final lengthFeet = (length * 3.28084).round();
-        final formattedLength = lengthFeet.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},'
-        );
-        
-        // Add surface information if available
-        if (surface != null && surface != 'Unknown') {
-          details = 'Rwy $identifier $formattedLength ft ($surface)';
-        } else {
-          details = 'Rwy $identifier $formattedLength ft';
-        }
-      } else {
-        details = 'Rwy $identifier (length data not available)';
-      }
-    } else {
-      identifier = 'Unknown';
-      details = 'Rwy $identifier';
-    }
-    
-    return _buildFacilityItem(
-      name: details,
-      details: '', // Empty since we put everything in the name
-      status: 'Operational',
-      statusColor: Colors.green,
-    );
-  }
   
   /// Build a facility item with enhanced runway formatting
   Widget _buildEnhancedRunwayItem(dynamic runway) {
     return Consumer2<SettingsProvider, FlightProvider>(
       builder: (context, settingsProvider, flightProvider, child) {
-        if (runway is! Runway) {
-          return _buildFacilityItem(
-            name: 'Rwy ${runway.toString()}',
-            details: '',
-            status: 'Operational',
-            statusColor: Colors.green,
-          );
-        }
         
         final identifier = runway.identifier;
         final length = runway.length;
@@ -361,68 +303,149 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         final formattedWidth = settingsProvider.formatWidth(width);
         final unitSymbol = settingsProvider.unitSymbol;
         
-        return _buildFacilityItem(
-          name: Row(
-            children: [
-              // Runway identifier - fixed width
-              SizedBox(
-                width: 80,
-                child: Text(
-                  identifier,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Determine if we have enough space for horizontal layout
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isCompact = screenWidth < 400; // iPhone 16 Pro is ~393px wide
+            
+            if (isCompact) {
+              // Compact layout: Prioritize runway identifier and length, minimize surface info
+              return _buildFacilityItem(
+                name: Row(
+                  children: [
+                    // Runway identifier - give it more space
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        identifier,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Length - give it more space
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        formattedLength.isNotEmpty ? '$formattedLength $unitSymbol' : '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Width - minimal space
+                    if (formattedWidth.isNotEmpty)
+                      Text(
+                        '$formattedWidth m',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    const SizedBox(width: 4),
+                    // Surface - minimal space, abbreviated if needed
+                    if (surface != 'Unknown')
+                      Text(
+                        surface.length > 8 ? surface.substring(0, 8) : surface,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
-              ),
-              // Length - fixed width
-              SizedBox(
-                width: 70,
-                child: Text(
-                  formattedLength.isNotEmpty ? '$formattedLength $unitSymbol' : '',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
+                details: '',
+                status: runwayStatus.statusText,
+                statusColor: runwayStatus.statusColor,
+                onTap: runwayStatus.hasNotams ? () => _showRunwayNotams(identifier, runwayStatus.notams) : null,
+              );
+            } else {
+              // Standard layout: Use responsive column widths with priority for runway info
+              final availableWidth = constraints.maxWidth - 100; // Reserve space for status badge
+              final identifierWidth = (availableWidth * 0.3).clamp(70.0, 90.0); // Prioritize runway identifier
+              final lengthWidth = (availableWidth * 0.3).clamp(70.0, 90.0); // Prioritize length
+              final widthWidth = (availableWidth * 0.2).clamp(40.0, 60.0);
+              final surfaceWidth = (availableWidth * 0.2).clamp(50.0, 70.0); // Reduce surface width
+              
+              return _buildFacilityItem(
+                name: Row(
+                  children: [
+                    // Runway identifier - responsive width
+                    SizedBox(
+                      width: identifierWidth,
+                      child: Text(
+                        identifier,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Length - responsive width
+                    SizedBox(
+                      width: lengthWidth,
+                      child: Text(
+                        formattedLength.isNotEmpty ? '$formattedLength $unitSymbol' : '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Width - responsive width (always in meters)
+                    SizedBox(
+                      width: widthWidth,
+                      child: Text(
+                        formattedWidth.isNotEmpty ? '$formattedWidth m' : '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Surface - responsive width
+                    SizedBox(
+                      width: surfaceWidth,
+                      child: Text(
+                        surface != 'Unknown' ? surface : '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              // Width - fixed width (always in meters)
-              SizedBox(
-                width: 50,
-                child: Text(
-                  formattedWidth.isNotEmpty ? '$formattedWidth m' : '',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              // Surface - fixed width
-              SizedBox(
-                width: 75,
-                child: Text(
-                  surface != null && surface != 'Unknown' ? surface : '',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          details: '',
-          status: runwayStatus.statusText,
-          statusColor: runwayStatus.statusColor,
-          onTap: runwayStatus.hasNotams ? () => _showRunwayNotams(identifier, runwayStatus.notams) : null,
+                details: '',
+                status: runwayStatus.statusText,
+                statusColor: runwayStatus.statusColor,
+                onTap: runwayStatus.hasNotams ? () => _showRunwayNotams(identifier, runwayStatus.notams) : null,
+              );
+            }
+          },
         );
       },
     );
   }
 
   Widget _buildNavAidsSection(AirportInfrastructure airportData, FlightProvider flightProvider) {
-    debugPrint('DEBUG: _buildNavAidsSection called with airportData: ${airportData?.runtimeType}');
+    debugPrint('DEBUG: _buildNavAidsSection called with airportData: ${airportData.runtimeType}');
     
     final navaids = airportData.navaids;
     debugPrint('DEBUG: _buildNavAidsSection - Found ${navaids.length} navaids from AirportInfrastructure');
@@ -515,65 +538,150 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0), // Reduced padding
-      child: Row(
-        children: [
-          // Type - fixed width
-          SizedBox(
-            width: 80,
-            child: Text(
-              navaid.type,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          // Identifier - fixed width
-          SizedBox(
-            width: 60,
-            child: Text(
-              navaid.identifier,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          // Frequency - fixed width
-          SizedBox(
-            width: 70,
-            child: Text(
-              navaid.frequency,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          const Spacer(),
-          // Status badge - now dynamic based on NOTAM analysis with light styling
-          GestureDetector(
-            onTap: navaidStatus.hasNotams ? () => _showNavaidNotams(navaid.identifier, navaidStatus.notams) : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: navaidStatus.statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: navaidStatus.statusColor.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                navaidStatus.statusText,
-                style: TextStyle(
-                  color: navaidStatus.statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isCompact = screenWidth < 400;
+          
+          if (isCompact) {
+            // Compact layout: Prioritize type and identifier, minimize frequency
+            return Row(
+              children: [
+                // Type - more space for type
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    navaid.type,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            ),
-          ),
-        ],
+                const SizedBox(width: 4),
+                // Identifier - give it more space
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    navaid.identifier,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Frequency - minimal space
+                SizedBox(
+                  width: 50,
+                  child: Text(
+                    navaid.frequency,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Status badge
+                GestureDetector(
+                  onTap: navaidStatus.hasNotams ? () => _showNavaidNotams(navaid.identifier, navaidStatus.notams) : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: navaidStatus.statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: navaidStatus.statusColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      navaidStatus.statusText,
+                      style: TextStyle(
+                        color: navaidStatus.statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // Standard layout: Use responsive column widths with priority for important info
+            final availableWidth = constraints.maxWidth - 100; // Reserve space for status badge
+            final typeWidth = (availableWidth * 0.3).clamp(60.0, 90.0); // More space for type
+            final identifierWidth = (availableWidth * 0.3).clamp(60.0, 90.0); // Prioritize identifier
+            final frequencyWidth = (availableWidth * 0.2).clamp(50.0, 80.0); // Less space for frequency
+            
+            return Row(
+              children: [
+                // Type - responsive width
+                SizedBox(
+                  width: typeWidth,
+                  child: Text(
+                    navaid.type,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Identifier - responsive width
+                SizedBox(
+                  width: identifierWidth,
+                  child: Text(
+                    navaid.identifier,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Frequency - responsive width
+                SizedBox(
+                  width: frequencyWidth,
+                  child: Text(
+                    navaid.frequency,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Spacer(),
+                // Status badge - now dynamic based on NOTAM analysis with light styling
+                GestureDetector(
+                  onTap: navaidStatus.hasNotams ? () => _showNavaidNotams(navaid.identifier, navaidStatus.notams) : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: navaidStatus.statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: navaidStatus.statusColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      navaidStatus.statusText,
+                      style: TextStyle(
+                        color: navaidStatus.statusColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+        },
       ),
     );
   }
@@ -584,54 +692,123 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     final flightProvider = Provider.of<FlightProvider>(context, listen: false);
     final navaidStatus = _analyzeNavaidStatus(navaid.identifier, navaid.type, flightProvider);
     
-    return _buildFacilityItem(
-      name: Row(
-        children: [
-          // Type - fixed width
-          SizedBox(
-            width: 80,
-            child: Text(
-              navaid.type,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final isCompact = screenWidth < 400;
+        
+        if (isCompact) {
+          // Compact layout: Prioritize type and identifier, minimize frequency
+          return _buildFacilityItem(
+            name: Row(
+              children: [
+                // Type - more space for type
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    navaid.type,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Identifier - give it more space
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    navaid.identifier,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Frequency - minimal space
+                SizedBox(
+                  width: 50,
+                  child: Text(
+                    navaid.frequency,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-          ),
-          // Identifier - fixed width
-          SizedBox(
-            width: 60,
-            child: Text(
-              navaid.identifier,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
+            details: '',
+            status: navaidStatus.statusText,
+            statusColor: navaidStatus.statusColor,
+          );
+        } else {
+          // Standard layout: Use responsive column widths with priority for important info
+          final availableWidth = constraints.maxWidth - 100; // Reserve space for status badge
+          final typeWidth = (availableWidth * 0.3).clamp(60.0, 90.0); // More space for type
+          final identifierWidth = (availableWidth * 0.3).clamp(60.0, 90.0); // Prioritize identifier
+          final frequencyWidth = (availableWidth * 0.2).clamp(50.0, 80.0); // Less space for frequency
+          
+          return _buildFacilityItem(
+            name: Row(
+              children: [
+                // Type - responsive width
+                SizedBox(
+                  width: typeWidth,
+                  child: Text(
+                    navaid.type,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Identifier - responsive width
+                SizedBox(
+                  width: identifierWidth,
+                  child: Text(
+                    navaid.identifier,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Frequency - responsive width
+                SizedBox(
+                  width: frequencyWidth,
+                  child: Text(
+                    navaid.frequency,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-          ),
-          // Frequency - fixed width
-          SizedBox(
-            width: 70,
-            child: Text(
-              navaid.frequency,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-        ],
-      ),
-      details: '',
-      status: navaidStatus.statusText,
-      statusColor: navaidStatus.statusColor,
+            details: '',
+            status: navaidStatus.statusText,
+            statusColor: navaidStatus.statusColor,
+          );
+        }
+      },
     );
   }
 
   Widget _buildLightingSection(AirportInfrastructure airportData, FlightProvider flightProvider) {
-    final lighting = airportData.lighting as List<Lighting>;
+    final lighting = airportData.lighting;
     debugPrint('DEBUG: _buildLightingSection - Found ${lighting.length} lighting systems');
 
     if (lighting.isEmpty) {
@@ -799,53 +976,6 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  /// Get status color based on status string
-  Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'OPERATIONAL':
-        return Colors.green;
-      case 'CLOSED':
-        return Colors.red;
-      case 'MAINTENANCE':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Widget _buildServicesSection(dynamic airportData) {
-    return _buildFacilitySection(
-      title: 'Services',
-      icon: Icons.business,
-      color: Colors.purple,
-      facilities: [
-        _buildFacilityItem(
-          name: 'Fuel',
-          details: 'Aviation fuel available',
-          status: 'Available',
-          statusColor: Colors.green,
-        ),
-      ],
-      emptyMessage: 'No service data available',
-    );
-  }
-
-  Widget _buildHazardsSection(dynamic airportData) {
-    return _buildFacilitySection(
-      title: 'Hazards',
-      icon: Icons.warning,
-      color: Colors.red,
-      facilities: [
-        _buildFacilityItem(
-          name: 'None reported',
-          details: 'No hazards identified',
-          status: 'Clear',
-          statusColor: Colors.green,
-        ),
-      ],
-      emptyMessage: 'No hazard data available',
-    );
-  }
 
   Widget _buildFacilitySection({
     required String title,
@@ -1032,17 +1162,94 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  /// Get NOTAMs that affect a specific runway
+  /// Get NOTAMs that affect a specific runway using two-stage filtering
   List<Notam> _getRunwayNotams(String runwayId, List<Notam> notams) {
-    return notams.where((notam) {
+    debugPrint('DEBUG: _getRunwayNotams called for $runwayId with ${notams.length} NOTAMs');
+    
+    final result = notams.where((notam) {
       final text = notam.rawText.toUpperCase();
       
-      // Check for runway-specific NOTAMs
-      return text.contains('RWY $runwayId') || 
-             text.contains('RUNWAY $runwayId') ||
-             text.contains('RWY ${runwayId.split('/')[0]}') ||
-             text.contains('RWY ${runwayId.split('/')[1]}');
+      // Stage 1: Is this a runway-related NOTAM?
+      if (!_isRunwayNotam(text)) {
+        return false;
+      }
+      
+      // Stage 2: Does this specific NOTAM affect our specific runway?
+      return _doesNotamAffectRunway(text, runwayId);
     }).toList();
+    
+    debugPrint('DEBUG: _getRunwayNotams returning ${result.length} NOTAMs for $runwayId');
+    return result;
+  }
+
+  /// Stage 1: Check if NOTAM is related to runways
+  bool _isRunwayNotam(String notamText) {
+    return notamText.contains('RWY') || 
+           notamText.contains('RUNWAY') ||
+           notamText.contains('TAXIWAY') ||
+           notamText.contains('TWY') ||
+           notamText.contains('APRON') ||
+           notamText.contains('MOVEMENT AREA') ||
+           notamText.contains('WIP'); // Work in Progress often affects runways
+  }
+
+  /// Stage 2: Check if this specific NOTAM affects our specific runway
+  bool _doesNotamAffectRunway(String notamText, String runwayId) {
+    final runwayIdUpper = runwayId.toUpperCase();
+    
+    // Extract runway identifiers from the NOTAM text
+    final extractedRunways = _extractRunwayIdentifiers(notamText);
+    
+    // Check if any extracted runway matches our runway
+    for (final extractedRunway in extractedRunways) {
+      if (extractedRunway == runwayIdUpper) {
+        debugPrint('DEBUG: Extracted runway match for $runwayIdUpper in: $notamText');
+        return true;
+      }
+    }
+    
+    // Also check for direct mentions with common patterns
+    if (notamText.contains('RWY $runwayIdUpper') || 
+        notamText.contains('RUNWAY $runwayIdUpper')) {
+      debugPrint('DEBUG: Direct runway mention for $runwayIdUpper in: $notamText');
+      return true;
+    }
+    
+    return false;
+  }
+
+  /// Extract runway identifiers from NOTAM text
+  List<String> _extractRunwayIdentifiers(String notamText) {
+    final runways = <String>[];
+    
+    // Pattern 1: "RWY 16L/34R" or "RWY 16L" or "RUNWAY 16L/34R"
+    final pattern1 = RegExp(r'(RWY|RUNWAY)\s+([0-9]{2}[LRC]?/[0-9]{2}[LRC]?|[0-9]{2}[LRC]?)');
+    final matches1 = pattern1.allMatches(notamText);
+    for (final match in matches1) {
+      final runway = match.group(2)!;
+      runways.add(runway);
+      
+      // If it's a dual runway (e.g., "16L/34R"), also add individual runways
+      if (runway.contains('/')) {
+        final parts = runway.split('/');
+        runways.add(parts[0]);
+        runways.add(parts[1]);
+      }
+    }
+    
+    // Pattern 2: Standalone runway mentions "16L", "34R", etc.
+    final pattern2 = RegExp(r'\b([0-9]{2}[LRC]?)\b');
+    final matches2 = pattern2.allMatches(notamText);
+    for (final match in matches2) {
+      final runway = match.group(1)!;
+      // Only add if it looks like a runway (2 digits, optionally followed by L/R/C)
+      if (runway.length >= 2 && runway.length <= 3) {
+        runways.add(runway);
+      }
+    }
+    
+    debugPrint('DEBUG: Extracted runways from "$notamText": $runways');
+    return runways;
   }
 
 
@@ -1390,221 +1597,22 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     }
   }
 
-  /// Build a NOTAM card in the same format as Raw Data screen
-  Widget _buildNotamCard(Notam notam) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // NOTAM Header with ID and category badge
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'NOTAM ${notam.id}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getCategoryColor(notam.group),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getCategoryLabel(notam.group),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                          ),
-                        ],
-                      ),
-          const SizedBox(height: 12),
-          
-          // Validity Section
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : '${_formatDateTime(notam.validTo)} UTC'}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                            children: [
-                              Expanded(
-                      child: Text(
-                        _getLeftSideText(notam),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: const Color(0xFFF59E0B),
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      _getRightSideText(notam),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green.shade600,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // Schedule Information (if present)
-          if (notam.fieldD.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: Colors.grey.shade600,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Schedule: ${notam.fieldD}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.orange.shade700,
-                      ),
-              ),
-            ),
-          ],
-        ),
-            ),
-          ],
-          
-          // NOTAM Text
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notam.fieldE.isNotEmpty ? notam.fieldE : notam.rawText,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-                if (notam.fieldF.isNotEmpty || notam.fieldG.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    _formatAltitudeInfo(notam.fieldF, notam.fieldG),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          
-          // Metadata Footer
-          const SizedBox(height: 8),
-          Text(
-            'Q: ${notam.qCode ?? 'N/A'} • Type: ${notam.type.name} • Group: ${notam.group.name}',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade500,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build enhanced NAVAID item with NOTAM-based status
-  Widget _buildEnhancedNavaidItem(dynamic navaid, String? runwayId) {
-    return Consumer<FlightProvider>(
-      builder: (context, flightProvider, child) {
-        if (navaid is! Navaid) {
-          return _buildFacilityItem(
-            name: 'Navaid ${navaid.toString()}',
-            details: '',
-            status: 'Operational',
-            statusColor: Colors.green,
-          );
-        }
-
-        final identifier = navaid.identifier;
-        final frequency = navaid.frequency;
-        final type = navaid.type;
-        
-        // Analyze NOTAMs for this specific NAVAID to determine real-time status
-        final navaidStatus = _analyzeNavaidStatus(identifier, type, flightProvider);
-        
-        // Build the name with frequency and runway association
-        String name = '$type $identifier';
-        if (frequency != null && frequency.isNotEmpty) {
-          name += ' ($frequency)';
-        }
-        if (runwayId != null) {
-          name += ' (RWY $runwayId)';
-        }
-
-        return _buildFacilityItem(
-          name: name,
-          details: '',
-          status: navaidStatus.statusText,
-          statusColor: navaidStatus.statusColor,
-          onTap: navaidStatus.hasNotams ? () => _showNavaidNotams(identifier, navaidStatus.notams) : null,
-        );
-      },
-    );
-  }
 
   /// Analyze NAVAID status based on NOTAMs
   NavaidStatusInfo _analyzeNavaidStatus(String navaidId, String navaidType, FlightProvider flightProvider) {
     // Filter NOTAMs for this specific NAVAID
     final filteredNotams = flightProvider.filterNotamsByTimeAndAirport(widget.notams, widget.icao);
+    debugPrint('DEBUG: _analyzeNavaidStatus for $navaidId ($navaidType) - ${filteredNotams.length} filtered NOTAMs');
     
     // Use NotamGroupingService to get properly grouped NOTAMs
     final groupedNotams = _groupingService.groupNotams(filteredNotams);
     
     // Extract NAVAID-specific NOTAMs from the grouped results
-    final navaidGroupNotams = groupedNotams[NotamGroup.instrumentProcedures] ?? [];
+    // NAVAID NOTAMs can be in multiple groups, so check all relevant ones
+    final navaidGroupNotams = (groupedNotams[NotamGroup.instrumentProcedures] ?? []) +
+                              (groupedNotams[NotamGroup.airportServices] ?? []) +
+                              (groupedNotams[NotamGroup.runways] ?? []);
+    debugPrint('DEBUG: _analyzeNavaidStatus for $navaidId ($navaidType) - ${navaidGroupNotams.length} NAVAID group NOTAMs');
     final navaidNotams = _getNavaidNotams(navaidId, navaidType, navaidGroupNotams);
     
     if (navaidNotams.isEmpty) {
@@ -1626,7 +1634,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     
     switch (status) {
       case SystemStatus.red:
-        statusText = 'Unserviceable';
+        statusText = 'U/S';
         statusColor = Colors.red;
         break;
       case SystemStatus.yellow:
@@ -1647,45 +1655,133 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  /// Get NOTAMs that affect a specific NAVAID
+  /// Get NOTAMs that affect a specific NAVAID using two-stage filtering
   List<Notam> _getNavaidNotams(String navaidId, String navaidType, List<Notam> notams) {
-    return notams.where((notam) {
+    debugPrint('DEBUG: _getNavaidNotams called for $navaidId ($navaidType) with ${notams.length} NOTAMs');
+    
+    final result = notams.where((notam) {
       final text = notam.rawText.toUpperCase();
       final navaidIdUpper = navaidId.toUpperCase();
-      final navaidTypeUpper = navaidType.toUpperCase();
       
-      // Check for NAVAID-specific NOTAMs with more precise matching
-      // Look for the specific NAVAID identifier (e.g., "IPN", "IGD", "IPH")
-      if (text.contains(navaidIdUpper)) {
-        return true;
+      // Stage 1: Is this a NAVAID-related NOTAM?
+      if (!_isNavaidNotam(text)) {
+        return false;
       }
       
-      // For ILS systems, check for the specific identifier in quotes or after "ILS"
-      if (navaidTypeUpper.contains('ILS')) {
-        // Look for patterns like "ILS 'IPN'", "ILS 'IGD'", etc.
-        if (text.contains("ILS '$navaidIdUpper'") || 
-            text.contains("ILS $navaidIdUpper") ||
-            text.contains("'$navaidIdUpper'")) {
-          return true;
-        }
-        
-        // Also check if the NOTAM mentions the specific runway this ILS serves
-        // This helps catch runway-specific ILS NOTAMs
-        if (text.contains('RWY') && text.contains('ILS')) {
-          return true;
-        }
-      }
-      
-      if (navaidTypeUpper.contains('VOR') && text.contains('VOR')) {
-        return true;
-      }
-      
-      if (navaidTypeUpper.contains('DME') && text.contains('DME')) {
-        return true;
-      }
-      
-      return false;
+      // Stage 2: Does this specific NOTAM affect our specific NAVAID?
+      return _doesNotamAffectNavaid(text, navaidIdUpper, navaidType);
     }).toList();
+    
+    debugPrint('DEBUG: _getNavaidNotams returning ${result.length} NOTAMs for $navaidId ($navaidType)');
+    return result;
+  }
+
+  /// Stage 1: Check if NOTAM is related to NAVAIDs
+  bool _isNavaidNotam(String notamText) {
+    return notamText.contains('ILS') || 
+           notamText.contains('DME') || 
+           notamText.contains('VOR') || 
+           notamText.contains('TACAN') || 
+           notamText.contains('NDB') ||
+           notamText.contains('NAVAID') ||
+           notamText.contains('INSTRUMENT');
+  }
+
+  /// Stage 2: Check if this specific NOTAM affects our specific NAVAID
+  bool _doesNotamAffectNavaid(String notamText, String navaidId, String navaidType) {
+    final navaidTypeUpper = navaidType.toUpperCase();
+    
+    // First check for direct identifier match (highest confidence)
+    if (notamText.contains(navaidId)) {
+      debugPrint('DEBUG: Direct identifier match for $navaidId in: $notamText');
+      return true;
+    }
+    
+    // Extract NAVAID identifiers from the NOTAM text
+    final extractedIds = _extractNavaidIdentifiers(notamText, navaidTypeUpper);
+    
+    // Check if any extracted identifier matches our NAVAID
+    for (final extractedId in extractedIds) {
+      if (extractedId == navaidId) {
+        debugPrint('DEBUG: Extracted identifier match for $navaidId in: $notamText');
+        return true;
+      }
+    }
+    
+    // Fallback: Check for quoted identifier match
+    if (notamText.contains("'$navaidId'")) {
+      debugPrint('DEBUG: Quoted identifier match for $navaidId in: $notamText');
+      return true;
+    }
+    
+    return false;
+  }
+
+  /// Extract NAVAID identifiers from NOTAM text using simple string parsing
+  List<String> _extractNavaidIdentifiers(String notamText, String navaidType) {
+    final identifiers = <String>[];
+    
+    // Simple approach: Look for common NAVAID patterns
+    final words = notamText.split(' ');
+    
+    for (int i = 0; i < words.length - 1; i++) {
+      final currentWord = words[i];
+      final nextWord = words[i + 1];
+      
+      // Check for "ILS 'ISN'" or "ILS ISN" pattern
+      if ((currentWord == 'ILS' || currentWord == 'DME' || currentWord == 'VOR' || 
+           currentWord == 'TACAN' || currentWord == 'NDB') &&
+          navaidType.contains(currentWord)) {
+        
+        // Clean the next word (remove quotes, punctuation)
+        final cleanId = nextWord.replaceAll(RegExp(r'[^\w]'), '');
+        if (cleanId.length >= 2 && cleanId.length <= 4) {
+          identifiers.add(cleanId);
+        }
+      }
+      
+      // Check for "ILS/DME IKN" pattern
+      if ((currentWord == 'ILS/DME' || currentWord == 'VOR/DME' || currentWord == 'ILS/DME/GP') &&
+          (navaidType.contains('ILS') || navaidType.contains('DME') || navaidType.contains('VOR'))) {
+        
+        final cleanId = nextWord.replaceAll(RegExp(r'[^\w]'), '');
+        if (cleanId.length >= 2 && cleanId.length <= 4) {
+          identifiers.add(cleanId);
+        }
+      }
+    }
+    
+    // Also look for quoted identifiers
+    final quotePattern = RegExp(r"'([A-Z]{2,4})'");
+    final matches = quotePattern.allMatches(notamText);
+    for (final match in matches) {
+      final id = match.group(1)!;
+      if (_isLikelyNavaidIdentifier(id)) {
+        identifiers.add(id);
+      }
+    }
+    
+    debugPrint('DEBUG: Extracted identifiers from "$notamText": $identifiers');
+    return identifiers;
+  }
+
+  /// Check if a string is likely a NAVAID identifier
+  bool _isLikelyNavaidIdentifier(String identifier) {
+    // NAVAID identifiers are typically 2-4 letters
+    if (identifier.length < 2 || identifier.length > 4) return false;
+    
+    // Common NAVAID patterns (can be expanded)
+    final commonPatterns = [
+      'ILS', 'DME', 'VOR', 'TACAN', 'NDB', 'LOC', 'GS', 'GP', 'MB'
+    ];
+    
+    // Check if it matches common patterns
+    for (final pattern in commonPatterns) {
+      if (identifier.contains(pattern)) return true;
+    }
+    
+    // Check if it's all letters (typical for NAVAID identifiers)
+    return RegExp(r'^[A-Z]+$').hasMatch(identifier);
   }
 
   /// Show NAVAID NOTAMs in a modal
@@ -1761,7 +1857,7 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     
     switch (mostSevereComponentStatus) {
       case 'unserviceable':
-        statusText = 'Unserviceable';
+        statusText = 'U/S';
         statusColor = Colors.red;
         break;
       case 'limited':
@@ -1783,28 +1879,62 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
     );
   }
 
-  /// Get NOTAMs that affect lighting for a specific runway end
+  /// Get NOTAMs that affect lighting for a specific runway end using two-stage filtering
   List<Notam> _getLightingNotams(String runwayEnd, List<Notam> notams) {
-    return notams.where((notam) {
+    debugPrint('DEBUG: _getLightingNotams called for $runwayEnd with ${notams.length} NOTAMs');
+    
+    final result = notams.where((notam) {
       final text = notam.rawText.toUpperCase();
-      final runwayEndUpper = runwayEnd.toUpperCase();
       
-      // Check if the NOTAM mentions this specific runway end AND contains lighting-related keywords
-      final mentionsRunway = text.contains('RWY $runwayEndUpper') || 
-             text.contains('RUNWAY $runwayEndUpper') ||
-             text.contains(runwayEndUpper);
+      // Stage 1: Is this a lighting-related NOTAM?
+      if (!_isLightingNotam(text)) {
+        return false;
+      }
       
-      if (!mentionsRunway) return false;
-      
-      // Check for lighting-related keywords
-      final lightingKeywords = [
-        'LIGHT', 'LGT', 'LIGHTING', 'MIRL', 'HIRL', 'PAPI', 'RCLL', 'RTZL', 'HIAL',
-        'APPROACH LIGHT', 'RUNWAY LIGHT', 'TAXIWAY LIGHT', 'EDGE LIGHT',
-        'CENTERLINE LIGHT', 'THRESHOLD LIGHT', 'END LIGHT', 'BOUNDARY LIGHT'
-      ];
-      
-      return lightingKeywords.any((keyword) => text.contains(keyword));
+      // Stage 2: Does this specific NOTAM affect our specific runway end's lighting?
+      return _doesNotamAffectLighting(text, runwayEnd);
     }).toList();
+    
+    debugPrint('DEBUG: _getLightingNotams returning ${result.length} NOTAMs for $runwayEnd');
+    return result;
+  }
+
+  /// Stage 1: Check if NOTAM is related to lighting
+  bool _isLightingNotam(String notamText) {
+    final lightingKeywords = [
+      'LIGHT', 'LGT', 'LIGHTING', 'MIRL', 'HIRL', 'PAPI', 'RCLL', 'RTZL', 'HIAL',
+      'APPROACH LIGHT', 'RUNWAY LIGHT', 'TAXIWAY LIGHT', 'EDGE LIGHT',
+      'CENTERLINE LIGHT', 'THRESHOLD LIGHT', 'END LIGHT', 'BOUNDARY LIGHT',
+      'VISUAL AIDS', 'NAVIGATION AIDS', 'MARKING', 'BEACON'
+    ];
+    
+    return lightingKeywords.any((keyword) => notamText.contains(keyword));
+  }
+
+  /// Stage 2: Check if this specific NOTAM affects our specific runway end's lighting
+  bool _doesNotamAffectLighting(String notamText, String runwayEnd) {
+    final runwayEndUpper = runwayEnd.toUpperCase();
+    
+    // Extract runway identifiers from the NOTAM text
+    final extractedRunways = _extractRunwayIdentifiers(notamText);
+    
+    // Check if any extracted runway matches our runway end
+    for (final extractedRunway in extractedRunways) {
+      if (extractedRunway == runwayEndUpper) {
+        debugPrint('DEBUG: Lighting NOTAM runway match for $runwayEndUpper in: $notamText');
+        return true;
+      }
+    }
+    
+    // Also check for direct mentions with common patterns
+    if (notamText.contains('RWY $runwayEndUpper') || 
+        notamText.contains('RUNWAY $runwayEndUpper') ||
+        notamText.contains(runwayEndUpper)) {
+      debugPrint('DEBUG: Lighting NOTAM direct runway mention for $runwayEndUpper in: $notamText');
+      return true;
+    }
+    
+    return false;
   }
 
   /// Analyze individual lighting component status based on NOTAMs

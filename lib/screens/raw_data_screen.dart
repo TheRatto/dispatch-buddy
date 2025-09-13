@@ -44,7 +44,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     '12 hours', 
     '24 hours',
     '72 hours',
-    'All NOTAMs'
+    'All'
   ];
   
   // Scroll controller for TAFs2 tab
@@ -935,8 +935,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     
     debugPrint('DEBUG: After CNL filter: ${activeNotams.length} NOTAMs (filtered out ${notams.length - activeNotams.length} CNL NOTAMs)');
     
-    if (_selectedTimeFilter == 'All NOTAMs') {
-      debugPrint('DEBUG: Returning all ${activeNotams.length} NOTAMs (All NOTAMs filter)');
+    if (_selectedTimeFilter == 'All') {
+      debugPrint('DEBUG: Returning all ${activeNotams.length} NOTAMs (All filter)');
       return activeNotams;
     }
     

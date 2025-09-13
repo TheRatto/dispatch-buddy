@@ -33,8 +33,11 @@ class NotamGroupContent extends StatelessWidget {
 
     return Container(
       color: Colors.white,
-      child: Column(
-        children: notams.map((notam) => _buildNotamItem(context, notam)).toList(),
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(), // Prevent nested scrolling conflicts
+        itemCount: notams.length,
+        itemBuilder: (context, index) => _buildNotamItem(context, notams[index]),
       ),
     );
   }
@@ -222,14 +225,9 @@ class NotamGroupContent extends StatelessWidget {
     final validFrom = notam.validFrom;
     final validTo = notam.validTo;
 
-    if (validFrom == null || validTo == null) {
-      return const SizedBox.shrink();
-    }
-
     // Check if NOTAM is currently active
     final isActive = now.isAfter(validFrom) && now.isBefore(validTo);
     final isFuture = now.isBefore(validFrom);
-    final isExpired = now.isAfter(validTo);
 
     if (isActive) {
       // Active NOTAM - show "Active" on left (amber) and "Ends in..." on right (green)

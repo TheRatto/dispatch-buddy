@@ -230,6 +230,18 @@ class WeatherRadarProvider extends ChangeNotifier {
         
         // Start layers loading grace period
         _startLayersLoadingGracePeriod();
+        
+        // Add delay before starting animation to prevent juttering
+        // National radar uses satellite pictures which take longer to load
+        final delayDuration = _selectedSite!.id == 'NATIONAL' 
+            ? const Duration(milliseconds: 800) 
+            : const Duration(milliseconds: 300);
+            
+        Timer(delayDuration, () {
+          if (_isAnimating && _currentRadarLoop.isNotEmpty) {
+            debugPrint('DEBUG: WeatherRadarProvider - Starting animation after delay (${delayDuration.inMilliseconds}ms)');
+          }
+        });
       } else {
         _setError('No radar loop data available for ${_selectedSite!.name}');
       }
@@ -256,13 +268,23 @@ class WeatherRadarProvider extends ChangeNotifier {
       });
     }
     
-    // Start animation timer - advance frame every 800ms
-    _animationTimer?.cancel();
-    _animationTimer = Timer.periodic(const Duration(milliseconds: 800), (timer) {
+    // Add initial delay to prevent juttering on animation start
+    // National radar needs longer delay for satellite images
+    final initialDelay = _selectedSite?.id == 'NATIONAL' 
+        ? const Duration(milliseconds: 1000) 
+        : const Duration(milliseconds: 500);
+        
+    Timer(initialDelay, () {
       if (_isAnimating && _currentRadarLoop.isNotEmpty) {
-        nextFrame();
-      } else {
-        timer.cancel();
+        // Start animation timer - advance frame every 1000ms
+        _animationTimer?.cancel();
+        _animationTimer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          if (_isAnimating && _currentRadarLoop.isNotEmpty) {
+            nextFrame();
+          } else {
+            timer.cancel();
+          }
+        });
       }
     });
     
