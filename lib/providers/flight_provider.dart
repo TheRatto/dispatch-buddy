@@ -23,6 +23,7 @@ class FlightProvider with ChangeNotifier {
   Briefing? _currentBriefing; // Track the currently loaded briefing
   List<Flight> _savedFlights = [];
   bool _isLoading = false;
+  String? _loadingAirport; // Track which specific airport is being loaded
   Map<String, List<Weather>> _metarsByIcao = {};
   Map<String, List<Weather>> _tafsByIcao = {};
   String? _selectedAirport; // Shared airport selection across all tabs
@@ -59,6 +60,160 @@ class FlightProvider with ChangeNotifier {
   void dispose() {
     _stopStatusUpdateTimer();
     super.dispose();
+  }
+
+  /// Update the current briefing with a newly added airport
+  Future<void> _updateCurrentBriefingWithNewAirport(String icao) async {
+    debugPrint('DEBUG: _updateCurrentBriefingWithNewAirport START - ICAO: $icao');
+    
+    if (_currentBriefing == null || _currentFlight == null) {
+      debugPrint('DEBUG: Cannot update briefing - _currentBriefing: ${_currentBriefing != null}, _currentFlight: ${_currentFlight != null}');
+      return;
+    }
+    
+    try {
+      debugPrint('DEBUG: Updating briefing ${_currentBriefing!.id} with new airport $icao');
+      debugPrint('DEBUG: Current briefing airports before update: ${_currentBriefing!.airports}');
+      
+      // Verify the new airport exists in the flight
+      if (!_currentFlight!.airports.any((airport) => airport.icao == icao)) {
+        throw Exception('New airport $icao not found in flight');
+      }
+      
+      // Update the briefing's airport list
+      final updatedAirports = List<String>.from(_currentBriefing!.airports);
+      debugPrint('DEBUG: Original briefing airports: $updatedAirports');
+      if (!updatedAirports.contains(icao)) {
+        updatedAirports.add(icao);
+        debugPrint('DEBUG: Added $icao to briefing airports: $updatedAirports');
+      } else {
+        debugPrint('DEBUG: Airport $icao already exists in briefing airports');
+      }
+      
+      // Get ALL NOTAMs and weather for this airport (including newly fetched data)
+      final airportNotams = _currentFlight!.notams.where((notam) => notam.icao == icao).toList();
+      final airportWeather = _currentFlight!.weather.where((weather) => weather.icao == icao).toList();
+      
+      debugPrint('DEBUG: Found ${airportNotams.length} NOTAMs and ${airportWeather.length} weather reports for $icao');
+      
+      // Update briefing data - start with existing data
+      final updatedNotams = Map<String, dynamic>.from(_currentBriefing!.notams);
+      final updatedWeather = Map<String, dynamic>.from(_currentBriefing!.weather);
+      
+      // Remove any existing data for this airport to avoid duplicates
+      updatedNotams.removeWhere((key, value) => value['icao'] == icao);
+      updatedWeather.removeWhere((key, value) => value['icao'] == icao);
+      
+      // Add ALL NOTAMs for this airport using the same format as original briefing creation
+      // Find the highest existing NOTAM index to continue the sequence
+      int maxNotamIndex = -1;
+      for (final key in updatedNotams.keys) {
+        if (key.startsWith('notam_')) {
+          final indexStr = key.substring(6); // Remove 'notam_' prefix
+          final index = int.tryParse(indexStr);
+          if (index != null && index > maxNotamIndex) {
+            maxNotamIndex = index;
+          }
+        }
+      }
+      
+      // Add new NOTAMs with sequential keys
+      for (int i = 0; i < airportNotams.length; i++) {
+        final key = 'notam_${maxNotamIndex + 1 + i}';
+        updatedNotams[key] = airportNotams[i].toJson();
+        debugPrint('DEBUG: Added NOTAM with key: $key');
+      }
+      
+      // Add ALL weather for this airport using the same format as original briefing creation
+      // Find the highest existing weather index to continue the sequence
+      int maxWeatherIndex = -1;
+      for (final key in updatedWeather.keys) {
+        if (key.startsWith('weather_')) {
+          final indexStr = key.substring(8); // Remove 'weather_' prefix
+          final index = int.tryParse(indexStr);
+          if (index != null && index > maxWeatherIndex) {
+            maxWeatherIndex = index;
+          }
+        }
+      }
+      
+      // Add new weather with sequential keys
+      for (int i = 0; i < airportWeather.length; i++) {
+        final key = 'weather_${maxWeatherIndex + 1 + i}';
+        updatedWeather[key] = airportWeather[i].toJson();
+        debugPrint('DEBUG: Added weather with key: $key');
+      }
+      
+      debugPrint('DEBUG: Updated briefing will have ${updatedNotams.length} NOTAMs and ${updatedWeather.length} weather entries');
+      
+      // Create updated briefing
+      final updatedBriefing = _currentBriefing!.copyWith(
+        airports: updatedAirports,
+        notams: updatedNotams,
+        weather: updatedWeather,
+        timestamp: DateTime.now(),
+      );
+      
+      // Save the updated briefing
+      debugPrint('DEBUG: About to save briefing with airports: ${updatedBriefing.airports}');
+      final success = await BriefingStorageService.updateBriefing(updatedBriefing);
+      if (success) {
+        _currentBriefing = updatedBriefing;
+        debugPrint('DEBUG: SUCCESS - Updated briefing with new airport $icao');
+        debugPrint('DEBUG: Updated briefing airports: ${_currentBriefing!.airports}');
+        debugPrint('DEBUG: Briefing storage updated - airport and data will persist when briefing is reloaded');
+      } else {
+        debugPrint('DEBUG: FAILED - Could not update briefing with new airport $icao');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: ERROR - Error updating briefing with new airport $icao: $e');
+      debugPrint('DEBUG: ERROR - Stack trace: ${StackTrace.current}');
+    }
+    
+    debugPrint('DEBUG: _updateCurrentBriefingWithNewAirport END - ICAO: $icao');
+  }
+
+  /// Remove an airport from the current briefing
+  Future<void> _removeAirportFromBriefing(String icao) async {
+    if (_currentBriefing == null || _currentFlight == null) return;
+    
+    try {
+      debugPrint('DEBUG: Removing airport $icao from briefing ${_currentBriefing!.id}');
+      
+      // Update the briefing's airport list
+      final updatedAirports = List<String>.from(_currentBriefing!.airports);
+      updatedAirports.remove(icao);
+      
+      // Remove all data for this airport from briefing storage
+      final updatedNotams = Map<String, dynamic>.from(_currentBriefing!.notams);
+      final updatedWeather = Map<String, dynamic>.from(_currentBriefing!.weather);
+      
+      // Remove NOTAMs and weather for this airport
+      updatedNotams.removeWhere((key, value) => value['icao'] == icao);
+      updatedWeather.removeWhere((key, value) => value['icao'] == icao);
+      
+      debugPrint('DEBUG: Removed data for airport $icao from briefing');
+      
+      // Create updated briefing
+      final updatedBriefing = _currentBriefing!.copyWith(
+        airports: updatedAirports,
+        notams: updatedNotams,
+        weather: updatedWeather,
+        timestamp: DateTime.now(),
+      );
+      
+      // Save the updated briefing
+      final success = await BriefingStorageService.updateBriefing(updatedBriefing);
+      if (success) {
+        _currentBriefing = updatedBriefing;
+        debugPrint('DEBUG: Successfully removed airport $icao from briefing');
+        debugPrint('DEBUG: Briefing storage updated - airport removal will persist when briefing is reloaded');
+      } else {
+        debugPrint('DEBUG: Failed to remove airport $icao from briefing');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Error removing airport $icao from briefing: $e');
+    }
   }
 
   // Timer management methods
@@ -115,6 +270,7 @@ class FlightProvider with ChangeNotifier {
   Briefing? get currentBriefing => _currentBriefing; // Get the currently loaded briefing
   List<Flight> get savedFlights => _savedFlights;
   bool get isLoading => _isLoading;
+  String? get loadingAirport => _loadingAirport;
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
   Map<String, List<Weather>> get tafsByIcao => _tafsByIcao;
   String? get selectedAirport => _selectedAirport;
@@ -139,8 +295,9 @@ class FlightProvider with ChangeNotifier {
   String? get lastViewedAirport => _lastViewedAirport;
 
   // Set loading state
-  void setLoading(bool loading) {
+  void setLoading(bool loading, {String? airport}) {
     _isLoading = loading;
+    _loadingAirport = airport;
     notifyListeners();
   }
 
@@ -718,16 +875,21 @@ class FlightProvider with ChangeNotifier {
 
   // Add an airport to the current flight
   Future<bool> addAirportToFlight(String icao, {bool? naipsEnabled, String? naipsUsername, String? naipsPassword}) async {
+    debugPrint('DEBUG: addAirportToFlight START - ICAO: $icao, Current Briefing: ${_currentBriefing?.id ?? "NULL"}');
+    
     if (_currentFlight == null) {
+      debugPrint('DEBUG: addAirportToFlight - _currentFlight is NULL, returning false');
       return false;
     }
 
     // Check if airport already exists
     if (_currentFlight!.airports.any((airport) => airport.icao == icao.toUpperCase())) {
+      debugPrint('DEBUG: addAirportToFlight - Airport $icao already exists in flight');
       return false; // Airport already exists
     }
 
-    setLoading(true);
+    debugPrint('DEBUG: addAirportToFlight - Setting loading state for $icao');
+    setLoading(true, airport: icao.toUpperCase());
     
     try {
       final apiService = ApiService();
@@ -799,15 +961,35 @@ class FlightProvider with ChangeNotifier {
       // Regroup weather data to include the new airport
       _groupWeatherData();
       
+      // Save the updated flight to persist the new airport
+      await saveCurrentFlight();
+      
+      // If we're working with a previous briefing, also update the briefing storage
+      debugPrint('DEBUG: addAirportToFlight - _currentBriefing is ${_currentBriefing != null ? "NOT NULL" : "NULL"}');
+      if (_currentBriefing != null) {
+        debugPrint('DEBUG: addAirportToFlight - About to call _updateCurrentBriefingWithNewAirport for $icao');
+        await _updateCurrentBriefingWithNewAirport(icao.toUpperCase());
+        debugPrint('DEBUG: addAirportToFlight - Completed _updateCurrentBriefingWithNewAirport for $icao');
+      } else {
+        debugPrint('DEBUG: addAirportToFlight - No current briefing to update');
+      }
+      
+      // Automatically select the newly added airport so user can see the data
+      setSelectedAirport(icao.toUpperCase());
+      debugPrint('DEBUG: addAirportToFlight - Set selected airport to $icao');
+      
       notifyListeners();
+      debugPrint('DEBUG: addAirportToFlight - SUCCESS - Airport $icao added successfully');
       return true;
     } catch (e) {
-      debugPrint('Error adding airport $icao: $e');
+      debugPrint('ERROR: addAirportToFlight - Error adding airport $icao: $e');
+      debugPrint('ERROR: addAirportToFlight - Stack trace: ${StackTrace.current}');
       // Remove the airport if data fetching failed
       _currentFlight!.airports.removeWhere((airport) => airport.icao == icao.toUpperCase());
       return false;
     } finally {
       setLoading(false);
+      debugPrint('DEBUG: addAirportToFlight - END - Loading state cleared for $icao');
     }
   }
 
@@ -885,6 +1067,14 @@ class FlightProvider with ChangeNotifier {
       // Regroup weather data
       _groupWeatherData();
       
+      // Save the updated flight to persist the airport change
+      await saveCurrentFlight();
+      
+      // If we're working with a previous briefing, also update the briefing storage
+      if (_currentBriefing != null) {
+        await _updateCurrentBriefingWithNewAirport(newIcao.toUpperCase());
+      }
+      
       notifyListeners();
       return true;
     } catch (e) {
@@ -913,6 +1103,14 @@ class FlightProvider with ChangeNotifier {
 
       // Regroup weather data
       _groupWeatherData();
+      
+      // Save the updated flight to persist the airport removal
+      await saveCurrentFlight();
+      
+      // If we're working with a previous briefing, also update the briefing storage
+      if (_currentBriefing != null) {
+        await _removeAirportFromBriefing(icao.toUpperCase());
+      }
       
       notifyListeners();
       return true;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -321,7 +322,14 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                     controller: _tabController,
                     children: [
                       // NOTAMs tab: grouped NOTAMs for selected airport
-                      _buildNotams2Tab(context, flight.notams, flightProvider),
+                      _buildTabContent(
+                        'NOTAMs',
+                        flightProvider.isLoading && 
+                        flightProvider.loadingAirport != null && 
+                        flightProvider.selectedAirport == flightProvider.loadingAirport,
+                        'Fetching NOTAMs and airport data for ${flightProvider.loadingAirport}...',
+                        _buildNotams2Tab(context, flight.notams, flightProvider),
+                      ),
                       RefreshIndicator(
                         onRefresh: () async {
                           _clearCache();
@@ -343,10 +351,24 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                             );
                           }
                         },
-                        child: MetarTab(),
+                        child: _buildTabContent(
+                          'METAR/ATIS',
+                          flightProvider.isLoading && 
+                          flightProvider.loadingAirport != null && 
+                          flightProvider.selectedAirport == flightProvider.loadingAirport,
+                          'Fetching METAR and ATIS data for ${flightProvider.loadingAirport}...',
+                          MetarTab(),
+                        ),
                       ),
                       // TAFs tab: timeline-based TAF display
-                      _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                      _buildTabContent(
+                        'TAFs',
+                        flightProvider.isLoading && 
+                        flightProvider.loadingAirport != null && 
+                        flightProvider.selectedAirport == flightProvider.loadingAirport,
+                        'Fetching TAF data for ${flightProvider.loadingAirport}...',
+                        _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                      ),
 
                     ],
                   ),
@@ -1421,5 +1443,50 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     return '';
   }
 
+  /// Build tab content with conditional loading overlay
+  Widget _buildTabContent(String tabName, bool isLoading, String loadingMessage, Widget content) {
+    if (isLoading) {
+      return Stack(
+        children: [
+          // Show existing content (other airports)
+          content,
+          // Loading overlay
+          Container(
+            color: Colors.white.withOpacity(0.9),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    loadingMessage,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This may take 30+ seconds...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return content;
+  }
 
-} 
+}

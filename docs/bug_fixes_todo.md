@@ -253,7 +253,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 3.1: Airport Pill "Add" Button Says "Coming Soon"
 **Priority**: HIGH | **Estimated Time**: 1 hour
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - Airport pill "Add" button shows "Coming Soon"
@@ -265,9 +265,12 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 - `lib/widgets/airport_pill_widget.dart`
 
 **Acceptance Criteria**:
-- [ ] "Add" button functional
-- [ ] Uses same logic as Raw Data screen
-- [ ] Airport addition works consistently
+- [x] "Add" button functional
+- [x] Uses same logic as Raw Data screen
+- [x] Airport addition works consistently
+- [x] Edit airport functionality also implemented
+- [x] Remove airport functionality also implemented
+- [x] Full airport management capabilities available
 
 ---
 
@@ -670,15 +673,55 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ---
 
+## ⏱️ AIRPORT ADDITION UX
+
+### Bug 11.1: Improve Airport Addition Loading UX
+**Priority**: HIGH | **Estimated Time**: 1 hour
+**Status**: ✅ COMPLETED
+
+**Description**: 
+- Airport addition takes 30+ seconds with no visual feedback
+- Blocking popup for 30+ seconds is annoying rather than helpful
+- Need inline loading states that don't block user interaction
+
+**Files to Modify**:
+- `lib/screens/airport_detail_screen.dart`
+- `lib/screens/raw_data_screen.dart`
+- `lib/providers/flight_provider.dart`
+
+**Acceptance Criteria**:
+- [x] Simple dialog closes immediately after "Add" button pressed
+- [x] Raw Data screen shows inline loading states in tabs during airport addition
+- [x] Users can still navigate and use other parts of the app
+- [x] Loading indicators show which sections are being updated
+- [x] Clear indication that process may take 30+ seconds
+- [x] Added airports are persisted to previous briefings
+- [x] Consistent experience across Airport Facilities and Raw Data screens
+
+**Implementation Details**:
+- [x] Reverted blocking popup approach
+- [x] Implemented inline loading states using `flightProvider.isLoading`
+- [x] Added `_buildLoadingTab()` method for consistent loading UI
+- [x] Loading states show specific messages per tab:
+  - NOTAMs: "Fetching NOTAMs and airport data..."
+  - METAR/ATIS: "Fetching METAR and ATIS data..."
+  - TAFs: "Fetching TAF data..."
+- [x] Added `await saveCurrentFlight()` to all airport management methods
+- [x] Ensured airport changes persist to previous briefings
+- [x] Non-blocking UX allows continued app usage during loading
+
+---
+
 ## 📊 PRIORITY SUMMARY
 
 ### HIGH PRIORITY (Fix First)
 1. **Bug 1.2**: Split Start New Briefing into Two Pathways
 2. **Bug 2.1**: Adding Airport on TAF Doesn't Fetch NOTAMs
 3. **Bug 2.5**: Fix NOTAM F&G Incorrectly Showing
-4. **Bug 3.1**: Airport Pill "Add" Button Says "Coming Soon"
+4. **Bug 3.1**: Airport Pill "Add" Button Says "Coming Soon" ✅
 5. **Bug 3.6**: Implement Two-Stage Filtering for Runways and Lighting ✅
 6. **Bug 4.1**: Fix Pinch Zoom vs Swipe Conflict
+7. **Bug 11.1**: Add Loading Indicator for Airport Addition Process ✅
 
 ### MEDIUM PRIORITY (Fix Second)
 1. **Bug 1.4**: Add Airport Pill Should Add to Current Previous Briefing

@@ -712,36 +712,313 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
   }
 
   void _showAddAirportDialog(BuildContext context) {
-    // TODO: Implement add airport functionality
+    final TextEditingController controller = TextEditingController();
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (BuildContext context) {
+        return AlertDialog(
         title: const Text('Add Airport'),
-        content: const Text('Add airport functionality coming soon.'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the ICAO code for the airport you want to add:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'ICAO Code',
+                  hintText: 'e.g., KJFK',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 4,
+                onChanged: (value) {
+                  // Auto-capitalize and limit to 4 characters
+                  if (value.length > 4) {
+                    controller.text = value.substring(0, 4).toUpperCase();
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final icao = controller.text.trim().toUpperCase();
+                if (icao.length == 4) {
+                  Navigator.of(context).pop();
+                  
+                  // Get the FlightProvider and add the airport
+                  final flightProvider = context.read<FlightProvider>();
+                  
+                  final success = await flightProvider.addAirportToFlight(icao);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Airport $icao added successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    // Check if it's because the airport already exists
+                    final currentFlight = flightProvider.currentFlight;
+                    if (currentFlight?.airports.any((airport) => airport.icao == icao) == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Airport $icao is already in your flight plan'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to add airport $icao. Please try again.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid 4-letter ICAO code'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
     );
   }
 
   void _showEditAirportDialog(BuildContext context, String icao) {
-    // TODO: Implement edit airport functionality
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (BuildContext context) {
+        return AlertDialog(
         title: const Text('Edit Airport'),
-        content: Text('Edit airport $icao functionality coming soon.'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('What would you like to do with airport $icao?'),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showEditAirportCodeDialog(context, icao);
+                      },
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Edit'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showRemoveAirportDialog(context, icao);
+                      },
+                      icon: const Icon(Icons.delete, size: 16),
+                      label: const Text('Remove'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
-} 
+
+  void _showEditAirportCodeDialog(BuildContext context, String oldAirport) {
+    final TextEditingController controller = TextEditingController(text: oldAirport);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Airport Code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter the new ICAO code for airport $oldAirport:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'ICAO Code',
+                  hintText: 'e.g., KJFK',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 4,
+                onChanged: (value) {
+                  // Auto-capitalize and limit to 4 characters
+                  if (value.length > 4) {
+                    controller.text = value.substring(0, 4).toUpperCase();
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newIcao = controller.text.trim().toUpperCase();
+                if (newIcao.length == 4 && newIcao != oldAirport) {
+                  Navigator.of(context).pop();
+                  
+                  // Get the FlightProvider and update the airport
+                  final flightProvider = context.read<FlightProvider>();
+                  final success = await flightProvider.updateAirportCode(oldAirport, newIcao);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Airport updated from $oldAirport to $newIcao successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to update airport. Please try again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } else if (newIcao == oldAirport) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No changes made'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid 4-letter ICAO code'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRemoveAirportDialog(BuildContext context, String airport) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Airport'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning,
+                color: Colors.orange,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Are you sure you want to remove airport $airport from your flight plan?',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will also remove all associated weather data.',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                
+                // Get the FlightProvider and remove the airport
+                final flightProvider = context.read<FlightProvider>();
+                final success = await flightProvider.removeAirportFromFlight(airport);
+                
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Airport $airport removed successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to remove airport $airport. Please try again.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
