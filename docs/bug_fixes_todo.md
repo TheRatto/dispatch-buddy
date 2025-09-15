@@ -712,6 +712,39 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ---
 
+### Bug 11.2: Fix Weather and NOTAM Data Persistence for Added Airports
+**Priority**: HIGH | **Estimated Time**: 2 hours
+**Status**: ✅ COMPLETED
+
+**Description**: 
+- Added airports persist in previous briefings but their weather and NOTAM data doesn't
+- When switching between briefings, the airport is there but data is missing
+- Data format inconsistency between sequential keys and versioned data system
+
+**Files to Modify**:
+- `lib/providers/flight_provider.dart`
+- `lib/services/briefing_storage_service.dart`
+
+**Acceptance Criteria**:
+- [x] Weather data persists when switching between briefings
+- [x] NOTAM data persists when switching between briefings
+- [x] Data format consistent with versioned data system
+- [x] Uses proper NOTAM ID keys instead of sequential numbering
+- [x] Uses proper TYPE_ICAO format for weather keys
+- [x] Creates new versioned data for updated briefings
+- [x] Debug logging shows data persistence process
+
+**Implementation Details**:
+- [x] Fixed data format inconsistency between sequential and versioned formats
+- [x] Updated NOTAM storage to use `notam.id` as key (e.g., "F2984/25")
+- [x] Updated weather storage to use `"${type}_${icao}"` format (e.g., "METAR_YBBN")
+- [x] Implemented versioned data storage using `BriefingStorageService.createNewVersion()`
+- [x] Added comprehensive debug logging for data persistence tracking
+- [x] Ensured consistency with `BriefingConversionService` format
+- [x] Both add and remove airport operations now use versioned data system
+
+---
+
 ## 📊 PRIORITY SUMMARY
 
 ### HIGH PRIORITY (Fix First)
@@ -722,6 +755,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 5. **Bug 3.6**: Implement Two-Stage Filtering for Runways and Lighting ✅
 6. **Bug 4.1**: Fix Pinch Zoom vs Swipe Conflict
 7. **Bug 11.1**: Add Loading Indicator for Airport Addition Process ✅
+8. **Bug 11.2**: Fix Weather and NOTAM Data Persistence for Added Airports ✅
 
 ### MEDIUM PRIORITY (Fix Second)
 1. **Bug 1.4**: Add Airport Pill Should Add to Current Previous Briefing

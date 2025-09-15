@@ -104,44 +104,20 @@ class FlightProvider with ChangeNotifier {
       updatedNotams.removeWhere((key, value) => value['icao'] == icao);
       updatedWeather.removeWhere((key, value) => value['icao'] == icao);
       
-      // Add ALL NOTAMs for this airport using the same format as original briefing creation
-      // Find the highest existing NOTAM index to continue the sequence
-      int maxNotamIndex = -1;
-      for (final key in updatedNotams.keys) {
-        if (key.startsWith('notam_')) {
-          final indexStr = key.substring(6); // Remove 'notam_' prefix
-          final index = int.tryParse(indexStr);
-          if (index != null && index > maxNotamIndex) {
-            maxNotamIndex = index;
-          }
-        }
+      // Add ALL NOTAMs for this airport using the same format as BriefingConversionService
+      // Use NOTAM ID as key (consistent with versioned data system)
+      for (final notam in airportNotams) {
+        final key = notam.id; // Use NOTAM ID as key, not sequential
+        updatedNotams[key] = notam.toJson();
+        debugPrint('DEBUG: Added NOTAM with key: $key (ID: ${notam.id})');
       }
       
-      // Add new NOTAMs with sequential keys
-      for (int i = 0; i < airportNotams.length; i++) {
-        final key = 'notam_${maxNotamIndex + 1 + i}';
-        updatedNotams[key] = airportNotams[i].toJson();
-        debugPrint('DEBUG: Added NOTAM with key: $key');
-      }
-      
-      // Add ALL weather for this airport using the same format as original briefing creation
-      // Find the highest existing weather index to continue the sequence
-      int maxWeatherIndex = -1;
-      for (final key in updatedWeather.keys) {
-        if (key.startsWith('weather_')) {
-          final indexStr = key.substring(8); // Remove 'weather_' prefix
-          final index = int.tryParse(indexStr);
-          if (index != null && index > maxWeatherIndex) {
-            maxWeatherIndex = index;
-          }
-        }
-      }
-      
-      // Add new weather with sequential keys
-      for (int i = 0; i < airportWeather.length; i++) {
-        final key = 'weather_${maxWeatherIndex + 1 + i}';
-        updatedWeather[key] = airportWeather[i].toJson();
-        debugPrint('DEBUG: Added weather with key: $key');
+      // Add ALL weather for this airport using the same format as BriefingConversionService
+      // Use TYPE_ICAO format (consistent with versioned data system)
+      for (final weather in airportWeather) {
+        final key = '${weather.type}_${weather.icao}'; // Use TYPE_ICAO format, not sequential
+        updatedWeather[key] = weather.toJson();
+        debugPrint('DEBUG: Added weather with key: $key (Type: ${weather.type}, ICAO: ${weather.icao})');
       }
       
       debugPrint('DEBUG: Updated briefing will have ${updatedNotams.length} NOTAMs and ${updatedWeather.length} weather entries');
@@ -154,14 +130,25 @@ class FlightProvider with ChangeNotifier {
         timestamp: DateTime.now(),
       );
       
-      // Save the updated briefing
-      debugPrint('DEBUG: About to save briefing with airports: ${updatedBriefing.airports}');
+      // Create new versioned data with the updated NOTAM and weather data
+      debugPrint('DEBUG: Creating new versioned data for briefing ${updatedBriefing.id}');
+      final versionedData = {
+        'notams': updatedNotams,
+        'weather': updatedWeather,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      // Store the new versioned data
+      final newVersion = await BriefingStorageService.createNewVersion(updatedBriefing.id, versionedData);
+      debugPrint('DEBUG: Created new version $newVersion for briefing ${updatedBriefing.id}');
+      
+      // Update the briefing metadata (airports, timestamp)
       final success = await BriefingStorageService.updateBriefing(updatedBriefing);
       if (success) {
         _currentBriefing = updatedBriefing;
         debugPrint('DEBUG: SUCCESS - Updated briefing with new airport $icao');
         debugPrint('DEBUG: Updated briefing airports: ${_currentBriefing!.airports}');
-        debugPrint('DEBUG: Briefing storage updated - airport and data will persist when briefing is reloaded');
+        debugPrint('DEBUG: Briefing storage updated with versioned data - airport and data will persist when briefing is reloaded');
       } else {
         debugPrint('DEBUG: FAILED - Could not update briefing with new airport $icao');
       }
@@ -202,12 +189,24 @@ class FlightProvider with ChangeNotifier {
         timestamp: DateTime.now(),
       );
       
-      // Save the updated briefing
+      // Create new versioned data with the updated NOTAM and weather data
+      debugPrint('DEBUG: Creating new versioned data for briefing ${updatedBriefing.id} after airport removal');
+      final versionedData = {
+        'notams': updatedNotams,
+        'weather': updatedWeather,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      // Store the new versioned data
+      final newVersion = await BriefingStorageService.createNewVersion(updatedBriefing.id, versionedData);
+      debugPrint('DEBUG: Created new version $newVersion for briefing ${updatedBriefing.id}');
+      
+      // Update the briefing metadata (airports, timestamp)
       final success = await BriefingStorageService.updateBriefing(updatedBriefing);
       if (success) {
         _currentBriefing = updatedBriefing;
         debugPrint('DEBUG: Successfully removed airport $icao from briefing');
-        debugPrint('DEBUG: Briefing storage updated - airport removal will persist when briefing is reloaded');
+        debugPrint('DEBUG: Briefing storage updated with versioned data - airport removal will persist when briefing is reloaded');
       } else {
         debugPrint('DEBUG: Failed to remove airport $icao from briefing');
       }
