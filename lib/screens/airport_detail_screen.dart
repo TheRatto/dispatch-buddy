@@ -373,6 +373,7 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
         airportName: selectedAirport.name,
         icao: selectedAirport.icao,
         notams: notams,
+        city: selectedAirport.city,
       ),
       // Overview page
       _buildOverviewPage(selectedAirport, notams),
@@ -439,7 +440,7 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
                     Text(
                       '${selectedAirport.name} (${selectedAirport.icao}${AirportDatabase.getIataCode(selectedAirport.icao) != null ? '/${AirportDatabase.getIataCode(selectedAirport.icao)}' : ''})',
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

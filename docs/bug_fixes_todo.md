@@ -293,20 +293,24 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 3.2: Airport Title Too Large
 **Priority**: LOW | **Estimated Time**: 30 minutes
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - Airport title text is unnecessarily large
 - Reduce size for better screen utilization
 - Maintain readability
+- **COMPLETED**: Airport title size reduced from 18px to 16px
 
 **Files to Modify**:
 - `lib/screens/airport_detail_screen.dart`
+- `lib/widgets/facilities_widget.dart`
 
 **Acceptance Criteria**:
-- [ ] Airport title size reduced
-- [ ] Text remains readable
-- [ ] Layout looks more balanced
+- [x] Airport title size reduced
+- [x] Text remains readable
+- [x] Layout looks more balanced
+- [x] Reduced from fontSize: 18 to fontSize: 16 in airport detail screen
+- [x] Changed from titleLarge to titleMedium theme in facilities widget
 
 ---
 
@@ -797,7 +801,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 3. **Bug 2.3**: NOTAM Modal Valid Time Shows Both Z and UTC ✅
 4. **Bug 2.4**: Remove "Schedule" Word from NOTAM Modal ✅
 5. **Bug 2.9**: Consider Switching Tab Order (Raw Data)
-6. **Bug 3.2**: Airport Title Too Large
+6. **Bug 3.2**: Airport Title Too Large ✅
 7. **Bug 3.4**: Change "Unserviceable" to "U/S"
 8. **Bug 5.3**: Consider Pre-loaded NAIPS Logins
 9. **Bug 8.1**: Remove Menu Heading (Drawer Menu)

@@ -46,12 +46,14 @@ class FacilitiesWidget extends StatefulWidget {
   final String airportName;
   final String icao;
   final List<Notam> notams;
+  final String? city;
 
   const FacilitiesWidget({
     Key? key,
     required this.airportName,
     required this.icao,
     required this.notams,
+    this.city,
   }) : super(key: key);
 
   @override
@@ -149,12 +151,14 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
                 children: [
                   Text(
                     '${widget.airportName} (${widget.icao})',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    'Facilities Overview',
+                    widget.city ?? (widget.airportName.split(' ').length > 1 
+                        ? widget.airportName.substring(widget.airportName.indexOf(' ') + 1)
+                        : widget.airportName),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
