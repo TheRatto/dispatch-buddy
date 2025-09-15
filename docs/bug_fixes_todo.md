@@ -11,19 +11,24 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 1.1: Shrink Banner and Change Heading
 **Priority**: MEDIUM | **Estimated Time**: 1 hour
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - Reduce banner size for better screen real estate
 - Update heading text for clarity
+- Redesigned banner with horizontal layout for better space utilization
 
 **Files to Modify**:
 - `lib/screens/home_screen.dart`
 
 **Acceptance Criteria**:
-- [ ] Banner takes up less vertical space
-- [ ] Heading text is more concise and clear
-- [ ] Layout remains responsive on different screen sizes
+- [x] Banner takes up less vertical space
+- [x] Heading text is more concise and clear
+- [x] Layout remains responsive on different screen sizes
+- [x] Horizontal layout with logo on left, text on right
+- [x] "Briefing Buddy" as main text, "Preflight Briefing Assistant" as byline
+- [x] Removed redundant "Briefing Buddy" from app bar
+- [x] More space available for content below banner
 
 ---
 
@@ -775,7 +780,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 15. **Bug 10.1**: Zoom Out App Icon Slightly to Prevent Cropping
 
 ### LOW PRIORITY (Fix Last)
-1. **Bug 1.1**: Shrink Banner and Change Heading
+1. **Bug 1.1**: Shrink Banner and Change Heading ✅
 2. **Bug 1.3**: Change Flag to Star on Previous Briefings
 3. **Bug 2.3**: NOTAM Modal Valid Time Shows Both Z and UTC ✅
 4. **Bug 2.4**: Remove "Schedule" Word from NOTAM Modal ✅

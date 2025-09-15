@@ -22,17 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false, // Disable back button on home screen
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
-            SizedBox(height: 2),
-            Text(
-              'Briefing Buddy',
-              style: TextStyle(fontSize: 18),
-            ),
-          ],
-        ),
+        title: const ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
         centerTitle: true,
         actions: [
           Builder(
@@ -54,35 +44,53 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
+                // Header - Compact horizontal layout
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E3A8A),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
+                      // Logo
                       Image.asset(
                         'assets/images/logo.png',
                         width: 80,
-                        height: 80, // Restore original size
+                        height: 80,
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Preflight Briefing Assistant',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(width: 16),
+                      // Text content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Briefing Buddy',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Preflight Briefing Assistant',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 
                 // New Briefing Button
                 ElevatedButton.icon(
@@ -109,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 
                 // Previous briefings list
                 Expanded(
