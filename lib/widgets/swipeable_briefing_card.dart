@@ -200,7 +200,7 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              updatedBriefing.isFlagged ? 'Briefing flagged' : 'Briefing unflagged',
+              updatedBriefing.isFlagged ? 'Briefing pinned' : 'Briefing unpinned',
             ),
             duration: const Duration(seconds: 2),
           ),
@@ -495,8 +495,8 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
                           // Flag button (left)
                           _buildAnimatedActionButton(
                             color: Colors.blue,
-                            icon: widget.briefing.isFlagged ? Icons.flag : Icons.outlined_flag,
-                            label: widget.briefing.isFlagged ? 'Unflag' : 'Flag',
+                            icon: widget.briefing.isFlagged ? Icons.star : Icons.star_border,
+                            label: widget.briefing.isFlagged ? 'Unpin' : 'Pin',
                             onTap: _onFlagTap,
                             anim: flagAnim,
                             width: buttonSize,
@@ -626,7 +626,7 @@ class _SwipeableBriefingCardState extends State<SwipeableBriefingCard>
                     const SizedBox(width: 8),
                     if (widget.briefing.isFlagged)
                       const Icon(
-                        Icons.flag,
+                        Icons.star,
                         color: Colors.blue,
                         size: 20,
                       ),

@@ -55,7 +55,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 1.3: Change Flag to Star on Previous Briefings
 **Priority**: LOW | **Estimated Time**: 30 minutes
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - Replace flag icon with star icon to match radar screen styling
@@ -66,9 +66,11 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 - `lib/widgets/` (previous briefing cards)
 
 **Acceptance Criteria**:
-- [ ] Star icon replaces flag icon
-- [ ] Icon matches radar screen styling
-- [ ] Functionality remains unchanged
+- [x] Star icon replaces flag icon
+- [x] Icon matches radar screen styling
+- [x] Functionality remains unchanged
+- [x] Both filled star (Icons.star) and outlined star (Icons.star_border) implemented
+- [x] Consistent with radar screen star styling
 
 ---
 
@@ -787,7 +789,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### LOW PRIORITY (Fix Last)
 1. **Bug 1.1**: Shrink Banner and Change Heading ✅
-2. **Bug 1.3**: Change Flag to Star on Previous Briefings
+2. **Bug 1.3**: Change Flag to Star on Previous Briefings ✅
 3. **Bug 2.3**: NOTAM Modal Valid Time Shows Both Z and UTC ✅
 4. **Bug 2.4**: Remove "Schedule" Word from NOTAM Modal ✅
 5. **Bug 2.9**: Consider Switching Tab Order (Raw Data)
