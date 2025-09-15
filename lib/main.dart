@@ -1,4 +1,4 @@
-// main.dart – Dispatch Buddy (Flutter MVP Scaffold)
+// main.dart – Briefing Buddy (Flutter MVP Scaffold)
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dispatch Buddy',
+      title: 'Briefing Buddy',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         primaryColor: const Color(0xFF1E3A8A), // Deep Blue

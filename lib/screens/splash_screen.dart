@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 import 'briefing_tabs_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -105,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen>
                         end: Alignment.bottomRight,
                       ).createShader(bounds),
                       child: const Text(
-                        'Dispatch Buddy',
+                        'Briefing Buddy',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 32,
@@ -117,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen>
                     const SizedBox(height: 8),
                     // Tagline
                     const Text(
-                      'Aviation Dispatch Assistant',
+                      'Preflight Briefing Assistant',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 16,

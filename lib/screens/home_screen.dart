@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ZuluTimeWidget(showIcon: false, compact: true, fontSize: 13),
             SizedBox(height: 2),
             Text(
-              'Dispatch Buddy',
+              'Briefing Buddy',
               style: TextStyle(fontSize: 18),
             ),
           ],
@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'AI Preflight Briefing Assistant',
+                        'Preflight Briefing Assistant',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
