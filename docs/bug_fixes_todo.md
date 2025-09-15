@@ -74,12 +74,13 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 1.4: Add Airport Pill Should Add to Current Previous Briefing
 **Priority**: MEDIUM | **Estimated Time**: 2 hours
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - When using "Add Airport" pill on Airports or Raw Data screens
 - Should add airport to the current previous briefing for future reloads
 - Currently only adds to current session
+- **COMPLETED**: Airport addition now persists to previous briefings with full data
 
 **Files to Modify**:
 - `lib/screens/airport_detail_screen.dart`
@@ -87,9 +88,11 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 - `lib/providers/flight_provider.dart`
 
 **Acceptance Criteria**:
-- [ ] Add airport pill persists airport to saved briefing
-- [ ] Airport appears when briefing is reloaded
-- [ ] Works consistently across Airports and Raw Data screens
+- [x] Add airport pill persists airport to saved briefing
+- [x] Airport appears when briefing is reloaded
+- [x] Works consistently across Airports and Raw Data screens
+- [x] Weather and NOTAM data also persists for added airports
+- [x] Uses versioned data storage system for proper persistence
 
 ---
 
@@ -97,20 +100,23 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 2.1: Adding Airport on TAF Doesn't Fetch NOTAMs
 **Priority**: HIGH | **Estimated Time**: 2 hours
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - When adding airport via TAF section, NOTAMs are not automatically fetched
 - Should fetch both TAF and NOTAMs when adding new airport
+- **COMPLETED**: Airport addition now fetches all data types (NOTAMs, weather, TAFs)
 
 **Files to Modify**:
 - `lib/screens/raw_data_screen.dart`
 - `lib/providers/flight_provider.dart`
 
 **Acceptance Criteria**:
-- [ ] Adding airport via TAF section fetches both TAF and NOTAMs
-- [ ] Behavior matches other airport addition methods
-- [ ] Loading states properly displayed
+- [x] Adding airport via TAF section fetches both TAF and NOTAMs
+- [x] Behavior matches other airport addition methods
+- [x] Loading states properly displayed
+- [x] All data types (NOTAMs, METAR, TAFs) are fetched when adding airport
+- [x] Consistent behavior across all airport addition methods
 
 ---
 
@@ -754,7 +760,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### HIGH PRIORITY (Fix First)
 1. **Bug 1.2**: Split Start New Briefing into Two Pathways
-2. **Bug 2.1**: Adding Airport on TAF Doesn't Fetch NOTAMs
+2. **Bug 2.1**: Adding Airport on TAF Doesn't Fetch NOTAMs ✅
 3. **Bug 2.5**: Fix NOTAM F&G Incorrectly Showing
 4. **Bug 3.1**: Airport Pill "Add" Button Says "Coming Soon" ✅
 5. **Bug 3.6**: Implement Two-Stage Filtering for Runways and Lighting ✅
@@ -763,7 +769,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 8. **Bug 11.2**: Fix Weather and NOTAM Data Persistence for Added Airports ✅
 
 ### MEDIUM PRIORITY (Fix Second)
-1. **Bug 1.4**: Add Airport Pill Should Add to Current Previous Briefing
+1. **Bug 1.4**: Add Airport Pill Should Add to Current Previous Briefing ✅
 2. **Bug 2.2**: NOTAM Group Expansion Needs Auto-Scroll
 3. **Bug 2.6**: TAF Vertical Size - Keep Time Slider Visible
 4. **Bug 2.7**: TAF Slider Time Position Not Covered by Thumb
