@@ -38,6 +38,12 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
   
   // Track which NOTAM is currently being swiped
   String? _currentlySwipedNotamId;
+  
+  // Scroll controller for auto-scroll functionality
+  final ScrollController _scrollController = ScrollController();
+  
+  // Global keys for each group to enable scrolling to them
+  final Map<NotamGroup, GlobalKey> _groupKeys = {};
 
 
 
@@ -47,6 +53,7 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
     // Initialize all groups as collapsed or expanded based on initiallyExpanded
     for (final group in NotamGroup.values) {
       _expandedGroups[group] = widget.initiallyExpanded;
+      _groupKeys[group] = GlobalKey();
     }
     _loadHiddenCounts();
     _loadFilteredNotams();
@@ -74,6 +81,7 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
 
   @override
   void dispose() {
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -173,6 +181,7 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
     }
 
     return ListView.builder(
+      controller: _scrollController,
       itemCount: sortedGroups.length,
       itemBuilder: (context, index) {
         final group = sortedGroups[index];
@@ -186,6 +195,7 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
         }
 
         return Column(
+          key: _groupKeys[group],
           children: [
             if (widget.showGroupHeaders)
               NotamGroupHeader(
@@ -266,6 +276,28 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
     final wasExpanded = _expandedGroups[group] ?? false;
     setState(() {
       _expandedGroups[group] = !wasExpanded;
+    });
+    
+    // Auto-scroll to the group when expanding (not when collapsing)
+    if (!wasExpanded) {
+      _scrollToGroup(group);
+    }
+  }
+  
+  void _scrollToGroup(NotamGroup group) {
+    // Wait for the animation to complete before scrolling
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      
+      final context = _groupKeys[group]?.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.1, // Scroll so the group appears near the top
+        );
+      }
     });
   }
 

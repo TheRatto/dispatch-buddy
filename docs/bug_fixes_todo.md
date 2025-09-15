@@ -124,21 +124,25 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 2.2: NOTAM Group Expansion Needs Auto-Scroll
 **Priority**: MEDIUM | **Estimated Time**: 1.5 hours
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - When expanding bottom NOTAM group (usually "Other")
 - Page should auto-scroll to show expanded NOTAMs
 - Currently expanded content may be hidden below viewport
+- **COMPLETED**: Auto-scroll functionality implemented for all NOTAM groups
 
 **Files to Modify**:
 - `lib/screens/raw_data_screen.dart`
 - `lib/widgets/notam_group_widget.dart`
 
 **Acceptance Criteria**:
-- [ ] Page scrolls to show expanded NOTAMs
-- [ ] Smooth scrolling animation
-- [ ] Works for all NOTAM groups, not just "Other"
+- [x] Page scrolls to show expanded NOTAMs
+- [x] Smooth scrolling animation
+- [x] Works for all NOTAM groups, not just "Other"
+- [x] Scrolls only when expanding (not when collapsing)
+- [x] Waits for animation to complete before scrolling
+- [x] Uses Scrollable.ensureVisible for smooth scrolling
 
 ---
 
@@ -772,7 +776,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### MEDIUM PRIORITY (Fix Second)
 1. **Bug 1.4**: Add Airport Pill Should Add to Current Previous Briefing ✅
-2. **Bug 2.2**: NOTAM Group Expansion Needs Auto-Scroll
+2. **Bug 2.2**: NOTAM Group Expansion Needs Auto-Scroll ✅
 3. **Bug 2.6**: TAF Vertical Size - Keep Time Slider Visible
 4. **Bug 2.7**: TAF Slider Time Position Not Covered by Thumb
 5. **Bug 2.8**: TAF Color Differentiation for TEMPO Periods
