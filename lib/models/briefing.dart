@@ -8,6 +8,7 @@ class Briefing {
   final List<String> airports;
   final Map<String, dynamic> notams;
   final Map<String, dynamic> weather;
+  final Map<String, dynamic> firstLastLight; // Added for first/last light storage
   final DateTime timestamp;
   final bool isFlagged;
   final String? userNotes;
@@ -18,6 +19,7 @@ class Briefing {
     required this.airports,
     required this.notams,
     required this.weather,
+    required this.firstLastLight,
     required this.timestamp,
     this.isFlagged = false,
     this.userNotes,
@@ -29,6 +31,7 @@ class Briefing {
     required List<String> airports,
     required Map<String, dynamic> notams,
     required Map<String, dynamic> weather,
+    Map<String, dynamic>? firstLastLight,
     bool isFlagged = false,
     String? userNotes,
   }) {
@@ -46,6 +49,7 @@ class Briefing {
       airports: airports,
       notams: notams,
       weather: weather,
+      firstLastLight: firstLastLight ?? {},
       timestamp: now,
       isFlagged: isFlagged,
       userNotes: userNotes,
@@ -59,6 +63,7 @@ class Briefing {
     List<String>? airports,
     Map<String, dynamic>? notams,
     Map<String, dynamic>? weather,
+    Map<String, dynamic>? firstLastLight,
     DateTime? timestamp,
     bool? isFlagged,
     String? userNotes,
@@ -69,6 +74,7 @@ class Briefing {
       airports: airports ?? this.airports,
       notams: notams ?? this.notams,
       weather: weather ?? this.weather,
+      firstLastLight: firstLastLight ?? this.firstLastLight,
       timestamp: timestamp ?? this.timestamp,
       isFlagged: isFlagged ?? this.isFlagged,
       userNotes: userNotes, // Allow explicit null values
@@ -83,6 +89,7 @@ class Briefing {
       'airports': airports,
       'notams': notams,
       'weather': weather,
+      'firstLastLight': firstLastLight,
       'timestamp': timestamp.toIso8601String(),
       'isFlagged': isFlagged,
       'userNotes': userNotes,
@@ -97,6 +104,7 @@ class Briefing {
       airports: List<String>.from(json['airports'] as List),
       notams: Map<String, dynamic>.from(json['notams'] as Map),
       weather: Map<String, dynamic>.from(json['weather'] as Map),
+      firstLastLight: Map<String, dynamic>.from(json['firstLastLight'] as Map? ?? {}),
       timestamp: DateTime.parse(json['timestamp'] as String),
       isFlagged: json['isFlagged'] as bool? ?? false,
       userNotes: json['userNotes'] as String?,

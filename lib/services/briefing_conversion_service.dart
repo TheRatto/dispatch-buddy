@@ -36,11 +36,13 @@ class BriefingConversionService {
       
       Map<String, dynamic> notamsMap;
       Map<String, dynamic> weatherMap;
+      Map<String, dynamic> firstLastLightMap;
       
       if (versionedData != null) {
         debugPrint('DEBUG: Using versioned data for briefing ${briefing.id}');
         notamsMap = Map<String, dynamic>.from(versionedData['notams'] ?? {});
         weatherMap = Map<String, dynamic>.from(versionedData['weather'] ?? {});
+        firstLastLightMap = Map<String, dynamic>.from(versionedData['firstLastLight'] ?? {});
       } else {
         debugPrint('DEBUG: No versioned data found, migrating briefing ${briefing.id} to versioned data system');
         
@@ -53,20 +55,24 @@ class BriefingConversionService {
             debugPrint('DEBUG: Using newly migrated versioned data for briefing ${briefing.id}');
             notamsMap = Map<String, dynamic>.from(newVersionedData['notams'] ?? {});
             weatherMap = Map<String, dynamic>.from(newVersionedData['weather'] ?? {});
+            firstLastLightMap = Map<String, dynamic>.from(newVersionedData['firstLastLight'] ?? {});
           } else {
             debugPrint('DEBUG: Migration failed, using briefing metadata');
             notamsMap = briefing.notams;
             weatherMap = briefing.weather;
+            firstLastLightMap = briefing.firstLastLight;
           }
         } else {
           debugPrint('DEBUG: Migration failed, using briefing metadata');
           notamsMap = briefing.notams;
           weatherMap = briefing.weather;
+          firstLastLightMap = briefing.firstLastLight;
         }
       }
       
       debugPrint('DEBUG: Briefing has ${notamsMap.length} NOTAM entries');
       debugPrint('DEBUG: Briefing has ${weatherMap.length} weather entries');
+      debugPrint('DEBUG: Briefing has ${firstLastLightMap.length} first/last light entries');
       
       // Convert stored data back to proper objects
       final notams = _convertNotamsMapToList(notamsMap);
@@ -121,6 +127,7 @@ class BriefingConversionService {
         airports: airportsList,
         notams: notamsMap,
         weather: weatherMap,
+        firstLastLight: {}, // First/last light data is handled separately in FlightProvider
       );
     } catch (e) {
       debugPrint('ERROR: Failed to convert flight to briefing: $e');

@@ -11,7 +11,6 @@ class NAIPSService {
   // Session management
   Map<String, String> _sessionCookies = {};
   bool _isAuthenticated = false;
-  String? _workingBriefingUrl; // Store the working URL we found
   
   /// Authenticate with NAIPS using username and password
   /// Returns true if authentication successful, false otherwise
@@ -41,9 +40,34 @@ class NAIPSService {
         _isAuthenticated = true;
         debugPrint('DEBUG: NAIPSService - Authentication successful');
         
-        // Don't follow server redirect - instead navigate like a browser
-        // The session cookies should be sufficient for subsequent requests
-        debugPrint('DEBUG: NAIPSService - Session established with ${_sessionCookies.length} cookies');
+          // Follow the authentication redirect to establish session properly
+          final redirectLocation = response.headers['location'];
+          if (redirectLocation != null) {
+            debugPrint('DEBUG: NAIPSService - Following auth redirect to: $redirectLocation');
+            
+            final redirectResponse = await http.get(
+              Uri.parse('$baseUrl$redirectLocation'),
+              headers: {
+                'Cookie': _buildCookieHeader(),
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+                'Referer': '$baseUrl/Account/LogOn',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-AU,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+              },
+            );
+            debugPrint('DEBUG: NAIPSService - Auth redirect response status: ${redirectResponse.statusCode}');
+            
+            // Update cookies from redirect response
+            _parseSessionCookies(redirectResponse.headers);
+            debugPrint('DEBUG: NAIPSService - Updated session cookies after auth redirect: ${_sessionCookies.length}');
+          }
         
         // Navigate to the main NAIPS page to establish session
         debugPrint('DEBUG: NAIPSService - Navigating to main NAIPS page...');
@@ -53,6 +77,15 @@ class NAIPSService {
             'Cookie': _buildCookieHeader(),
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
             'Referer': '$baseUrl/Account/LogOn',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-AU,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
           },
         );
         debugPrint('DEBUG: NAIPSService - Main page response status: ${mainPageResponse.statusCode}');
@@ -234,7 +267,7 @@ class NAIPSService {
                       final preMatches = RegExp(r'<pre[^>]*>(.*?)</pre>', dotAll: true).allMatches(finalResponse.body);
                       for (int i = 0; i < preMatches.length; i++) {
                         final preContent = preMatches.elementAt(i).group(1);
-                        debugPrint('DEBUG: NAIPSService - PRE content ${i + 1}: ${preContent?.substring(0, preContent!.length > 2000 ? 2000 : preContent.length)}');
+                        debugPrint('DEBUG: NAIPSService - PRE content ${i + 1}: ${preContent?.substring(0, preContent.length > 2000 ? 2000 : preContent.length)}');
                       }
                     }
                     
@@ -332,6 +365,606 @@ class NAIPSService {
   /// Verify that current cookies can access the Chart Directory. Returns true when
   /// the response looks like the directory (has table headers like Code/Name),
   /// false when we got the login page.
+  /// Fetch first/last light data for a specific airport and date
+  /// Returns a map with 'firstLight' and 'lastLight' times in UTC
+  Future<Map<String, String>?> fetchFirstLastLight({
+    required String icao,
+    required DateTime date,
+  }) async {
+    if (!_isAuthenticated) {
+      debugPrint('DEBUG: NAIPSService - Cannot fetch first/last light: not authenticated');
+      return null;
+    }
+
+    try {
+      debugPrint('DEBUG: NAIPSService - Fetching first/last light for $icao on ${date.toIso8601String()}');
+      
+      // Try multiple approaches for first/last light
+      // Approach 1: Page navigation approach (more reliable)
+      debugPrint('DEBUG: NAIPSService - Trying Approach 1: Page navigation...');
+      final result1 = await _tryPageNavigationApproach(icao, date);
+      if (result1 != null) {
+        debugPrint('DEBUG: NAIPSService - Approach 1 succeeded');
+        return result1;
+      }
+      
+      // Approach 2: Try page navigation with longer delays
+      debugPrint('DEBUG: NAIPSService - Trying Approach 2: Page navigation with delays...');
+      final result2 = await _tryPageNavigationWithDelays(icao, date);
+      if (result2 != null) {
+        debugPrint('DEBUG: NAIPSService - Approach 2 succeeded');
+        return result2;
+      }
+      
+      // Approach 3: Direct POST (like weather briefing) - try last
+      debugPrint('DEBUG: NAIPSService - Trying Approach 3: Direct POST...');
+      final result3 = await _tryDirectPostApproach(icao, date);
+      if (result3 != null) {
+        debugPrint('DEBUG: NAIPSService - Approach 3 succeeded');
+        return result3;
+      }
+      
+      
+      debugPrint('DEBUG: NAIPSService - All approaches failed for $icao');
+      return null;
+    } catch (e) {
+      debugPrint('ERROR: NAIPSService - Exception fetching first/last light for $icao: $e');
+      return null;
+    }
+  }
+  
+  /// Submit the First/Last Light form following proper flow
+  Future<Map<String, String>?> _submitFirstLastLightForm(String icao, DateTime date) async {
+    try {
+      // Format date as YYMMDD (e.g., "250920" for 20 Sep 2025)
+      final dateStr = _formatDateForNaips(date);
+      debugPrint('DEBUG: NAIPSService - Formatted date: $dateStr');
+      
+      // Prepare form data
+      final formData = {
+        'DomesticOnly': 'true',
+        'LocationName': icao.toUpperCase(),
+        'FirstLastDate': dateStr,
+      };
+      
+      debugPrint('DEBUG: NAIPSService - Form data: $formData');
+      debugPrint('DEBUG: NAIPSService - Submitting First/Last Light form...');
+      
+      // Submit the form
+      final response = await http.post(
+        Uri.parse('$baseUrl/FirstLastLight'),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Cookie': _buildCookieHeader(),
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+          'Referer': '$baseUrl/FirstLastLight',
+          'Origin': 'https://www.airservicesaustralia.com',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-AU,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'same-origin',
+        },
+        body: formData.entries
+            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+            .join('&'),
+      );
+      
+      debugPrint('DEBUG: NAIPSService - Form submission response status: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        debugPrint('DEBUG: NAIPSService - Form submission response body length: ${response.body.length}');
+        
+        // Parse HTML response to extract first/last light times
+        final result = _parseFirstLastLightHtml(response.body);
+        if (result != null) {
+          debugPrint('DEBUG: NAIPSService - Successfully fetched first/last light data for $icao: $result');
+          return result;
+        } else {
+          debugPrint('DEBUG: NAIPSService - Failed to parse first/last light HTML for $icao');
+          return null;
+        }
+      } else if (response.statusCode == 302) {
+        // Handle redirect to results page
+        final redirectLocation = response.headers['location'];
+        debugPrint('DEBUG: NAIPSService - Form submission redirect to: $redirectLocation');
+        
+        if (redirectLocation != null && redirectLocation.contains('ShowResults')) {
+          // Follow the redirect to the results page
+          String resultsUrl;
+          if (redirectLocation.startsWith('http')) {
+            resultsUrl = redirectLocation;
+          } else {
+            // Remove leading /naips/ if present to avoid double /naips/naips/
+            final cleanRedirect = redirectLocation.startsWith('/naips/') 
+                ? redirectLocation.substring(6) // Remove '/naips'
+                : redirectLocation;
+            resultsUrl = '$baseUrl$cleanRedirect';
+          }
+          debugPrint('DEBUG: NAIPSService - Following redirect to results page...');
+          debugPrint('DEBUG: NAIPSService - Corrected redirect URL: $resultsUrl');
+          
+          // Add a small delay before following the redirect
+          await Future.delayed(Duration(milliseconds: 500));
+          
+          final resultsResponse = await http.get(
+            Uri.parse(resultsUrl),
+            headers: {
+              'Cookie': _buildCookieHeader(),
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+              'Referer': '$baseUrl/FirstLastLight',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-AU,en;q=0.9',
+              'Accept-Encoding': 'gzip, deflate, br',
+              'Connection': 'keep-alive',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            },
+          );
+          
+          debugPrint('DEBUG: NAIPSService - Results page response status: ${resultsResponse.statusCode}');
+          debugPrint('DEBUG: NAIPSService - Results page body length: ${resultsResponse.body.length}');
+          
+          // Update cookies from results page response
+          _parseSessionCookies(resultsResponse.headers);
+          debugPrint('DEBUG: NAIPSService - Updated cookies after results page: ${_sessionCookies.length}');
+          
+          if (resultsResponse.statusCode == 200) {
+            return _parseFirstLastLightHtml(resultsResponse.body);
+          } else {
+            debugPrint('DEBUG: NAIPSService - Results page failed with status: ${resultsResponse.statusCode}');
+            return null;
+          }
+        } else {
+          debugPrint('DEBUG: NAIPSService - Unexpected redirect location: $redirectLocation');
+          return null;
+        }
+      } else {
+        debugPrint('DEBUG: NAIPSService - Form submission failed with status: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('ERROR: NAIPSService - Form submission failed: $e');
+      return null;
+    }
+  }
+
+  /// Try direct POST approach (like weather briefing)
+  Future<Map<String, String>?> _tryDirectPostApproach(String icao, DateTime date) async {
+    try {
+      // Add a small delay to ensure session is fully established
+      debugPrint('DEBUG: NAIPSService - Waiting for session to stabilize...');
+      await Future.delayed(Duration(milliseconds: 1000));
+      
+      // First, navigate to the First/Last Light page to get any additional cookies (like weather flow)
+      debugPrint('DEBUG: NAIPSService - Step 1: Navigating to First/Last Light page to get additional cookies...');
+      try {
+        final firstLastLightPageResponse = await http.get(
+          Uri.parse('$baseUrl/FirstLastLight'),
+          headers: {
+            'Cookie': _buildCookieHeader(),
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+            'Referer': '$baseUrl/',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-AU,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        );
+        debugPrint('DEBUG: NAIPSService - First/Last Light page response status: ${firstLastLightPageResponse.statusCode}');
+        
+        // Update cookies from First/Last Light page response
+        _parseSessionCookies(firstLastLightPageResponse.headers);
+        debugPrint('DEBUG: NAIPSService - Updated cookies after First/Last Light page: ${_sessionCookies.length}');
+        
+        if (firstLastLightPageResponse.statusCode != 200) {
+          debugPrint('DEBUG: NAIPSService - First/Last Light page failed, but continuing with POST...');
+        }
+        
+        // Navigate back to main page to get any additional cookies
+        debugPrint('DEBUG: NAIPSService - Step 1.5: Navigating back to main page for additional cookies...');
+        try {
+          final mainPageResponse = await http.get(
+            Uri.parse('$baseUrl/'),
+            headers: {
+              'Cookie': _buildCookieHeader(),
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+              'Referer': '$baseUrl/FirstLastLight',
+            },
+          );
+          _parseSessionCookies(mainPageResponse.headers);
+          debugPrint('DEBUG: NAIPSService - Final cookies after main page: ${_sessionCookies.length}');
+        } catch (e) {
+          debugPrint('DEBUG: NAIPSService - Main page navigation failed: $e');
+        }
+      } catch (e) {
+        debugPrint('DEBUG: NAIPSService - First/Last Light page navigation failed: $e');
+      }
+      
+      // Format date as DDMMYY (e.g., "150925" for 15 Sep 2025)
+      final dateStr = _formatDateForNaips(date);
+      debugPrint('DEBUG: NAIPSService - Formatted date: $dateStr');
+      
+      // Prepare form data
+      final formData = {
+        'DomesticOnly': 'true',
+        'LocationName': icao.toUpperCase(),
+        'FirstLastDate': dateStr,
+      };
+      
+      debugPrint('DEBUG: NAIPSService - Form data: $formData');
+      debugPrint('DEBUG: NAIPSService - Making POST request to FirstLastLight endpoint');
+      
+      // Step 2: Submit First/Last Light form directly (like weather briefing)
+      debugPrint('DEBUG: NAIPSService - Step 2: Submitting First/Last Light form directly...');
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/FirstLastLight'),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Cookie': _buildCookieHeader(),
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+          'Referer': '$baseUrl/FirstLastLight',
+          'Origin': 'https://www.airservicesaustralia.com',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-AU,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'same-origin',
+        },
+        body: formData.entries
+            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+            .join('&'),
+      );
+      
+      debugPrint('DEBUG: NAIPSService - First/last light response status: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        debugPrint('DEBUG: NAIPSService - First/last light response body length: ${response.body.length}');
+        debugPrint('DEBUG: NAIPSService - First/last light response preview: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
+        
+        // Parse HTML response to extract first/last light times
+        final result = _parseFirstLastLightHtml(response.body);
+        if (result != null) {
+          debugPrint('DEBUG: NAIPSService - Successfully fetched first/last light data for $icao: $result');
+          return result;
+        } else {
+          debugPrint('DEBUG: NAIPSService - Failed to parse first/last light HTML for $icao');
+          return null;
+        }
+      } else if (response.statusCode == 302) {
+        // Handle redirect to results page
+        final redirectLocation = response.headers['location'];
+        debugPrint('DEBUG: NAIPSService - First/last light redirect to: $redirectLocation');
+        
+        if (redirectLocation != null && redirectLocation.contains('ShowResults')) {
+          // Follow the redirect to get the actual results
+          debugPrint('DEBUG: NAIPSService - Following redirect to results page...');
+          
+          // Add a small delay to ensure the server has processed the request
+          await Future.delayed(Duration(milliseconds: 500));
+          
+          // Try different URL formats for the results page (like weather briefing)
+          // Clean the redirect location to avoid double /naips/naips/
+          final cleanRedirect = redirectLocation.startsWith('/naips/') 
+              ? redirectLocation.substring(6) // Remove '/naips'
+              : redirectLocation;
+          
+          final possibleUrls = [
+            '$baseUrl$cleanRedirect', // Clean format
+            'https://www.airservicesaustralia.com$redirectLocation', // Full URL
+            '$baseUrl/FirstLastLight/ShowResults', // Direct path
+            '$baseUrl/FirstLastLight/Results', // Alternative path
+          ];
+          
+          for (final url in possibleUrls) {
+            debugPrint('DEBUG: NAIPSService - Trying URL: $url');
+            try {
+              final resultsResponse = await http.get(
+                Uri.parse(url),
+                headers: {
+                  'Cookie': _buildCookieHeader(),
+                  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+                  'Referer': '$baseUrl/FirstLastLight',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                  'Accept-Language': 'en-AU,en;q=0.9',
+                  'Accept-Encoding': 'gzip, deflate, br',
+                  'Connection': 'keep-alive',
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0',
+                },
+              );
+              
+              debugPrint('DEBUG: NAIPSService - URL $url response status: ${resultsResponse.statusCode}');
+              debugPrint('DEBUG: NAIPSService - URL $url response headers: ${resultsResponse.headers}');
+              
+              // Update cookies from results response
+              _parseSessionCookies(resultsResponse.headers);
+              debugPrint('DEBUG: NAIPSService - Updated cookies after results page: ${_sessionCookies.length}');
+              
+              if (resultsResponse.statusCode == 200) {
+                debugPrint('DEBUG: NAIPSService - Found working URL: $url');
+                debugPrint('DEBUG: NAIPSService - Results page body length: ${resultsResponse.body.length}');
+                debugPrint('DEBUG: NAIPSService - Results page preview: ${resultsResponse.body.substring(0, resultsResponse.body.length > 500 ? 500 : resultsResponse.body.length)}');
+                
+                // Check if we got the login page instead of results
+                if (resultsResponse.body.contains('LogOn') || resultsResponse.body.contains('login') || resultsResponse.body.contains('UserName')) {
+                  debugPrint('DEBUG: NAIPSService - WARNING: Got login page instead of results!');
+                  continue; // Try next URL
+                } else if (resultsResponse.body.contains('First Light - Last Light Results') || resultsResponse.body.contains('First-Light') || resultsResponse.body.contains('Last-Light')) {
+                  debugPrint('DEBUG: NAIPSService - SUCCESS: Got first/last light results!');
+                  
+                  // Parse HTML response to extract first/last light times
+                  final result = _parseFirstLastLightHtml(resultsResponse.body);
+                  if (result != null) {
+                    debugPrint('DEBUG: NAIPSService - Successfully fetched first/last light data for $icao: $result');
+                    return result;
+                  } else {
+                    debugPrint('DEBUG: NAIPSService - Failed to parse first/last light HTML from results page for $icao');
+                    continue; // Try next URL
+                  }
+                } else {
+                  debugPrint('DEBUG: NAIPSService - Unknown page content, trying next URL...');
+                  continue; // Try next URL
+                }
+              }
+            } catch (e) {
+              debugPrint('DEBUG: NAIPSService - URL $url failed: $e');
+            }
+          }
+          
+          // If none work, return null
+          debugPrint('DEBUG: NAIPSService - No working URL found for results page');
+          return null;
+        } else {
+          debugPrint('DEBUG: NAIPSService - Unexpected redirect location: $redirectLocation');
+          debugPrint('DEBUG: NAIPSService - Redirect response body: ${response.body}');
+          return null;
+        }
+      } else {
+        debugPrint('DEBUG: NAIPSService - First/last light HTTP error ${response.statusCode} for $icao');
+        debugPrint('DEBUG: NAIPSService - Error response body: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('ERROR: NAIPSService - Exception fetching first/last light for $icao: $e');
+      return null;
+    }
+  }
+
+  /// Try page navigation approach with longer delays (more reliable)
+  Future<Map<String, String>?> _tryPageNavigationWithDelays(String icao, DateTime date) async {
+    try {
+      // Add a longer delay to ensure session is fully established
+      debugPrint('DEBUG: NAIPSService - Waiting longer for session to stabilize...');
+      await Future.delayed(Duration(milliseconds: 2000));
+      
+      // Navigate to First/Last Light page to get any additional cookies
+      debugPrint('DEBUG: NAIPSService - Step 1: Navigating to First/Last Light page...');
+      final firstLastLightPageResponse = await http.get(
+        Uri.parse('$baseUrl/FirstLastLight'),
+        headers: {
+          'Cookie': _buildCookieHeader(),
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+          'Referer': '$baseUrl/',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-AU,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      );
+      debugPrint('DEBUG: NAIPSService - First/Last Light page response status: ${firstLastLightPageResponse.statusCode}');
+      
+      // Update cookies from First/Last Light page response
+      _parseSessionCookies(firstLastLightPageResponse.headers);
+      debugPrint('DEBUG: NAIPSService - Updated cookies after First/Last Light page: ${_sessionCookies.length}');
+      
+      if (firstLastLightPageResponse.statusCode != 200) {
+        debugPrint('DEBUG: NAIPSService - First/Last Light page failed, but continuing with POST...');
+      }
+      
+      // Navigate back to main page to get additional cookies
+      debugPrint('DEBUG: NAIPSService - Step 2: Navigating back to main page for additional cookies...');
+      final mainPageResponse = await http.get(
+        Uri.parse('$baseUrl/'),
+        headers: {
+          'Cookie': _buildCookieHeader(),
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+          'Referer': '$baseUrl/FirstLastLight',
+        },
+      );
+      _parseSessionCookies(mainPageResponse.headers);
+      debugPrint('DEBUG: NAIPSService - Final cookies after main page: ${_sessionCookies.length}');
+      
+      // Add another longer delay before POST request
+      debugPrint('DEBUG: NAIPSService - Waiting longer before POST request...');
+      await Future.delayed(Duration(milliseconds: 1000));
+      
+      // Now submit the form to get results
+      return await _submitFirstLastLightForm(icao, date);
+    } catch (e) {
+      debugPrint('ERROR: NAIPSService - Page navigation with delays approach failed: $e');
+      return null;
+    }
+  }
+
+  /// Try page navigation approach (more complex but might work)
+  Future<Map<String, String>?> _tryPageNavigationApproach(String icao, DateTime date) async {
+    try {
+      // Add a small delay to ensure session is fully established
+      debugPrint('DEBUG: NAIPSService - Waiting for session to stabilize...');
+      await Future.delayed(Duration(milliseconds: 1000));
+      
+      // Navigate to First/Last Light page to get any additional cookies
+      debugPrint('DEBUG: NAIPSService - Step 1: Navigating to First/Last Light page...');
+      final firstLastLightPageResponse = await http.get(
+        Uri.parse('$baseUrl/FirstLastLight'),
+        headers: {
+          'Cookie': _buildCookieHeader(),
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+          'Referer': '$baseUrl/',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+        },
+      );
+      debugPrint('DEBUG: NAIPSService - First/Last Light page response status: ${firstLastLightPageResponse.statusCode}');
+      
+      // Update cookies from First/Last Light page response
+      _parseSessionCookies(firstLastLightPageResponse.headers);
+      debugPrint('DEBUG: NAIPSService - Updated cookies after First/Last Light page: ${_sessionCookies.length}');
+      
+      if (firstLastLightPageResponse.statusCode != 200) {
+        debugPrint('DEBUG: NAIPSService - First/Last Light page failed, but continuing with POST...');
+      }
+      
+      // Navigate back to main page to get additional cookies
+      debugPrint('DEBUG: NAIPSService - Step 2: Navigating back to main page for additional cookies...');
+      final mainPageResponse = await http.get(
+        Uri.parse('$baseUrl/'),
+        headers: {
+          'Cookie': _buildCookieHeader(),
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+          'Referer': '$baseUrl/FirstLastLight',
+        },
+      );
+      _parseSessionCookies(mainPageResponse.headers);
+      debugPrint('DEBUG: NAIPSService - Final cookies after main page: ${_sessionCookies.length}');
+      
+      // Add another small delay before POST request
+      debugPrint('DEBUG: NAIPSService - Waiting before POST request...');
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Now submit the form to get results
+      return await _submitFirstLastLightForm(icao, date);
+    } catch (e) {
+      debugPrint('ERROR: NAIPSService - Page navigation approach failed: $e');
+      return null;
+    }
+  }
+
+  /// Formats DateTime to YYMMDD format for NAIPS
+  String _formatDateForNaips(DateTime date) {
+    final year = date.year.toString().substring(2); // Get last 2 digits
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year$month$day';
+  }
+
+  /// Parses the HTML response from NAIPS to extract first/last light times
+  Map<String, String>? _parseFirstLastLightHtml(String htmlString) {
+    try {
+      debugPrint('DEBUG: NAIPSService - Parsing HTML of length ${htmlString.length}');
+      
+      // Check if this is the expected results page
+      if (htmlString.contains('First Light - Last Light Results')) {
+        debugPrint('DEBUG: NAIPSService - Found expected results page title');
+        
+        // Look for the actual HTML structure: <td><span>First-Light:</span></td><td>19:31&nbsp;UTC</td>
+        final firstLightMatch = RegExp(r'<td><span>First-Light:</span></td>\s*<td>(\d{1,2}:\d{2})&nbsp;UTC</td>', caseSensitive: false).firstMatch(htmlString);
+        final lastLightMatch = RegExp(r'<td><span>Last-Light:</span></td>\s*<td>(\d{1,2}:\d{2})&nbsp;UTC</td>', caseSensitive: false).firstMatch(htmlString);
+        
+        // If the above doesn't work, try a more flexible approach
+        if (firstLightMatch == null || lastLightMatch == null) {
+          final firstLightMatch2 = RegExp(r'First-Light:\s*(\d{1,2}:\d{2})', caseSensitive: false).firstMatch(htmlString);
+          final lastLightMatch2 = RegExp(r'Last-Light:\s*(\d{1,2}:\d{2})', caseSensitive: false).firstMatch(htmlString);
+          
+          if (firstLightMatch2 != null && lastLightMatch2 != null) {
+            final firstLight = firstLightMatch2.group(1)!;
+            final lastLight = lastLightMatch2.group(1)!;
+            
+            debugPrint('DEBUG: NAIPSService - Successfully parsed times (flexible): First=$firstLight, Last=$lastLight');
+            return {
+              'firstLight': firstLight,
+              'lastLight': lastLight,
+            };
+          }
+        }
+        
+        // If still no match, try looking for the table structure directly
+        if (firstLightMatch == null || lastLightMatch == null) {
+          final tableMatch = RegExp(r'<table[^>]*class="formTable"[^>]*>.*?First-Light:\s*(\d{1,2}:\d{2})[^<]*UTC[^<]*Last-Light:\s*(\d{1,2}:\d{2})[^<]*UTC', caseSensitive: false, dotAll: true).firstMatch(htmlString);
+          
+          if (tableMatch != null) {
+            final firstLight = tableMatch.group(1)!;
+            final lastLight = tableMatch.group(2)!;
+            
+            debugPrint('DEBUG: NAIPSService - Successfully parsed times (table): First=$firstLight, Last=$lastLight');
+            return {
+              'firstLight': firstLight,
+              'lastLight': lastLight,
+            };
+          }
+        }
+        
+        if (firstLightMatch != null && lastLightMatch != null) {
+          final firstLight = firstLightMatch.group(1)!;
+          final lastLight = lastLightMatch.group(1)!;
+          
+          debugPrint('DEBUG: NAIPSService - Successfully parsed times: First=$firstLight, Last=$lastLight');
+          return {
+            'firstLight': firstLight,
+            'lastLight': lastLight,
+          };
+        }
+        
+        // Fallback: Look for other time patterns
+        final timePatterns = [
+          r'First.*?Light.*?(\d{1,2}:\d{2})',
+          r'Last.*?Light.*?(\d{1,2}:\d{2})',
+          r'First-Light.*?(\d{1,2}:\d{2})',
+          r'Last-Light.*?(\d{1,2}:\d{2})',
+        ];
+        
+        for (int i = 0; i < timePatterns.length; i += 2) {
+          if (i + 1 < timePatterns.length) {
+            final firstMatch = RegExp(timePatterns[i], caseSensitive: false).firstMatch(htmlString);
+            final lastMatch = RegExp(timePatterns[i + 1], caseSensitive: false).firstMatch(htmlString);
+            
+            if (firstMatch != null && lastMatch != null) {
+              final firstLight = firstMatch.group(1)!;
+              final lastLight = lastMatch.group(1)!;
+              
+              debugPrint('DEBUG: NAIPSService - Fallback pattern ${i ~/ 2 + 1} worked: First=$firstLight, Last=$lastLight');
+              return {
+                'firstLight': firstLight,
+                'lastLight': lastLight,
+              };
+            }
+          }
+        }
+        
+        debugPrint('DEBUG: NAIPSService - No time patterns found in results page');
+        
+      } else if (htmlString.contains('NAIPS Login')) {
+        debugPrint('DEBUG: NAIPSService - Got login page instead of results');
+      } else {
+        debugPrint('DEBUG: NAIPSService - Unknown page type - not results or login');
+      }
+      
+      debugPrint('DEBUG: NAIPSService - Could not find first/last light in HTML');
+      debugPrint('DEBUG: NAIPSService - HTML preview: ${htmlString.substring(0, htmlString.length > 1000 ? 1000 : htmlString.length)}');
+      return null;
+    } catch (e) {
+      debugPrint('ERROR: NAIPSService - Error parsing first/last light HTML: $e');
+      return null;
+    }
+  }
+
   Future<bool> ensureChartsSession() async {
     try {
       final uri = Uri.parse('$baseUrl/ChartDirectory');

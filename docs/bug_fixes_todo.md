@@ -358,23 +358,31 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ### Bug 3.5: Add First/Last Light
 **Priority**: MEDIUM | **Estimated Time**: 1.5 hours
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 
 **Description**: 
 - Add first light and last light information to airport facilities
 - Important for flight planning and operations
 - Display sunrise/sunset times
+- **COMPLETED**: NAIPS integration implemented for first/last light data
 
 **Files to Modify**:
 - `lib/widgets/facilities_widget.dart`
-- `lib/models/airport.dart`
-- `lib/services/` (new service for sunrise/sunset)
+- `lib/models/first_last_light.dart` (new model)
+- `lib/services/first_last_light_service.dart` (removed - functionality moved to NAIPSService)
+- `lib/widgets/first_last_light_widget.dart` (new widget)
+- `lib/providers/flight_provider.dart`
 
 **Acceptance Criteria**:
-- [ ] First light time displayed
-- [ ] Last light time displayed
-- [ ] Times are accurate for airport location
-- [ ] Times update based on date
+- [x] First light time displayed
+- [x] Last light time displayed
+- [x] Times are accurate for airport location (from NAIPS)
+- [x] Times update based on date
+- [x] Shows both local time and UTC time
+- [x] Automatically fetches for all airports in briefing
+- [x] Displays on Airport Facilities page below header
+- [x] Loading states and error handling implemented
+- [x] Caches data to avoid repeated requests
 
 ---
 

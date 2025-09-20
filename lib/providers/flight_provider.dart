@@ -13,8 +13,10 @@ import '../services/taf_state_manager.dart';
 import '../services/briefing_refresh_service.dart'; // Added for refreshCurrentBriefing
 import '../services/briefing_storage_service.dart'; // Added for loadBriefing
 import '../services/cache_manager.dart'; // Added for cache clearing
+import '../services/airport_timezone_service.dart'; // Added for timezone pre-fetching
 import '../services/airport_database.dart'; // Added for airport lookup
 import '../providers/settings_provider.dart'; // Added for NAIPS settings
+import '../models/first_last_light.dart'; // Added for first/last light model
 
 class FlightProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -26,6 +28,7 @@ class FlightProvider with ChangeNotifier {
   String? _loadingAirport; // Track which specific airport is being loaded
   Map<String, List<Weather>> _metarsByIcao = {};
   Map<String, List<Weather>> _tafsByIcao = {};
+  Map<String, FirstLastLight> _firstLastLightByIcao = {}; // First/last light data by ICAO
   String? _selectedAirport; // Shared airport selection across all tabs
   bool _naipsFallbackUsed = false; // One-time snackbar flag for NAIPS fallback
   
@@ -99,10 +102,12 @@ class FlightProvider with ChangeNotifier {
       // Update briefing data - start with existing data
       final updatedNotams = Map<String, dynamic>.from(_currentBriefing!.notams);
       final updatedWeather = Map<String, dynamic>.from(_currentBriefing!.weather);
+      final updatedFirstLastLight = Map<String, dynamic>.from(_currentBriefing!.firstLastLight);
       
       // Remove any existing data for this airport to avoid duplicates
       updatedNotams.removeWhere((key, value) => value['icao'] == icao);
       updatedWeather.removeWhere((key, value) => value['icao'] == icao);
+      updatedFirstLastLight.removeWhere((key, value) => key.contains(icao));
       
       // Add ALL NOTAMs for this airport using the same format as BriefingConversionService
       // Use NOTAM ID as key (consistent with versioned data system)
@@ -120,21 +125,31 @@ class FlightProvider with ChangeNotifier {
         debugPrint('DEBUG: Added weather with key: $key (Type: ${weather.type}, ICAO: ${weather.icao})');
       }
       
-      debugPrint('DEBUG: Updated briefing will have ${updatedNotams.length} NOTAMs and ${updatedWeather.length} weather entries');
+      // Add first/last light data for this airport
+      final firstLastLight = firstLastLightByIcao[icao];
+      if (firstLastLight != null) {
+        final key = 'firstlastlight_$icao'; // Use consistent key format
+        updatedFirstLastLight[key] = firstLastLight.toJson();
+        debugPrint('DEBUG: Added first/last light with key: $key (ICAO: $icao)');
+      }
+      
+      debugPrint('DEBUG: Updated briefing will have ${updatedNotams.length} NOTAMs, ${updatedWeather.length} weather entries, and ${updatedFirstLastLight.length} first/last light entries');
       
       // Create updated briefing
       final updatedBriefing = _currentBriefing!.copyWith(
         airports: updatedAirports,
         notams: updatedNotams,
         weather: updatedWeather,
+        firstLastLight: updatedFirstLastLight,
         timestamp: DateTime.now(),
       );
       
-      // Create new versioned data with the updated NOTAM and weather data
+      // Create new versioned data with the updated NOTAM, weather, and first/last light data
       debugPrint('DEBUG: Creating new versioned data for briefing ${updatedBriefing.id}');
       final versionedData = {
         'notams': updatedNotams,
         'weather': updatedWeather,
+        'firstLastLight': updatedFirstLastLight,
         'timestamp': DateTime.now().toIso8601String(),
       };
       
@@ -272,7 +287,14 @@ class FlightProvider with ChangeNotifier {
   String? get loadingAirport => _loadingAirport;
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
   Map<String, List<Weather>> get tafsByIcao => _tafsByIcao;
+  Map<String, FirstLastLight> get firstLastLightByIcao => _firstLastLightByIcao;
   String? get selectedAirport => _selectedAirport;
+  
+  /// Add First/Last Light data for a specific airport
+  void addFirstLastLightData(FirstLastLight firstLastLight) {
+    _firstLastLightByIcao[firstLastLight.icao] = firstLastLight;
+    notifyListeners();
+  }
   // UI can call this after refresh to show a one-time snackbar if true
   bool consumeNaipsFallbackUsed() {
     final used = _naipsFallbackUsed;
@@ -445,6 +467,7 @@ class FlightProvider with ChangeNotifier {
     debugPrint('DEBUG: Briefing airports: ${briefing.airports}');
     debugPrint('DEBUG: Briefing NOTAM count: ${briefing.notams.length}');
     debugPrint('DEBUG: Briefing weather count: ${briefing.weather.length}');
+    debugPrint('DEBUG: Briefing first/last light count: ${briefing.firstLastLight.length}');
     
     // Set the current briefing
     _currentBriefing = briefing;
@@ -471,6 +494,33 @@ class FlightProvider with ChangeNotifier {
     final flight = await BriefingConversionService.briefingToFlight(briefing);
     
     debugPrint('DEBUG: FlightProvider - Converted flight has ${flight.notams.length} NOTAMs and ${flight.weather.length} weather items');
+    
+    // Load stored first/last light data from briefing
+    _firstLastLightByIcao.clear();
+    debugPrint('DEBUG: FlightProvider - Loading ${briefing.firstLastLight.length} stored first/last light entries');
+    
+    for (final entry in briefing.firstLastLight.entries) {
+      try {
+        final key = entry.key;
+        final data = entry.value as Map<String, dynamic>;
+        
+        // Parse the ICAO from the key (format: firstlastlight_ICAO)
+        if (key.startsWith('firstlastlight_')) {
+          final icao = key.substring('firstlastlight_'.length);
+          debugPrint('DEBUG: FlightProvider - Loading first/last light for $icao');
+          
+          // Create FirstLastLight object from stored data
+          final firstLastLight = FirstLastLight.fromJson(data);
+          _firstLastLightByIcao[icao] = firstLastLight;
+          
+          debugPrint('DEBUG: FlightProvider - Loaded first/last light for $icao: ${firstLastLight.firstLight} - ${firstLastLight.lastLight}');
+        }
+      } catch (e) {
+        debugPrint('ERROR: FlightProvider - Failed to load first/last light entry $entry: $e');
+      }
+    }
+    
+    debugPrint('DEBUG: FlightProvider - Loaded ${_firstLastLightByIcao.length} first/last light entries from briefing storage');
     
     // Debug: Print sample converted data
     if (flight.notams.isNotEmpty) {
@@ -833,6 +883,22 @@ class FlightProvider with ChangeNotifier {
         debugPrint('DEBUG: 🔍   ${icaos[i]}: ${notamResults[i].length} NOTAMs');
       }
       
+      // Fetch first/last light data for all airports
+      debugPrint('DEBUG: 🔍 FlightProvider - Fetching first/last light data for airports: $icaos');
+      try {
+        final firstLastLightList = await apiService.fetchFirstLastLight(icaos);
+        
+        // Store first/last light data by ICAO
+        _firstLastLightByIcao.clear();
+        for (final firstLastLight in firstLastLightList) {
+          _firstLastLightByIcao[firstLastLight.icao] = firstLastLight;
+        }
+        
+        debugPrint('DEBUG: 🔍 FlightProvider - First/last light data fetched: ${_firstLastLightByIcao.length} airports');
+      } catch (e) {
+        debugPrint('DEBUG: 🔍 FlightProvider - Error fetching first/last light data: $e');
+      }
+
       // Update the current flight with fresh data
       updateFlightData(
         notams: allNotams,
@@ -924,18 +990,26 @@ class FlightProvider with ChangeNotifier {
       // Add the airport to the current flight
       _currentFlight!.airports.add(newAirport);
 
-      // Fetch data for the new airport
+      // Fetch data for the new airport (including timezone pre-fetch)
       debugPrint('DEBUG: 🔄 FlightProvider.addAirportToFlight - Calling API service with NAIPS enabled: $naipsEnabled');
       
       final notamsFuture = apiService.fetchNotams(icao);
       final weatherFuture = apiService.fetchWeather([icao]);
       final tafsFuture = apiService.fetchTafs([icao]);
+      final timezoneFuture = AirportTimezoneService.getAirportTimezone(icao);
 
-      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
+      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture, timezoneFuture]);
 
       final List<Notam> newNotams = results[0] as List<Notam>;
       final List<Weather> newMetars = results[1] as List<Weather>;
       final List<Weather> newTafs = results[2] as List<Weather>;
+      final timezoneInfo = results[3] as AirportTimezone?;
+      
+      if (timezoneInfo != null) {
+        debugPrint('DEBUG: 🔄 FlightProvider.addAirportToFlight - Successfully pre-fetched timezone for $icao: ${timezoneInfo.timezone}');
+      } else {
+        debugPrint('DEBUG: 🔄 FlightProvider.addAirportToFlight - No timezone data available for $icao');
+      }
 
       // Add new data to existing data
       _currentFlight!.notams.addAll(newNotams);
@@ -1178,6 +1252,7 @@ class FlightProvider with ChangeNotifier {
           id: _currentFlight!.id,
           airports: _currentFlight!.airports.map((a) => a.icao).toList(),
           timestamp: _currentFlight!.createdAt,
+          firstLastLight: {},
           notams: _currentFlight!.notams.fold<Map<String, Map<String, dynamic>>>(
             {},
             (map, notam) {
@@ -1284,4 +1359,5 @@ class FlightProvider with ChangeNotifier {
     
     return stats;
   }
+
 } 

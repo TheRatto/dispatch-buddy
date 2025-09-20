@@ -8,7 +8,11 @@ import '../providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/airport_infrastructure.dart';
 import '../models/airport.dart';
+import 'first_last_light_widget.dart';
+import '../services/api_service.dart';
 import '../services/notam_grouping_service.dart';
+import '../services/airport_timezone_service.dart';
+import '../models/first_last_light.dart';
 
 /// Custom painter for runway icon
 class RunwayIconPainter extends CustomPainter {
@@ -101,6 +105,8 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
                   children: [
                     _buildAirportHeader(airportData),
                     const SizedBox(height: 16),
+                    _buildFirstLastLightSection(flightProvider),
+                    const SizedBox(height: 16),
                     _buildRunwaySection(airportData, flightProvider),
                     const SizedBox(height: 16),
                     _buildNavAidsSection(airportData, flightProvider),
@@ -170,6 +176,57 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         ),
       ),
     );
+  }
+
+  Widget _buildFirstLastLightSection(FlightProvider flightProvider) {
+    final icao = widget.icao;
+    final firstLastLight = flightProvider.firstLastLightByIcao[icao];
+    
+    // Trigger First/Last Light fetching if not already available
+    if (firstLastLight == null && !flightProvider.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchFirstLastLightForAirport(icao, flightProvider);
+      });
+    }
+    
+    return FirstLastLightWidget(
+      firstLastLight: firstLastLight,
+      isLoading: flightProvider.isLoading && flightProvider.loadingAirport == icao,
+    );
+  }
+
+  /// Fetch First/Last Light data for a specific airport
+  Future<void> _fetchFirstLastLightForAirport(String icao, FlightProvider flightProvider) async {
+    try {
+      debugPrint('DEBUG: 🔍 FacilitiesWidget - Fetching First/Last Light and timezone for $icao');
+      
+      final apiService = ApiService();
+      
+      // Fetch both first/last light data and timezone data in parallel
+      final futures = await Future.wait([
+        apiService.fetchFirstLastLight([icao]),
+        AirportTimezoneService.getAirportTimezone(icao),
+      ]);
+      
+      final firstLastLightList = futures[0] as List<FirstLastLight>;
+      final timezoneInfo = futures[1] as AirportTimezone?;
+      
+      if (timezoneInfo != null) {
+        debugPrint('DEBUG: 🔍 FacilitiesWidget - Successfully fetched timezone for $icao: ${timezoneInfo.timezone}');
+      } else {
+        debugPrint('DEBUG: 🔍 FacilitiesWidget - No timezone data available for $icao, will use fallback');
+      }
+      
+      if (firstLastLightList.isNotEmpty) {
+        final firstLastLight = firstLastLightList.first;
+        flightProvider.addFirstLastLightData(firstLastLight);
+        debugPrint('DEBUG: 🔍 FacilitiesWidget - Successfully fetched First/Last Light for $icao: ${firstLastLight.firstLight} - ${firstLastLight.lastLight}');
+      } else {
+        debugPrint('DEBUG: 🔍 FacilitiesWidget - No First/Last Light data available for $icao');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: 🔍 FacilitiesWidget - Error fetching First/Last Light for $icao: $e');
+    }
   }
 
   /// Custom runway icon widget

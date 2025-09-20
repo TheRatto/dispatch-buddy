@@ -5,12 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/notam.dart';
 import '../models/weather.dart';
+import '../models/first_last_light.dart';
 import '../services/naips_service.dart';
 import '../services/naips_parser.dart';
 import '../providers/settings_provider.dart';
 import '../services/decoder_service.dart';
 import '../services/taf_state_manager.dart';
 import '../services/cache_manager.dart';
+import '../services/airport_timezone_service.dart';
 
 import 'dart:async';
 
@@ -18,7 +20,6 @@ class ApiService {
   // Use CORS proxy for web development
   final String _corsProxy = 'https://cors-anywhere.herokuapp.com/';
   final String _notamBaseUrl = 'https://external-api.faa.gov/notamapi/v1/notams';
-  final String _weatherBaseUrl = 'https://aviationweather.gov/api/data/metar';
   final String _tafBaseUrl = 'https://aviationweather.gov/api/data/taf';
 
   // Helper method to get NAIPS settings automatically
@@ -257,6 +258,75 @@ class ApiService {
     debugPrint('DEBUG: 🔍 fetchWeather combined result: ${combined.length} items (${metars.length} METARs, ${atis.length} ATIS)');
     
     return combined;
+  }
+
+  /// Fetch first/last light data for the given ICAO codes
+  Future<List<FirstLastLight>> fetchFirstLastLight(List<String> icaos) async {
+    debugPrint('DEBUG: 🔍 fetchFirstLastLight called for ICAOs: $icaos');
+    
+    final naipsSettings = await _getNaipsSettings();
+    final naipsEnabled = naipsSettings['enabled'] as bool? ?? false;
+    final naipsUsername = naipsSettings['username'] as String?;
+    final naipsPassword = naipsSettings['password'] as String?;
+    
+    final List<FirstLastLight> firstLastLightList = [];
+    final today = DateTime.now().toUtc();
+    
+    // If NAIPS is enabled, try NAIPS first (primary source)
+    if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
+      try {
+        debugPrint('DEBUG: 🔍 Attempting to fetch first/last light from NAIPS for each ICAO: $icaos');
+        final naipsService = NAIPSService();
+
+        final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);
+        debugPrint('DEBUG: 🔍 NAIPS authentication result for first/last light: $isAuthenticated');
+        
+        if (isAuthenticated) {
+          debugPrint('DEBUG: 🔍 NAIPS authentication successful for first/last light');
+          
+          // Pre-fetch timezone data for all airports in parallel
+          debugPrint('DEBUG: 🔍 Pre-fetching timezone data for all airports: $icaos');
+          final timezoneFutures = icaos.map((icao) => AirportTimezoneService.getAirportTimezone(icao)).toList();
+          await Future.wait(timezoneFutures);
+          debugPrint('DEBUG: 🔍 Timezone data pre-fetch completed');
+
+          // Use the same authenticated service for all airports
+          for (final icao in icaos) {
+            try {
+              debugPrint('DEBUG: 🔍 Fetching NAIPS first/last light data for $icao...');
+              
+              final data = await naipsService.fetchFirstLastLight(
+                icao: icao,
+                date: today,
+              );
+              
+              if (data != null) {
+                final firstLastLight = FirstLastLight.fromApiResponse(
+                  icao: icao,
+                  date: today,
+                  data: data,
+                );
+                
+                firstLastLightList.add(firstLastLight);
+                debugPrint('DEBUG: 🔍 Successfully fetched NAIPS first/last light for $icao: ${firstLastLight.firstLight} - ${firstLastLight.lastLight}');
+              } else {
+                debugPrint('DEBUG: 🔍 No NAIPS first/last light data available for $icao');
+              }
+            } catch (e) {
+              debugPrint('DEBUG: 🔍 NAIPS first/last light fetch failed for $icao: $e');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('DEBUG: 🔍 NAIPS first/last light authentication failed: $e');
+      }
+    }
+    
+    // TODO: Add fallback to other sources if needed
+    // For now, we only have NAIPS as a source for first/last light
+    
+    debugPrint('DEBUG: 🔍 fetchFirstLastLight completed: ${firstLastLightList.length} items');
+    return firstLastLightList;
   }
 
   Future<List<Weather>> fetchTafs(List<String> icaos) async {
@@ -657,7 +727,7 @@ class ApiService {
     if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
       try {
         debugPrint('DEBUG: 🔍 Attempting to fetch ATIS from NAIPS for each ICAO: $icaos');
-        debugPrint('DEBUG: 🔍 NAIPS credentials: username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
+        debugPrint('DEBUG: 🔍 NAIPS credentials: username=SET, password=SET');
         final naipsService = NAIPSService();
 
         final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);

@@ -149,6 +149,11 @@ class AirportSelectionService {
           for (int i = 0; i < currentFlight.weather.length; i++)
             'weather_$i': currentFlight.weather[i].toJson()
         },
+        firstLastLight: {
+          // Include first/last light data from FlightProvider
+          for (final entry in flightProvider.firstLastLightByIcao.entries)
+            'firstlastlight_${entry.key}': entry.value.toJson()
+        },
       );
       
       // Save briefing

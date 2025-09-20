@@ -447,6 +447,11 @@ class _InputScreenState extends State<InputScreen> {
         airports: flight.airports.map((a) => a.icao).toList(),
         notams: notamsMap,
         weather: weatherMap,
+        firstLastLight: {
+          // Include first/last light data from FlightProvider
+          for (final entry in context.read<FlightProvider>().firstLastLightByIcao.entries)
+            'firstlastlight_${entry.key}': entry.value.toJson()
+        },
       );
 
       debugPrint('DEBUG: Created briefing object, about to save...');

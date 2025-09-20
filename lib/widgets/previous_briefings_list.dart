@@ -312,14 +312,20 @@ class _PreviousBriefingsListState extends State<PreviousBriefingsList> {
                     // Load the briefing into FlightProvider
                     await Provider.of<FlightProvider>(context, listen: false).loadBriefing(briefing);
                   debugPrint('DEBUG: 🎯 loadBriefing completed for briefing ${briefing.id}');
-                    // Navigate to the briefing tabs screen (with bottom navigation)
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const BriefingTabsScreen(),
-                      ),
-                    );
-                  debugPrint('DEBUG: 🎯 Navigation completed for briefing ${briefing.id}');
-                    widget.onBriefingSelected?.call();
+                    
+                    // Check if the widget is still mounted before navigating
+                    if (mounted) {
+                      // Navigate to the briefing tabs screen (with bottom navigation)
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const BriefingTabsScreen(),
+                        ),
+                      );
+                      debugPrint('DEBUG: 🎯 Navigation completed for briefing ${briefing.id}');
+                      widget.onBriefingSelected?.call();
+                    } else {
+                      debugPrint('DEBUG: 🎯 Widget no longer mounted, skipping navigation for briefing ${briefing.id}');
+                    }
                   },
                   onRefresh: _loadBriefings,
                   onSwipeStart: () => _onBriefingSwipeStart(briefing.id),
