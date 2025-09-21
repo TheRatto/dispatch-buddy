@@ -34,7 +34,7 @@ class FlightProvider with ChangeNotifier {
   
   // Navigation state tracking
   int? _lastViewedSystemPage; // Index of last viewed system page (0 = Overview, 1 = Runways, etc.)
-  int? _lastViewedRawDataTab; // Index of last viewed Raw Data tab (0 = NOTAMs, 1 = METARs, 2 = TAFs)
+  int? _lastViewedRawDataTab; // Index of last viewed Raw Data tab (0 = TAFs, 1 = METAR/ATIS, 2 = NOTAMs)
   String? _lastViewedAirport; // Last viewed airport for state persistence
   
   // Global time filter state

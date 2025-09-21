@@ -1,7 +1,7 @@
-# Dispatch Buddy – Product Requirements Document (PRD)
+# Briefing Buddy – Product Requirements Document (PRD)
 
 ## Overview
-**Dispatch Buddy** is a pilot-focused mobile app designed to simplify preflight dispatch briefings. It extracts key operational data from flight plans, NOTAMs, and weather documents, providing a structured summary with visual overlays and risk cues.
+**Briefing Buddy** is a pilot-focused mobile app designed to simplify preflight dispatch briefings. It extracts key operational data from flight plans, NOTAMs, and weather documents, providing a structured summary with visual overlays and risk cues.
 
 ## Goals
 - Reduce briefing fatigue by summarising critical operational points

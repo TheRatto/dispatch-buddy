@@ -64,7 +64,7 @@ class GlobalDrawer extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Dispatch Buddy',
+                                'Briefing Buddy',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,

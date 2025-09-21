@@ -1,4 +1,4 @@
-# Dispatch Buddy – Screen Specifications
+# Briefing Buddy – Screen Specifications
 
 ## Current Implementation (Hybrid Approach)
 

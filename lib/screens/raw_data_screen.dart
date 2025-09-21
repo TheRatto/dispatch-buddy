@@ -279,16 +279,16 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                     unselectedLabelStyle: const TextStyle(fontSize: 12), // Smaller text
                     tabs: const [
                       Tab(
-                        icon: Icon(Icons.warning_amber_outlined, size: 18), // Smaller icon
-                        text: 'NOTAMs',
+                        icon: Icon(Icons.access_time, size: 18), // Smaller icon
+                        text: 'TAFs',
                       ),
                       Tab(
                         icon: Icon(Icons.cloud, size: 18), // Smaller icon
                         text: 'METAR/ATIS',
                       ),
                       Tab(
-                        icon: Icon(Icons.access_time, size: 18), // Smaller icon
-                        text: 'TAFs',
+                        icon: Icon(Icons.warning_amber_outlined, size: 18), // Smaller icon
+                        text: 'NOTAMs',
                       ),
 
                     ],
@@ -321,14 +321,14 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      // NOTAMs tab: grouped NOTAMs for selected airport
+                      // TAFs tab: timeline-based TAF display
                       _buildTabContent(
-                        'NOTAMs',
+                        'TAFs',
                         flightProvider.isLoading && 
                         flightProvider.loadingAirport != null && 
                         flightProvider.selectedAirport == flightProvider.loadingAirport,
-                        'Fetching NOTAMs and airport data for ${flightProvider.loadingAirport}...',
-                        _buildNotams2Tab(context, flight.notams, flightProvider),
+                        'Fetching TAF data for ${flightProvider.loadingAirport}...',
+                        _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
                       ),
                       RefreshIndicator(
                         onRefresh: () async {
@@ -360,14 +360,14 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                           MetarTab(),
                         ),
                       ),
-                      // TAFs tab: timeline-based TAF display
+                      // NOTAMs tab: grouped NOTAMs for selected airport
                       _buildTabContent(
-                        'TAFs',
+                        'NOTAMs',
                         flightProvider.isLoading && 
                         flightProvider.loadingAirport != null && 
                         flightProvider.selectedAirport == flightProvider.loadingAirport,
-                        'Fetching TAF data for ${flightProvider.loadingAirport}...',
-                        _buildTafs2Tab(context, flightProvider.tafsByIcao, flightProvider),
+                        'Fetching NOTAMs and airport data for ${flightProvider.loadingAirport}...',
+                        _buildNotams2Tab(context, flight.notams, flightProvider),
                       ),
 
                     ],

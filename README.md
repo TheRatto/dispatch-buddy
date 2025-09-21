@@ -1,4 +1,4 @@
-# Dispatch Buddy – AI Preflight Briefing Assistant
+# Briefing Buddy – AI Preflight Briefing Assistant
 
 ## 🎨 Design System & Color Palette
 
@@ -16,7 +16,7 @@
   - Clear color-coded status and icons for operational clarity
   - Large, touch-friendly controls and readable text
 
-You are working on a **Flutter app** called **Dispatch Buddy**. The goal of the app is to assist pilots during preflight planning by parsing flight plan documents (e.g., ForeFlight PDFs), retrieving weather and NOTAMs, and providing a summarised, visually clear operational briefing.
+You are working on a **Flutter app** called **Briefing Buddy**. The goal of the app is to assist pilots during preflight planning by parsing flight plan documents (e.g., ForeFlight PDFs), retrieving weather and NOTAMs, and providing a summarised, visually clear operational briefing.
 
 ## 🎯 Objective
 
