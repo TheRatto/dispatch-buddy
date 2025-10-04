@@ -8,6 +8,7 @@ import '../models/weather.dart';
 import '../models/first_last_light.dart';
 import '../services/naips_service.dart';
 import '../services/naips_parser.dart';
+import '../services/naips_account_manager.dart';
 import '../providers/settings_provider.dart';
 import '../services/decoder_service.dart';
 import '../services/taf_state_manager.dart';
@@ -23,14 +24,27 @@ class ApiService {
   final String _tafBaseUrl = 'https://aviationweather.gov/api/data/taf';
 
   // Helper method to get NAIPS settings automatically
+  // Now uses rotating test accounts instead of user credentials
   Future<Map<String, dynamic>> _getNaipsSettings() async {
     final settingsProvider = SettingsProvider();
     await settingsProvider.initialize();
     
+    if (!settingsProvider.naipsEnabled) {
+      return {
+        'enabled': false,
+        'username': null,
+        'password': null,
+      };
+    }
+    
+    // Get rotating credentials when NAIPS is enabled
+    final accountManager = NAIPSAccountManager();
+    final account = accountManager.getNextAccount();
+    
     return {
-      'enabled': settingsProvider.naipsEnabled,
-      'username': settingsProvider.naipsUsername,
-      'password': settingsProvider.naipsPassword,
+      'enabled': true,
+      'username': account.username,
+      'password': account.password,
     };
   }
 
@@ -598,7 +612,7 @@ class ApiService {
     if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
       try {
         debugPrint('DEBUG: 🔍 Attempting to fetch METARs from NAIPS for each ICAO: $icaos');
-          debugPrint('DEBUG: 🔍 NAIPS credentials: username=SET, password=SET');
+        debugPrint('DEBUG: 🔍 NAIPS using rotating credentials');
         final naipsService = NAIPSService();
 
         final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);
@@ -727,7 +741,7 @@ class ApiService {
     if (naipsEnabled && naipsUsername != null && naipsPassword != null) {
       try {
         debugPrint('DEBUG: 🔍 Attempting to fetch ATIS from NAIPS for each ICAO: $icaos');
-        debugPrint('DEBUG: 🔍 NAIPS credentials: username=SET, password=SET');
+        debugPrint('DEBUG: 🔍 NAIPS using rotating credentials');
         final naipsService = NAIPSService();
 
         final isAuthenticated = await naipsService.authenticate(naipsUsername, naipsPassword);

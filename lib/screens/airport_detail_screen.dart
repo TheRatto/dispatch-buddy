@@ -348,8 +348,8 @@ class _AirportDetailScreenState extends State<AirportDetailScreen> with TickerPr
                       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
                       await flightProvider.refreshCurrentData(
                         naipsEnabled: settingsProvider.naipsEnabled,
-                        naipsUsername: settingsProvider.naipsUsername,
-                        naipsPassword: settingsProvider.naipsPassword,
+                        naipsUsername: null, // Using rotating accounts
+                        naipsPassword: null, // Using rotating accounts
                       );
                     }
                   },

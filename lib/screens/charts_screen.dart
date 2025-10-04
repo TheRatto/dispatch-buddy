@@ -8,6 +8,7 @@ import '../services/naips_charts_service.dart';
 import '../providers/charts_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/zulu_time_widget.dart';
+import '../services/naips_account_manager.dart';
 
 class ChartsScreen extends StatefulWidget {
   const ChartsScreen({super.key});
@@ -29,21 +30,21 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final charts = context.read<ChartsProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Only attempt load once settings have initialized with credentials.
-      final haveCreds = settings.naipsEnabled && (settings.naipsUsername?.isNotEmpty == true) && (settings.naipsPassword?.isNotEmpty == true);
+      final haveCreds = settings.naipsEnabled; // Using rotating accounts, no credentials needed
       if (!haveCreds) {
         debugPrint('DEBUG: ChartsScreen - delaying initial charts fetch: NAIPS creds not ready');
         // Wire a one-time listener so that as soon as settings are initialized with creds,
         // we automatically kick off verification/fetch just like pressing Retry.
         _settingsReadyListener ??= () {
           final s = context.read<SettingsProvider>();
-          final ready = s.isInitialized && s.naipsEnabled && (s.naipsUsername?.isNotEmpty == true) && (s.naipsPassword?.isNotEmpty == true);
+          final ready = s.isInitialized && s.naipsEnabled; // Using rotating accounts, no credentials needed
           if (ready) {
             debugPrint('DEBUG: ChartsScreen - settings ready; auto-starting charts verification');
             charts.refreshCatalogIfStale(
               ttl: const Duration(minutes: 5),
               naipsEnabled: s.naipsEnabled,
-              username: s.naipsUsername,
-              password: s.naipsPassword,
+              username: _getRotatingUsername(),
+              password: _getRotatingPassword(),
             );
             // Remove listener after first trigger
             if (_settingsReadyListener != null) {
@@ -58,8 +59,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
       charts.refreshCatalogIfStale(
         ttl: const Duration(minutes: 5),
         naipsEnabled: settings.naipsEnabled,
-        username: settings.naipsUsername,
-        password: settings.naipsPassword,
+        username: _getRotatingUsername(),
+        password: _getRotatingPassword(),
       );
     });
   }
@@ -74,12 +75,22 @@ class _ChartsScreenState extends State<ChartsScreen> {
     super.dispose();
   }
 
+  String _getRotatingUsername() {
+    final accountManager = NAIPSAccountManager();
+    return accountManager.getNextAccount().username;
+  }
+
+  String _getRotatingPassword() {
+    final accountManager = NAIPSAccountManager();
+    return accountManager.getNextAccount().password;
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     final provider = context.watch<ChartsProvider>();
 
-    final credsMissing = !(settings.naipsEnabled && (settings.naipsUsername?.isNotEmpty == true) && (settings.naipsPassword?.isNotEmpty == true));
+    final credsMissing = !settings.naipsEnabled; // Using rotating accounts, only need enabled status
 
     return Scaffold(
       appBar: AppBar(
@@ -131,8 +142,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
                                 onPressed: () => provider.refreshCatalogIfStale(
                                   ttl: const Duration(minutes: 0),
                                   naipsEnabled: settings.naipsEnabled,
-                                  username: settings.naipsUsername,
-                                  password: settings.naipsPassword,
+                                  username: _getRotatingUsername(),
+                                  password: _getRotatingPassword(),
                                 ),
                                 child: const Text('Retry'),
                               )

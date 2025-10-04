@@ -113,10 +113,8 @@ class BriefingRefreshService {
       final settingsProvider = SettingsProvider();
       await settingsProvider.initialize();
       final naipsEnabled = settingsProvider.naipsEnabled;
-      final naipsUsername = settingsProvider.naipsUsername;
-      final naipsPassword = settingsProvider.naipsPassword;
       
-      debugPrint('DEBUG: BriefingRefreshService - NAIPS settings: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
+      debugPrint('DEBUG: BriefingRefreshService - NAIPS settings: enabled=$naipsEnabled, using rotating accounts');
       
       // Use the exact same approach as new briefing flow
       // Fetch all data in parallel using the new batch methods with NAIPS settings

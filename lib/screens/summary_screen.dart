@@ -5,8 +5,6 @@ import '../providers/settings_provider.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../models/airport.dart';
-import '../models/briefing.dart';
-import '../services/briefing_storage_service.dart';
 import '../services/taf_state_manager.dart';
 import '../services/cache_manager.dart';
 import 'airport_detail_screen.dart';
@@ -228,8 +226,8 @@ class SummaryScreen extends StatelessWidget {
                       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
                       await flightProvider.refreshCurrentData(
                         naipsEnabled: settingsProvider.naipsEnabled,
-                        naipsUsername: settingsProvider.naipsUsername,
-                        naipsPassword: settingsProvider.naipsPassword,
+                        naipsUsername: null, // Using rotating accounts from _getNaipsSettings()
+                        naipsPassword: null, // Using rotating accounts from _getNaipsSettings()
                       );
                     }
                   },

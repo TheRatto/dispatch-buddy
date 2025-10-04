@@ -181,7 +181,7 @@ class _InputScreenState extends State<InputScreen> {
       final settingsProvider = SettingsProvider();
       await settingsProvider.initialize();
       
-      debugPrint('DEBUG: 🔄 InputScreen - NAIPS settings from SettingsProvider: enabled=${settingsProvider.naipsEnabled}, username=${settingsProvider.naipsUsername != null ? "SET" : "NOT SET"}, password=${settingsProvider.naipsPassword != null ? "SET" : "NOT SET"}');
+      debugPrint('DEBUG: 🔄 InputScreen - NAIPS settings from SettingsProvider: enabled=${settingsProvider.naipsEnabled}, using rotating accounts');
       
       // Debug: Check if NAIPS is actually enabled
       if (settingsProvider.naipsEnabled) {

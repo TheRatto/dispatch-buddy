@@ -334,11 +334,11 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                         onRefresh: () async {
                           _clearCache();
                           final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-                          debugPrint('DEBUG: 🔄 RawDataScreen - NAIPS settings from SettingsProvider: enabled=${settingsProvider.naipsEnabled}, username=${settingsProvider.naipsUsername != null ? "SET" : "NOT SET"}, password=${settingsProvider.naipsPassword != null ? "SET" : "NOT SET"}');
+                          debugPrint('DEBUG: 🔄 RawDataScreen - NAIPS settings from SettingsProvider: enabled=${settingsProvider.naipsEnabled}, using rotating accounts');
                           await flightProvider.refreshCurrentData(
                             naipsEnabled: settingsProvider.naipsEnabled,
-                            naipsUsername: settingsProvider.naipsUsername,
-                            naipsPassword: settingsProvider.naipsPassword,
+                            naipsUsername: null, // Using rotating accounts
+                            naipsPassword: null, // Using rotating accounts
                           );
                           // One-time snackbar if NAIPS fallback was used
                           if (flightProvider.consumeNaipsFallbackUsed()) {
@@ -496,8 +496,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
         await flightProvider.refreshCurrentData(
           naipsEnabled: settingsProvider.naipsEnabled,
-          naipsUsername: settingsProvider.naipsUsername,
-          naipsPassword: settingsProvider.naipsPassword,
+          naipsUsername: null, // Using rotating accounts
+          naipsPassword: null, // Using rotating accounts
         );
         
         // Add a small delay after refresh completes for smooth transition
@@ -1032,8 +1032,8 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
         await flightProvider.refreshCurrentData(
           naipsEnabled: settingsProvider.naipsEnabled,
-          naipsUsername: settingsProvider.naipsUsername,
-          naipsPassword: settingsProvider.naipsPassword,
+          naipsUsername: null, // Using rotating accounts
+          naipsPassword: null, // Using rotating accounts
         );
         debugPrint('DEBUG: 🔄 NOTAMs2 tab refresh completed!');
       },

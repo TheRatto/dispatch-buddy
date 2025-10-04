@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'naips_account_manager.dart';
 
 /// NAIPS Service
 /// 
@@ -103,6 +104,15 @@ class NAIPSService {
       debugPrint('DEBUG: NAIPSService - Authentication error: $e');
       return false;
     }
+  }
+  
+  /// Authenticate with NAIPS using rotating test accounts
+  /// Returns true if authentication successful, false otherwise
+  Future<bool> authenticateWithRotatingAccount() async {
+    final accountManager = NAIPSAccountManager();
+    final account = accountManager.getNextAccount();
+    debugPrint('DEBUG: NAIPSService - Authenticating with rotating account: ${account.username}');
+    return await authenticate(account.username, account.password);
   }
   
   /// Request location briefing for a specific airport

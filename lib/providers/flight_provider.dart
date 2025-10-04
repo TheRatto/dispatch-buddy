@@ -819,10 +819,10 @@ class FlightProvider with ChangeNotifier {
       
       // Use provided NAIPS settings or load from SettingsProvider if not provided
       naipsEnabled ??= settingsProvider.naipsEnabled;
-      naipsUsername ??= settingsProvider.naipsUsername;
-      naipsPassword ??= settingsProvider.naipsPassword;
+      naipsUsername ??= null; // Always use rotating accounts
+      naipsPassword ??= null; // Always use rotating accounts
       
-      debugPrint('DEBUG: 🔄 FlightProvider - NAIPS settings being passed to API: enabled=$naipsEnabled, username=${naipsUsername != null ? "SET" : "NOT SET"}, password=${naipsPassword != null ? "SET" : "NOT SET"}');
+      debugPrint('DEBUG: 🔄 FlightProvider - NAIPS settings being passed to API: enabled=$naipsEnabled, using rotating accounts');
       
       // Fetch all data in parallel using the new separate methods
       final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(icao)));
