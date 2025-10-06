@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:dispatch_buddy/models/airport_infrastructure.dart';
-import 'package:dispatch_buddy/widgets/facilities_widget.dart';
+import 'package:briefing_buddy/models/airport_infrastructure.dart';
+import 'package:briefing_buddy/widgets/facilities_widget.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

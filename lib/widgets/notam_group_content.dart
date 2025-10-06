@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/services/notam_status_service.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/services/notam_status_service.dart';
 import 'swipeable_notam_card.dart';
 
 class NotamGroupContent extends StatelessWidget {

@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/foundation.dart';
-import 'package:dispatch_buddy/models/briefing.dart';
-import 'package:dispatch_buddy/models/flight.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/models/weather.dart';
-import 'package:dispatch_buddy/services/briefing_conversion_service.dart';
+import 'package:briefing_buddy/models/briefing.dart';
+import 'package:briefing_buddy/models/flight.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/models/weather.dart';
+import 'package:briefing_buddy/services/briefing_conversion_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/widgets/notam_grouped_list.dart';
-import 'package:dispatch_buddy/services/notam_grouping_service.dart';
-import 'package:dispatch_buddy/services/notam_status_service.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/widgets/notam_grouped_list.dart';
+import 'package:briefing_buddy/services/notam_grouping_service.dart';
+import 'package:briefing_buddy/services/notam_status_service.dart';
 
 class NotamGroupedDemoScreen extends StatefulWidget {
   const NotamGroupedDemoScreen({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/briefing_storage_service.dart';
-import 'package:dispatch_buddy/models/briefing.dart';
+import 'package:briefing_buddy/services/briefing_storage_service.dart';
+import 'package:briefing_buddy/models/briefing.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

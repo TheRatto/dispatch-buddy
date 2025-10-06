@@ -1,8 +1,8 @@
 # iOS 26 Implementation Guide
-## Dispatch Buddy iOS Design System
+## Briefing Buddy iOS Design System
 
 ### Overview
-This guide provides specific implementation details for bringing Dispatch Buddy into full iOS 26 compliance. It will be updated with exact specifications once the official iOS 26 Design Resources are reviewed.
+This guide provides specific implementation details for bringing Briefing Buddy into full iOS 26 compliance. It will be updated with exact specifications once the official iOS 26 Design Resources are reviewed.
 
 **📱 iOS 26 Design Resources Available**: Sketch and Figma screenshots have been provided and need detailed analysis.
 

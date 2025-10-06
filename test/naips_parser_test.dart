@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/naips_parser.dart';
+import 'package:briefing_buddy/services/naips_parser.dart';
 
 void main() {
   group('NAIPSParser Tests', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/services/facility_notam_mapper.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/services/facility_notam_mapper.dart';
 
 void main() {
   group('FacilityNotamMapper', () {

@@ -12,6 +12,7 @@ import 'screens/ai_briefing_screen.dart';
 import 'providers/flight_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/ai_briefing_provider.dart';
+import 'providers/ai_chat_provider.dart';
 import 'screens/briefing_tabs_screen.dart';
 import 'providers/charts_provider.dart';
 import 'providers/weather_radar_provider.dart';
@@ -33,6 +34,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => AIBriefingProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AIChatProvider(),
         ),
         ChangeNotifierProvider(
           lazy: true,

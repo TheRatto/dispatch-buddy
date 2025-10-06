@@ -67,7 +67,7 @@
   - Log table headers, counts, and a capped sample of rows (code, name, category, times) to validate parsing without noisy logs.
   - When things look empty but status=200, assume login/docs body and check the Referer/POST path.
 
-# Lessons Learned - Dispatch Buddy Development
+# Lessons Learned - Briefing Buddy Development
 
 ## Navigation & UX Design
 

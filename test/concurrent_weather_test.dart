@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/decoder_service.dart';
+import 'package:briefing_buddy/services/decoder_service.dart';
 
 void main() {
   group('Concurrent Weather Parsing Tests', () {

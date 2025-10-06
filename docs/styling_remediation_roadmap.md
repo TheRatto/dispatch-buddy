@@ -2,7 +2,7 @@
 ## Apple UI Guidelines Compliance
 
 ### Overview
-This document outlines the comprehensive remediation plan to bring Dispatch Buddy into full compliance with Apple's Human Interface Guidelines. The audit identified several areas where the app's styling and interaction patterns need improvement to meet iOS standards.
+This document outlines the comprehensive remediation plan to bring Briefing Buddy into full compliance with Apple's Human Interface Guidelines. The audit identified several areas where the app's styling and interaction patterns need improvement to meet iOS standards.
 
 **📱 iOS 26 Design Resources**: Sketch and Figma screenshots have been provided and need detailed analysis for exact specifications.
 

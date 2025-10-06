@@ -342,4 +342,4 @@ A proactive flight monitoring system that tracks saved flights and provides inte
 
 ---
 
-*This roadmap provides a comprehensive plan for implementing the flight following feature while maintaining the high quality and aviation-focused approach of Dispatch Buddy.*
+*This roadmap provides a comprehensive plan for implementing the flight following feature while maintaining the high quality and aviation-focused approach of Briefing Buddy.*

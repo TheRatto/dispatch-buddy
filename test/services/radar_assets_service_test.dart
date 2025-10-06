@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/radar_assets_service.dart';
+import 'package:briefing_buddy/services/radar_assets_service.dart';
 
 void main() {
   group('RadarAssetsService', () {

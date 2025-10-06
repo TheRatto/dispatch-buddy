@@ -1,4 +1,4 @@
-# Development Guidelines - Dispatch Buddy
+# Development Guidelines - Briefing Buddy
 
 ## Quick Reference for Ongoing Development
 

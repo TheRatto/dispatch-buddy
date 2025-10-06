@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/api_service.dart';
-import 'package:dispatch_buddy/services/naips_service.dart';
-import 'package:dispatch_buddy/models/first_last_light.dart';
+import 'package:briefing_buddy/services/api_service.dart';
+import 'package:briefing_buddy/services/naips_service.dart';
+import 'package:briefing_buddy/models/first_last_light.dart';
 
 void main() {
   group('First/Last Light Integration Tests', () {

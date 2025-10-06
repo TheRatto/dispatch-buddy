@@ -11,7 +11,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _isInitialized = false;
   
   // NAIPS settings
-  bool _naipsEnabled = false;
+  bool _naipsEnabled = true;
 
   Units get runwayUnits => _runwayUnits;
   bool get isInitialized => _isInitialized;
@@ -36,7 +36,7 @@ class SettingsProvider extends ChangeNotifier {
       }
       
       // Load NAIPS settings
-      _naipsEnabled = prefs.getBool(_naipsEnabledKey) ?? false;
+      _naipsEnabled = prefs.getBool(_naipsEnabledKey) ?? true;
       
       debugPrint('DEBUG: 🔧 SettingsProvider.initialize() - Loaded NAIPS settings: enabled=$_naipsEnabled (using rotating test accounts)');
       

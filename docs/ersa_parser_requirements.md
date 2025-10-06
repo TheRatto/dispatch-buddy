@@ -1,8 +1,8 @@
-# ERSA Parser Requirements for Dispatch Buddy Integration
+# ERSA Parser Requirements for Briefing Buddy Integration
 
 ## 🎯 **Project Overview**
 
-Create a parser for AirServices Australia ERSA PDF files that extracts airport infrastructure data and outputs individual JSON files for integration with Dispatch Buddy.
+Create a parser for AirServices Australia ERSA PDF files that extracts airport infrastructure data and outputs individual JSON files for integration with Briefing Buddy.
 
 ## 📋 **Core Requirements**
 
@@ -212,7 +212,7 @@ assets/ersa_data/metadata/backup/
 }
 ```
 
-## 🚀 **Integration with Dispatch Buddy**
+## 🚀 **Integration with Briefing Buddy**
 
 ### **App Integration Points**
 - Files will be read by `AirportCacheManager`
@@ -315,18 +315,18 @@ Hours: H24
 - ✅ Performance optimization
 
 ### **Integration Requirements**
-- ✅ Compatible with Dispatch Buddy architecture
+- ✅ Compatible with Briefing Buddy architecture
 - ✅ Support existing airport models
 - ✅ Efficient caching integration
 - ✅ Transparent update process
 
 ## 🔗 **Related Documentation**
 
-- [Dispatch Buddy PRD](docs/prd.md)
+- [Briefing Buddy PRD](docs/prd.md)
 - [Airport Infrastructure Models](lib/models/airport_infrastructure.dart)
 - [Airport Cache Manager](lib/services/airport_cache_manager.dart)
 - [Australian Airport Database](lib/data/australian_airport_database.dart)
 
 ---
 
-**Note**: This parser will be a critical component of Dispatch Buddy's airport infrastructure analysis system. The output format and update process are designed to integrate seamlessly with the existing Flutter app architecture while providing reliable, up-to-date airport data for pilots. 
+**Note**: This parser will be a critical component of Briefing Buddy's airport infrastructure analysis system. The output format and update process are designed to integrate seamlessly with the existing Flutter app architecture while providing reliable, up-to-date airport data for pilots. 

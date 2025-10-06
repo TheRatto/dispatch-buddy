@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
-import 'package:dispatch_buddy/services/briefing_refresh_service.dart';
-import 'package:dispatch_buddy/models/briefing.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/models/weather.dart';
+import 'package:briefing_buddy/services/briefing_refresh_service.dart';
+import 'package:briefing_buddy/models/briefing.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/models/weather.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

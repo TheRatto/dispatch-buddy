@@ -69,7 +69,7 @@ class AirportTimezoneService {
         Uri.parse('$_baseUrl/airports/$icao'),
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'DispatchBuddy/1.0',
+          'User-Agent': 'BriefingBuddy/1.0',
         },
       ).timeout(const Duration(seconds: 10));
       
@@ -107,7 +107,7 @@ class AirportTimezoneService {
         Uri.parse('$_fallbackUrl/$icao'),
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'DispatchBuddy/1.0',
+          'User-Agent': 'BriefingBuddy/1.0',
         },
       ).timeout(const Duration(seconds: 10));
       

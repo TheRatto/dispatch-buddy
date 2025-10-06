@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
-import 'package:dispatch_buddy/services/ersa_data_service.dart';
-import 'package:dispatch_buddy/models/airport_infrastructure.dart';
+import 'package:briefing_buddy/services/ersa_data_service.dart';
+import 'package:briefing_buddy/models/airport_infrastructure.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/models/airport_infrastructure.dart';
-import 'package:dispatch_buddy/data/airport_infrastructure_data.dart';
+import 'package:briefing_buddy/models/airport_infrastructure.dart';
+import 'package:briefing_buddy/data/airport_infrastructure_data.dart';
 
 void main() {
   group('Airport Infrastructure Models', () {

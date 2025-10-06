@@ -1199,7 +1199,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Dispatch Buddy',
+                  'Briefing Buddy',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 14,

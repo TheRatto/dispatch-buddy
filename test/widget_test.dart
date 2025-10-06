@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:dispatch_buddy/main.dart';
-import 'package:dispatch_buddy/providers/flight_provider.dart';
+import 'package:briefing_buddy/main.dart';
+import 'package:briefing_buddy/providers/flight_provider.dart';
 
 void main() {
   testWidgets('App loads without crashing', (WidgetTester tester) async {

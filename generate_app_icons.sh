@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Dispatch Buddy App Icon Generator
+# Briefing Buddy App Icon Generator
 # This script generates all required app icon sizes from logo.png
 
-echo "🚀 Generating Dispatch Buddy App Icons..."
+echo "🚀 Generating Briefing Buddy App Icons..."
 
 # Check if ImageMagick is installed
 if ! command -v convert &> /dev/null; then

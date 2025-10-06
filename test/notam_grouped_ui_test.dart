@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/widgets/notam_group_header.dart';
-import 'package:dispatch_buddy/widgets/notam_group_content.dart';
-import 'package:dispatch_buddy/widgets/notam_grouped_list.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/widgets/notam_group_header.dart';
+import 'package:briefing_buddy/widgets/notam_group_content.dart';
+import 'package:briefing_buddy/widgets/notam_grouped_list.dart';
 
 void main() {
   group('NOTAM Grouped UI Tests', () {

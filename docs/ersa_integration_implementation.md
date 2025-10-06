@@ -1,7 +1,7 @@
 # ERSA Integration Implementation
 
 ## Overview
-This document outlines the implementation of ERSA (En Route Supplement Australia) data integration for Australian airports in the Dispatch Buddy Flutter application.
+This document outlines the implementation of ERSA (En Route Supplement Australia) data integration for Australian airports in the Briefing Buddy Flutter application.
 
 ## Architecture
 

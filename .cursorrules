@@ -1,7 +1,7 @@
-# Cursor Rules for Dispatch Buddy Flutter Project
+# Cursor Rules for Briefing Buddy Flutter Project
 
 ## Project Context
-This is a Flutter aviation application called "Dispatch Buddy" that handles NOTAMs, weather data, and flight planning. The project uses Flutter/Dart with a focus on aviation data parsing and presentation.
+This is a Flutter aviation application called "Briefing Buddy" that handles NOTAMs, weather data, and flight planning. The project uses Flutter/Dart with a focus on aviation data parsing and presentation.
 
 ## Development Standards
 

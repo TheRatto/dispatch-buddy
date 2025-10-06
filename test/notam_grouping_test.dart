@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/services/notam_grouping_service.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/services/notam_grouping_service.dart';
 
 void main() {
   group('NOTAM Grouping Tests', () {

@@ -1,4 +1,4 @@
-# AI Collaboration Guidelines for Dispatch Buddy
+# AI Collaboration Guidelines for Briefing Buddy
 
 ## 🎯 How to Work Effectively with AI in Cursor
 

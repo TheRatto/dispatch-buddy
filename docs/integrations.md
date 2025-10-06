@@ -1,7 +1,7 @@
-# Dispatch Buddy – Data & Integration Plan
+# Briefing Buddy – Data & Integration Plan
 
 ## Overview
-Dispatch Buddy aims to operate entirely on-device where possible, with cloud or API integrations as fallback or enhancement layers.
+Briefing Buddy aims to operate entirely on-device where possible, with cloud or API integrations as fallback or enhancement layers.
 
 ## Data Input
 ### ForeFlight / NAIPS PDF

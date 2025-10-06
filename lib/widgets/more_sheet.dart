@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/charts_screen.dart';
 import '../screens/weather_radar_screen.dart';
+import '../screens/ai_test_chat_screen.dart';
 
 class MoreSheet extends StatelessWidget {
   const MoreSheet({super.key});
@@ -44,6 +45,19 @@ class MoreSheet extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const WeatherRadarScreen()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.chat, color: Color(0xFF3B82F6)),
+              title: const Text('AI Test Chat'),
+              subtitle: const Text('Test Apple Foundation Models integration'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AITestChatScreen()),
                 );
               },
             ),

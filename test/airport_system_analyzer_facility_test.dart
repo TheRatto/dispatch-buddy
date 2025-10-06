@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/models/notam.dart';
-import 'package:dispatch_buddy/models/airport_infrastructure.dart';
-import 'package:dispatch_buddy/models/airport.dart';
-import 'package:dispatch_buddy/services/airport_system_analyzer.dart';
+import 'package:briefing_buddy/models/notam.dart';
+import 'package:briefing_buddy/models/airport_infrastructure.dart';
+import 'package:briefing_buddy/models/airport.dart';
+import 'package:briefing_buddy/services/airport_system_analyzer.dart';
 
 void main() {
   group('AirportSystemAnalyzer - Facility-Specific Analysis', () {

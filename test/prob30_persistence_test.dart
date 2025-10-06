@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/decoder_service.dart';
-import 'package:dispatch_buddy/services/taf_state_manager.dart';
-import 'package:dispatch_buddy/models/decoded_weather_models.dart';
+import 'package:briefing_buddy/services/decoder_service.dart';
+import 'package:briefing_buddy/services/taf_state_manager.dart';
+import 'package:briefing_buddy/models/decoded_weather_models.dart';
 
 void main() {
   group('PROB30 Persistence Tests', () {

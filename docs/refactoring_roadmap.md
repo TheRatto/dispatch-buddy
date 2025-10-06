@@ -1,4 +1,4 @@
-# Refactoring Roadmap - Dispatch Buddy
+# Refactoring Roadmap - Briefing Buddy
 
 ## 🎯 Overall Goal
 Transform the codebase from a monolithic structure to a clean, maintainable architecture that improves AI context management, code quality, and performance.
@@ -122,7 +122,7 @@ Transform the codebase from a monolithic structure to a clean, maintainable arch
 **Overall Progress:** 75% Complete (3 of 4 phases done)
 
 ## Overview
-This document outlines the strategic refactoring plan for Dispatch Buddy, focusing on architectural improvements, performance optimization, and code maintainability for better AI context management.
+This document outlines the strategic refactoring plan for Briefing Buddy, focusing on architectural improvements, performance optimization, and code maintainability for better AI context management.
 
 ## Current State Analysis
 

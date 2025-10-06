@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/api_service.dart';
+import 'package:briefing_buddy/services/api_service.dart';
 
 void main() {
   group('ApiService NAIPS Integration Tests', () {

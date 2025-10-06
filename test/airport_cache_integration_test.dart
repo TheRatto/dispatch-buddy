@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:dispatch_buddy/services/airport_cache_manager.dart';
-import 'package:dispatch_buddy/services/openaip_service.dart';
-import 'package:dispatch_buddy/models/airport_infrastructure.dart';
+import 'package:briefing_buddy/services/airport_cache_manager.dart';
+import 'package:briefing_buddy/services/openaip_service.dart';
+import 'package:briefing_buddy/models/airport_infrastructure.dart';
 
 void main() {
   setUpAll(() async {

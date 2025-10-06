@@ -3,7 +3,7 @@
 ## STATUS: ACTIVE - READY FOR IMPLEMENTATION
 
 ### OVERVIEW
-This document tracks all identified bugs and improvements across the Dispatch Buddy app. Items are organized by screen/feature area for systematic resolution.
+This document tracks all identified bugs and improvements across the Briefing Buddy app. Items are organized by screen/feature area for systematic resolution.
 
 ---
 
@@ -527,7 +527,132 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 
 ---
 
-### Bug 5.3: Consider Pre-loaded NAIPS Logins
+### Bug 5.3: Implement Theme Selection Dialog
+**Priority**: MEDIUM | **Estimated Time**: 2 hours
+**Status**: ⏳ PENDING
+
+**Description**: 
+- Create theme selection dialog (Light/Dark/System)
+- Theme setting currently shows placeholder text
+- Implement actual theme switching functionality
+
+**Files to Modify**:
+- `lib/screens/settings_screen.dart`
+- `lib/providers/settings_provider.dart`
+- `lib/widgets/theme_selection_dialog.dart` (new)
+
+**Acceptance Criteria**:
+- [ ] Theme selection dialog opens when tapped
+- [ ] Three options: Light, Dark, System
+- [ ] Selection updates app theme immediately
+- [ ] Setting persists across app restarts
+- [ ] Dialog shows current selection
+
+---
+
+### Bug 5.4: Implement Font Size Selection Dialog
+**Priority**: MEDIUM | **Estimated Time**: 2 hours
+**Status**: ⏳ PENDING
+
+**Description**: 
+- Create font size selection dialog
+- Font size setting currently shows "Medium" placeholder
+- Allow users to choose from multiple size options
+
+**Files to Modify**:
+- `lib/screens/settings_screen.dart`
+- `lib/providers/settings_provider.dart`
+- `lib/widgets/font_size_selection_dialog.dart` (new)
+
+**Acceptance Criteria**:
+- [ ] Font size selection dialog opens when tapped
+- [ ] Multiple size options (Small, Medium, Large, Extra Large)
+- [ ] Selection updates text size immediately
+- [ ] Setting persists across app restarts
+- [ ] Dialog shows current selection
+
+---
+
+### Bug 5.5: Implement Profile Settings Functionality
+**Priority**: MEDIUM | **Estimated Time**: 4 hours
+**Status**: ⏳ PENDING
+
+**Description**: 
+- All profile settings currently show "Not set" and don't function
+- Implement editing dialogs for Name, Email, Organization, Pilot License
+- Add data validation and persistence
+
+**Files to Modify**:
+- `lib/screens/settings_screen.dart`
+- `lib/providers/settings_provider.dart`
+- `lib/widgets/profile_edit_dialogs.dart` (new)
+- `lib/models/user_profile.dart` (new)
+
+**Acceptance Criteria**:
+- [ ] Name editing dialog with validation
+- [ ] Email editing dialog with email format validation
+- [ ] Organization editing dialog
+- [ ] Pilot License editing dialog with license type options
+- [ ] All settings persist across app restarts
+- [ ] Settings display actual values instead of "Not set"
+- [ ] Input validation and error handling
+
+---
+
+### Bug 5.6: Implement Privacy Settings Functionality
+**Priority**: MEDIUM | **Estimated Time**: 3 hours
+**Status**: ⏳ PENDING
+
+**Description**: 
+- Privacy settings switches currently don't save state
+- Analytics, Crash Reporting, Location Services, Data Sharing all need backend implementation
+- Connect to actual privacy control systems
+
+**Files to Modify**:
+- `lib/screens/settings_screen.dart`
+- `lib/providers/settings_provider.dart`
+- `lib/services/analytics_service.dart` (new)
+- `lib/services/crash_reporting_service.dart` (new)
+- `lib/services/location_service.dart` (new)
+
+**Acceptance Criteria**:
+- [ ] Analytics toggle controls actual analytics collection
+- [ ] Crash Reporting toggle controls crash data collection
+- [ ] Location Services toggle manages location permissions
+- [ ] Data Sharing toggle controls data sharing preferences
+- [ ] All settings persist across app restarts
+- [ ] Settings reflect actual current state
+- [ ] Proper permission handling for location services
+
+---
+
+### Bug 5.7: Implement About Section Functionality
+**Priority**: LOW | **Estimated Time**: 3 hours
+**Status**: ⏳ PENDING
+
+**Description**: 
+- About section items currently show TODO comments
+- Version, Terms of Service, Privacy Policy, Help & Support all non-functional
+- Create proper content and navigation
+
+**Files to Modify**:
+- `lib/screens/settings_screen.dart`
+- `lib/screens/terms_of_service_screen.dart` (new)
+- `lib/screens/privacy_policy_screen.dart` (new)
+- `lib/screens/help_support_screen.dart` (new)
+- `lib/widgets/version_info_dialog.dart` (new)
+
+**Acceptance Criteria**:
+- [ ] Version shows actual app version with build info
+- [ ] Terms of Service opens dedicated screen with content
+- [ ] Privacy Policy opens dedicated screen with content
+- [ ] Help & Support opens dedicated screen with resources
+- [ ] All screens have proper navigation and styling
+- [ ] Content is relevant and up-to-date
+
+---
+
+### Bug 5.8: Consider Pre-loaded NAIPS Logins
 **Priority**: LOW | **Estimated Time**: 8 hours
 **Status**: ⏳ PENDING
 
@@ -547,6 +672,36 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 - [ ] Random rotation system works
 - [ ] Browser simulation prevents detection
 - [ ] System is reliable and maintainable
+
+---
+
+## 📋 SETTINGS IMPLEMENTATION ROADMAP
+
+### Current Status Analysis
+Based on the settings screen review, here's what's currently functional vs non-functional:
+
+**✅ FUNCTIONAL ITEMS:**
+- **Units Settings**: Runway Length Units (Feet/Meters) - Fully implemented with persistence
+- **NAIPS Settings**: Enable/Disable, Username/Password dialogs, Test Connection - Fully implemented
+- **Debug Tools**: Network Test, FAA API Test - Fully implemented (debug mode only)
+
+**❌ NON-FUNCTIONAL ITEMS (Need Implementation):**
+1. **Theme Selection**: Shows placeholder text "Light, Dark, or System" - needs dialog implementation
+2. **Font Size**: Shows placeholder text "Medium" - needs dialog implementation  
+3. **Profile Settings**: All show "Not set" - Name, Email, Organization, Pilot License need dialogs
+4. **Privacy Settings**: All switches hardcoded to true/false - need backend integration
+5. **About Section**: All items show TODO comments - need content and navigation
+
+### Implementation Priority Order
+1. **High Impact, Low Effort**: Theme Selection Dialog (Bug 5.3) - 2 hours
+2. **High Impact, Low Effort**: Font Size Selection Dialog (Bug 5.4) - 2 hours  
+3. **Medium Impact, Medium Effort**: Profile Settings (Bug 5.5) - 4 hours
+4. **Medium Impact, Medium Effort**: Privacy Settings (Bug 5.6) - 3 hours
+5. **Low Impact, Medium Effort**: About Section (Bug 5.7) - 3 hours
+6. **Low Impact, High Effort**: Pre-loaded NAIPS Logins (Bug 5.8) - 8 hours
+
+### Estimated Total Time: 22 hours
+### Recommended Implementation Approach: Start with dialogs (high user impact, low complexity)
 
 ---
 
@@ -646,7 +801,7 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 **Status**: ⏳ PENDING
 
 **Description**: 
-- Consider adding Dispatch Buddy logo to app bar
+- Consider adding Briefing Buddy logo to app bar
 - Improve brand recognition
 - Enhance visual identity
 
@@ -806,10 +961,14 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 9. **Bug 4.3**: SIGMET Validity Period Shows 6hr Instead of 3hr
 10. **Bug 5.1**: Build Out Dark Mode Functionality
 11. **Bug 5.2**: Build Out Font Size Functionality
-12. **Bug 6.1**: Link AI Briefing from Drawer Menu
-13. **Bug 7.1**: Add Loading Delay to Prevent Juttering (Weather Radar)
-14. **Bug 7.2**: Reorder Layers for Scale and Names Visibility (Weather Radar)
-15. **Bug 10.1**: Zoom Out App Icon Slightly to Prevent Cropping
+12. **Bug 5.3**: Implement Theme Selection Dialog
+13. **Bug 5.4**: Implement Font Size Selection Dialog
+14. **Bug 5.5**: Implement Profile Settings Functionality
+15. **Bug 5.6**: Implement Privacy Settings Functionality
+16. **Bug 6.1**: Link AI Briefing from Drawer Menu
+17. **Bug 7.1**: Add Loading Delay to Prevent Juttering (Weather Radar)
+18. **Bug 7.2**: Reorder Layers for Scale and Names Visibility (Weather Radar)
+19. **Bug 10.1**: Zoom Out App Icon Slightly to Prevent Cropping
 
 ### LOW PRIORITY (Fix Last)
 1. **Bug 1.1**: Shrink Banner and Change Heading ✅
@@ -819,9 +978,10 @@ This document tracks all identified bugs and improvements across the Dispatch Bu
 5. **Bug 2.9**: Consider Switching Tab Order (Raw Data)
 6. **Bug 3.2**: Airport Title Too Large ✅
 7. **Bug 3.4**: Change "Unserviceable" to "U/S"
-8. **Bug 5.3**: Consider Pre-loaded NAIPS Logins
-9. **Bug 8.1**: Remove Menu Heading (Drawer Menu)
-10. **Bug 9.1**: Consider Adding Logo (App Bar)
+8. **Bug 5.7**: Implement About Section Functionality
+9. **Bug 5.8**: Consider Pre-loaded NAIPS Logins
+10. **Bug 8.1**: Remove Menu Heading (Drawer Menu)
+11. **Bug 9.1**: Consider Adding Logo (App Bar)
 
 ---
 

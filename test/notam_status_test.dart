@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dispatch_buddy/services/notam_status_service.dart';
-import 'package:dispatch_buddy/models/notam.dart';
+import 'package:briefing_buddy/services/notam_status_service.dart';
+import 'package:briefing_buddy/models/notam.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

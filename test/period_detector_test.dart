@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/period_detector.dart';
-import 'package:dispatch_buddy/models/decoded_weather_models.dart';
+import 'package:briefing_buddy/services/period_detector.dart';
+import 'package:briefing_buddy/models/decoded_weather_models.dart';
 
 void main() {
   group('PeriodDetector Tests', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dispatch_buddy/services/decoder_service.dart';
-import 'package:dispatch_buddy/services/period_detector.dart';
+import 'package:briefing_buddy/services/decoder_service.dart';
+import 'package:briefing_buddy/services/period_detector.dart';
 
 void main() {
   group('TAF BECMG Logic Tests', () {

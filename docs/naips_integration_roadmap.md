@@ -1,7 +1,7 @@
 # NAIPS Integration Roadmap
 
 ## Overview
-This document outlines the implementation plan for integrating NAIPS (Airservices Australia) data into Dispatch Buddy, providing users with access to Australian aviation weather and NOTAM data using their own NAIPS credentials.
+This document outlines the implementation plan for integrating NAIPS (Airservices Australia) data into Briefing Buddy, providing users with access to Australian aviation weather and NOTAM data using their own NAIPS credentials.
 
 ## Goals
 - Add NAIPS as an optional data source alongside existing free APIs

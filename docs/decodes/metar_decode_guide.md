@@ -1,6 +1,6 @@
-# METAR Decode Guide for Dispatch Buddy
+# METAR Decode Guide for Briefing Buddy
 
-This document consolidates key reference material for decoding METAR and SPECI weather reports. It includes official abbreviations, definitions, structure breakdowns, and decoder keys. This guide supports automated and manual decoding within the Dispatch Buddy application.
+This document consolidates key reference material for decoding METAR and SPECI weather reports. It includes official abbreviations, definitions, structure breakdowns, and decoder keys. This guide supports automated and manual decoding within the Briefing Buddy application.
 
 ---
 
@@ -147,5 +147,5 @@ Format: `RYY/XXXXFT`
 
 ---
 
-This markdown file is intended for integration in Dispatch Buddy’s internal reference system and LLM decoding prompts. Further expansion modules may include TAF codes, risk scoring rubrics, and decoded UI templates.
+This markdown file is intended for integration in Briefing Buddy's internal reference system and LLM decoding prompts. Further expansion modules may include TAF codes, risk scoring rubrics, and decoded UI templates.
 

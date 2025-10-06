@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dispatch_buddy/models/notam.dart';
+import 'package:briefing_buddy/models/notam.dart';
 
 class NotamGroupHeader extends StatelessWidget {
   final NotamGroup group;

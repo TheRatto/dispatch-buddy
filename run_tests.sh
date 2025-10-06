@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Test runner for Dispatch Buddy Flutter app
+# Test runner for Briefing Buddy Flutter app
 # Runs all tests and generates coverage report
 
-echo "🧪 Running Dispatch Buddy Flutter Tests..."
+echo "🧪 Running Briefing Buddy Flutter Tests..."
 
 # Run TAF date parsing tests specifically (critical for preventing regression)
 echo "📅 Testing TAF date parsing (critical for preventing regression)..."

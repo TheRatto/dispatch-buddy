@@ -1,6 +1,6 @@
-# Dispatch Buddy - Deployment Guide
+# Briefing Buddy - Deployment Guide
 
-This guide provides step-by-step instructions for deploying Dispatch Buddy to both iOS (TestFlight) and Android (APK) platforms.
+This guide provides step-by-step instructions for deploying Briefing Buddy to both iOS (TestFlight) and Android (APK) platforms.
 
 ## Prerequisites
 
@@ -39,16 +39,16 @@ chmod +x create_square_icons.sh
 ### Step 3: Apple Developer Portal Setup
 1. **Go to**: https://developer.apple.com/account
 2. **Create App ID**:
-   - Bundle ID: `com.paulrattigan.dispatchbuddy`
-   - Description: "Dispatch Buddy - Aviation Preflight Briefing Assistant"
+   - Bundle ID: `com.paulrattigan.briefingbuddy`
+   - Description: "Briefing Buddy - Aviation Preflight Briefing Assistant"
 3. **Create App in App Store Connect**:
-   - SKU: `dispatch-buddy-ios`
+   - SKU: `briefing-buddy-ios`
    - Access Level: **Limited Access** (for testing)
 
 ### Step 4: Update Bundle Identifier
 ```bash
 # Update iOS project bundle ID
-sed -i '' 's/com.example.dispatchBuddy/com.paulrattigan.dispatchbuddy/g' ios/Runner.xcodeproj/project.pbxproj
+sed -i '' 's/com.example.briefingBuddy/com.paulrattigan.briefingbuddy/g' ios/Runner.xcodeproj/project.pbxproj
 ```
 
 ### Step 5: Build and Archive
@@ -96,7 +96,7 @@ flutter create --platforms android .
 ### Step 2: Configure Android App
 ```bash
 # Update app name in AndroidManifest.xml
-# Change android:label="dispatch_buddy" to android:label="Dispatch Buddy"
+# Change android:label="briefing_buddy" to android:label="Briefing Buddy"
 ```
 
 ### Step 3: Generate Android App Icons
@@ -259,4 +259,4 @@ For issues specific to:
 ---
 
 *Last updated: January 2025*
-*Dispatch Buddy v1.0.1*
+*Briefing Buddy v1.0.1*

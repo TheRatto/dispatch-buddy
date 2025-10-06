@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# NOTAM Testing Script for Dispatch Buddy
+# NOTAM Testing Script for Briefing Buddy
 # This script runs all NOTAM-related tests and provides a summary
 
-echo "🧪 Running NOTAM Tests for Dispatch Buddy"
+echo "🧪 Running NOTAM Tests for Briefing Buddy"
 echo "=========================================="
 echo ""
 

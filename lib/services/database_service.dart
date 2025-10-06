@@ -16,7 +16,7 @@ class DatabaseService {
   }
 
   Future<Database> _initDB() async {
-    String path = join(await getDatabasesPath(), 'dispatch_buddy.db');
+    String path = join(await getDatabasesPath(), 'briefing_buddy.db');
     return await openDatabase(
       path,
       version: 1,
