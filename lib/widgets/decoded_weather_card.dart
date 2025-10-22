@@ -167,14 +167,15 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
   ) {
     return ConstrainedBox(
       constraints: const BoxConstraints(
-        maxHeight: 290,
+        maxHeight: 320, // Increased from 290 to allow more space for multiple lines
       ),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
+          child: Stack(
+            children: [
+              // Main scrollable content
+              SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -192,10 +193,14 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                           ),
                         ),
                         const Spacer(),
-                        if (concurrentPeriods.isNotEmpty) _buildConcurrentKeyWithBecmg(concurrentPeriods, baseline),
                       ],
                     ),
                     const SizedBox(height: 8),
+                    
+                    // Time period indication
+                    _buildTimePeriodIndicator(baseline),
+                    const SizedBox(height: 12),
+                    
                     // Wind/Visibility row (dynamic height)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,10 +221,22 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                         _buildGridItemWithConcurrent('Cloud', completeWeather['Cloud'], concurrentPeriods, 'Cloud'),
                       ],
                     ),
+                    
+                    // Add bottom padding to prevent content from overlapping with fixed legend
+                    if (concurrentPeriods.isNotEmpty) const SizedBox(height: 40),
                   ],
                 ),
-              );
-            },
+              ),
+              
+              // Fixed color legend at bottom (if there are concurrent periods)
+              if (concurrentPeriods.isNotEmpty)
+                Positioned(
+                  bottom: 8,
+                  left: 0,
+                  right: 0,
+                  child: _buildConcurrentKeyWithBecmg(concurrentPeriods, baseline),
+                ),
+            ],
           ),
         ),
       ),
@@ -249,23 +266,44 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
   }
 
   Widget _buildConcurrentKeyWithBecmg(List<DecodedForecastPeriod> concurrentPeriods, DecodedForecastPeriod? baseline) {
-    final children = <Widget>[];
+    final legendChildren = <Widget>[];
     
     // Add concurrent period keys
     for (final period in concurrentPeriods) {
       Color color = WeatherColors.getColorForProbCombination(period.type);
       String label = period.type;
+      String periodInfo = _formatPeriodTime(period.time);
       
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+      legendChildren.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          margin: const EdgeInsets.only(right: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              if (periodInfo.isNotEmpty)
+                Text(
+                  periodInfo,
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.normal,
+                    color: color.withValues(alpha: 0.8),
+                  ),
+                ),
+            ],
           ),
         ),
       );
@@ -273,25 +311,231 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
     
     // Add BECMG key if baseline is BECMG and we're in transition period
     if (baseline?.type == 'BECMG' && _isInBecmgTransition(baseline!)) {
-      children.add(
-        const Padding(
-          padding: EdgeInsets.only(left: 4.0),
-          child: Text(
-            'BECMG',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: WeatherColors.becmg,
-            ),
+      String becmgPeriodInfo = _formatPeriodTime(baseline.time);
+      
+      legendChildren.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          margin: const EdgeInsets.only(right: 6),
+          decoration: BoxDecoration(
+            color: WeatherColors.becmg.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: WeatherColors.becmg.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'BECMG',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: WeatherColors.becmg,
+                ),
+              ),
+              if (becmgPeriodInfo.isNotEmpty)
+                Text(
+                  becmgPeriodInfo,
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.normal,
+                    color: WeatherColors.becmg.withValues(alpha: 0.8),
+                  ),
+                ),
+            ],
           ),
         ),
       );
     }
     
-    return Row(
+    // Build concurrent period time indicators
+    final timeIndicators = <Widget>[];
+    for (final period in concurrentPeriods) {
+      final timePeriodText = _formatTimePeriod(period);
+      if (timePeriodText.isNotEmpty) {
+        Color color = WeatherColors.getColorForProbCombination(period.type);
+        
+        timeIndicators.add(
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(bottom: 6),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16), // More pill-shaped
+                border: Border.all(
+                  color: color.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                '${period.type} $timePeriodText',
+                style: TextStyle(
+                  fontSize: 11, // Match the main time period indicator font size
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    
+    return Column(
       mainAxisSize: MainAxisSize.min,
-      children: children,
+      children: [
+        // Time period indicators only (legend badges removed as redundant)
+        ...timeIndicators,
+      ],
     );
+  }
+
+  /// Build time period indicator widget
+  Widget _buildTimePeriodIndicator(DecodedForecastPeriod baseline) {
+    final timePeriodText = _formatTimePeriod(baseline);
+    
+    if (timePeriodText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16), // More pill-shaped
+          border: Border.all(
+            color: Colors.blue.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          timePeriodText,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.blue[700],
+            fontFamily: 'monospace',
+          ),
+          textAlign: TextAlign.left,
+        ),
+      ),
+    );
+  }
+
+  /// Format time period for display
+  String _formatTimePeriod(DecodedForecastPeriod baseline) {
+    if (baseline.startTime == null || baseline.endTime == null) {
+      // Fallback to parsing from time string if startTime/endTime not available
+      return _formatTimePeriodFromString(baseline.time, baseline.type);
+    }
+    
+    // Format using DateTime objects
+    final startTime = baseline.startTime!;
+    final endTime = baseline.endTime!;
+    
+    final startDay = startTime.day.toString().padLeft(2, '0');
+    final startHour = startTime.hour.toString().padLeft(2, '0');
+    final startMinute = startTime.minute.toString().padLeft(2, '0');
+    final endDay = endTime.day.toString().padLeft(2, '0');
+    final endHour = endTime.hour.toString().padLeft(2, '0');
+    final endMinute = endTime.minute.toString().padLeft(2, '0');
+    
+    return 'FROM $startDay ${startHour}${startMinute}Z TO $endDay ${endHour}${endMinute}Z';
+  }
+
+  /// Format time period from string (fallback method)
+  String _formatTimePeriodFromString(String time, String type) {
+    if (time.isEmpty) return '';
+    
+    // Handle different period formats
+    // Examples: "FM1200", "TEMPO 1418", "INTER 2205/2208", "BECMG 2608/2611"
+    
+    String cleaned = time.replaceFirst(RegExp(r'^(FM|TEMPO|INTER|BECMG|PROB30|PROB40)\s*'), '').trim();
+    
+    if (cleaned.isEmpty) return '';
+    
+    // Handle time ranges (e.g., "2205/2208" -> "FROM 22 0500Z TO 22 0800Z")
+    if (cleaned.contains('/')) {
+      final parts = cleaned.split('/');
+      if (parts.length == 2) {
+        final start = parts[0];
+        final end = parts[1];
+        
+        if (start.length >= 4 && end.length >= 4) {
+          final startDay = start.substring(0, 2);
+          final startTime = start.substring(2);
+          final endDay = end.substring(0, 2);
+          final endTime = end.substring(2);
+          
+          return 'FROM $startDay ${startTime}Z TO $endDay ${endTime}Z';
+        }
+      }
+    }
+    
+    // Handle single times (e.g., "1200" -> "FROM 22 1200Z")
+    if (cleaned.length == 4 && RegExp(r'^\d{4}$').hasMatch(cleaned)) {
+      final now = DateTime.now().toUtc();
+      final day = now.day.toString().padLeft(2, '0');
+      return 'FROM $day ${cleaned}Z';
+    }
+    
+    return '';
+  }
+
+  /// Format period time for display in legend
+  String _formatPeriodTime(String time) {
+    if (time.isEmpty) return '';
+    
+    // Handle different period formats
+    // Examples: "FM1200", "TEMPO 1418", "INTER 2205/2208", "BECMG 2608/2611"
+    
+    // Remove common prefixes and clean up
+    String cleaned = time
+        .replaceFirst(RegExp(r'^(FM|TEMPO|INTER|BECMG|PROB30|PROB40)\s*'), '')
+        .trim();
+    
+    if (cleaned.isEmpty) return '';
+    
+    // Handle time ranges (e.g., "2205/2208" -> "05/08")
+    if (cleaned.contains('/')) {
+      final parts = cleaned.split('/');
+      if (parts.length == 2) {
+        final start = parts[0];
+        final end = parts[1];
+        
+        // Extract day and time parts
+        if (start.length >= 4 && end.length >= 4) {
+          final startDay = start.substring(0, 2);
+          final startTime = start.substring(2);
+          final endDay = end.substring(0, 2);
+          final endTime = end.substring(2);
+          
+          // If same day, show as "05/08"
+          if (startDay == endDay) {
+            return '$startTime/$endTime';
+          } else {
+            // Different days, show as "05/08"
+            return '$startTime/$endTime';
+          }
+        }
+      }
+    }
+    
+    // Handle single times (e.g., "1200" -> "12:00")
+    if (cleaned.length == 4 && RegExp(r'^\d{4}$').hasMatch(cleaned)) {
+      final hour = cleaned.substring(0, 2);
+      final minute = cleaned.substring(2);
+      return '$hour:$minute';
+    }
+    
+    // Return cleaned version if we can't parse it
+    return cleaned;
   }
 
   /// Check if we're currently in the BECMG transition period
@@ -435,7 +679,6 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
     // Memoize concurrent period widgets to prevent unnecessary rebuilds
     final concurrentWidgets = relevantConcurrentPeriods.map((period) {
       final color = WeatherColors.getColorForProbCombination(period.type);
-      final label = period.type; // Use the full period type instead of just 'TEMPO' or 'INTER'
       final concurrentValue = period.weather[weatherType];
       
       if (concurrentValue == null || concurrentValue.isEmpty || 

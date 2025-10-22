@@ -29,6 +29,7 @@ class FlightProvider with ChangeNotifier {
   Map<String, List<Weather>> _metarsByIcao = {};
   Map<String, List<Weather>> _tafsByIcao = {};
   Map<String, FirstLastLight> _firstLastLightByIcao = {}; // First/last light data by ICAO
+  Map<String, String> _airportTimezones = {}; // Airport timezone data by ICAO
   String? _selectedAirport; // Shared airport selection across all tabs
   bool _naipsFallbackUsed = false; // One-time snackbar flag for NAIPS fallback
   
@@ -288,12 +289,39 @@ class FlightProvider with ChangeNotifier {
   Map<String, List<Weather>> get metarsByIcao => _metarsByIcao;
   Map<String, List<Weather>> get tafsByIcao => _tafsByIcao;
   Map<String, FirstLastLight> get firstLastLightByIcao => _firstLastLightByIcao;
+  Map<String, String> get airportTimezones => _airportTimezones;
   String? get selectedAirport => _selectedAirport;
   
   /// Add First/Last Light data for a specific airport
   void addFirstLastLightData(FirstLastLight firstLastLight) {
     _firstLastLightByIcao[firstLastLight.icao] = firstLastLight;
     notifyListeners();
+  }
+  
+  /// Pre-fetch timezone data for all airports in a briefing
+  Future<void> _prefetchAirportTimezones(List<String> airportIcaos) async {
+    debugPrint('DEBUG: FlightProvider - Pre-fetching timezone data for ${airportIcaos.length} airports');
+    
+    // Clear existing timezone data
+    _airportTimezones.clear();
+    
+    // Fetch timezone data for all airports in parallel
+    final timezoneFutures = airportIcaos.map((icao) async {
+      try {
+        final timezoneInfo = await AirportTimezoneService.getAirportTimezone(icao);
+        if (timezoneInfo != null) {
+          _airportTimezones[icao] = timezoneInfo.timezone;
+          debugPrint('DEBUG: FlightProvider - Pre-fetched timezone for $icao: ${timezoneInfo.timezone}');
+        } else {
+          debugPrint('DEBUG: FlightProvider - No timezone data available for $icao');
+        }
+      } catch (e) {
+        debugPrint('DEBUG: FlightProvider - Error fetching timezone for $icao: $e');
+      }
+    });
+    
+    await Future.wait(timezoneFutures);
+    debugPrint('DEBUG: FlightProvider - Pre-fetched timezone data for ${_airportTimezones.length} airports');
   }
   // UI can call this after refresh to show a one-time snackbar if true
   bool consumeNaipsFallbackUsed() {
@@ -521,6 +549,11 @@ class FlightProvider with ChangeNotifier {
     }
     
     debugPrint('DEBUG: FlightProvider - Loaded ${_firstLastLightByIcao.length} first/last light entries from briefing storage');
+    
+    // Pre-fetch timezone data for all airports in the briefing
+    debugPrint('DEBUG: FlightProvider - About to pre-fetch timezones for airports: ${flight.airports.map((a) => a.icao).toList()}');
+    await _prefetchAirportTimezones(flight.airports.map((a) => a.icao).toList());
+    debugPrint('DEBUG: FlightProvider - Completed timezone pre-fetching. Available timezones: ${_airportTimezones.keys.toList()}');
     
     // Debug: Print sample converted data
     if (flight.notams.isNotEmpty) {

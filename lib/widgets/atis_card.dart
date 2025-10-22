@@ -143,7 +143,6 @@ class _AtisCardState extends State<AtisCard> {
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
             ),
             child: SelectableText(

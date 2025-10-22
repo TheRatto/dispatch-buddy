@@ -489,7 +489,6 @@ class _MetarTabState extends State<MetarTab> {
                                     margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                                     padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
                                     decoration: BoxDecoration(
-                                      color: Colors.grey[100],
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: SelectableText(

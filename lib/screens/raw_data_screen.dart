@@ -12,8 +12,7 @@ import '../services/taf_state_manager.dart';
 import '../services/cache_manager.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
-import '../widgets/decoded_weather_card.dart';
-import '../widgets/raw_taf_card.dart';
+import '../widgets/flip_card_widget.dart';
 import '../widgets/taf_time_slider.dart';
 import '../widgets/taf_airport_selector.dart';
 import '../widgets/notam_grouped_list.dart';
@@ -503,75 +502,80 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         // Add a small delay after refresh completes for smooth transition
         await Future.delayed(const Duration(milliseconds: 500));
       },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        controller: _tafs2ScrollController,
-        child: Padding(
-      padding: const EdgeInsets.all(8.0),
-          child: Column(
+      child: Column(
         children: [
-              
-              // Decoded weather card
-              SizedBox(
-                height: 290,
-                child: RepaintBoundary(
-                  child: _activePeriods != null && _activePeriods!['baseline'] != null
-                      ? DecodedWeatherCard(
-                          key: ValueKey('decoded_${flightProvider.selectedAirport}'),
-                          baseline: _activePeriods!['baseline'] as DecodedForecastPeriod,
-                          completeWeather: _tafStateManager.getCompleteWeatherForPeriod(
-                            _activePeriods!['baseline'] as DecodedForecastPeriod,
-                            flightProvider.selectedAirport ?? '',
-                            sliderValue,
-                            forecastPeriods,
-                          ),
-                          concurrentPeriods: _activePeriods!['concurrent'] as List<DecodedForecastPeriod>,
+          // Scrollable content area
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              controller: _tafs2ScrollController,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    // Flip Card Widget - combines raw and decoded views
+                    SizedBox(
+                      height: 320, // Increased height for more vertical space
+                      child: RepaintBoundary(
+                        child: FlipCardWidget(
+                          key: ValueKey('flip_${flightProvider.selectedAirport}'),
+                          taf: selectedTaf,
+                          activePeriods: _activePeriods,
+                          baseline: _activePeriods != null ? _activePeriods!['baseline'] as DecodedForecastPeriod? : null,
+                          completeWeather: _activePeriods != null && _activePeriods!['baseline'] != null
+                              ? _tafStateManager.getCompleteWeatherForPeriod(
+                                  _activePeriods!['baseline'] as DecodedForecastPeriod,
+                                  flightProvider.selectedAirport ?? '',
+                                  sliderValue,
+                                  forecastPeriods,
+                                )
+                              : null,
+                          concurrentPeriods: _activePeriods != null ? _activePeriods!['concurrent'] as List<DecodedForecastPeriod>? : null,
+                          tafStateManager: _tafStateManager,
                           airport: flightProvider.selectedAirport,
                           sliderValue: sliderValue,
                           allPeriods: forecastPeriods,
-                          taf: selectedTaf,
                           timeline: selectedTaf.decodedWeather?.timeline,
-                        )
-                      : const Center(child: Text('No decoded data available')),
-                ),
-              ),
-              const SizedBox(height: 4),
-              
-              // Raw TAF card
-              SizedBox(
-                height: 240,
-                child: RepaintBoundary(
-                  child: RawTafCard(
-                    key: ValueKey('raw_${flightProvider.selectedAirport}'),
-                    taf: selectedTaf,
-                    activePeriods: _activePeriods,
-                  ),
-                ),
-              ),
-              
-              // Time Slider - now part of scrollable content
-              const SizedBox(height: 4),
-              SizedBox(
-            height: 89,
-                child: RepaintBoundary(
-                  child: selectedTaf.decodedWeather?.timeline.isNotEmpty == true
-                      ? TafTimeSlider(
-                          timeline: selectedTaf.decodedWeather!.timeline,
-                          sliderValue: sliderValue,
-                          onChanged: (value) => _onSliderChanged(value, selectedTaf, flightProvider),
-                        )
-                      : const SizedBox(
-                          height: 89,
-                          child: Center(child: Text('No timeline available')),
                         ),
+                      ),
+                    ),
+                    
+                    // Bottom padding for pull-to-refresh
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
-              
-              // Bottom padding for pull-to-refresh
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
-        ),
+          
+          // Fixed Time Slider at bottom
+          Container(
+            height: 110, // Increased from 89 to accommodate time display above slider
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: RepaintBoundary(
+              child: selectedTaf.decodedWeather?.timeline.isNotEmpty == true
+                        ? TafTimeSlider(
+                            timeline: selectedTaf.decodedWeather!.timeline,
+                            sliderValue: sliderValue,
+                            onChanged: (value) => _onSliderChanged(value, selectedTaf, flightProvider),
+                            airportIcao: flightProvider.selectedAirport,
+                          )
+                  : const SizedBox(
+                      height: 110,
+                      child: Center(child: Text('No timeline available')),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1452,7 +1456,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
           content,
           // Loading overlay
           Container(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

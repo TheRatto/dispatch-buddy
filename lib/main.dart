@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/summary_screen.dart';
@@ -22,6 +23,9 @@ import 'services/naips_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  
+  // Initialize timezone database globally
+  tz.initializeTimeZones();
 
   runApp(
     MultiProvider(

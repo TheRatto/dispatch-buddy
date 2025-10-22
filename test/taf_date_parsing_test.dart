@@ -108,8 +108,8 @@ void main() {
         expect(timeline.first.day, equals(30));
         expect(timeline.first.hour, equals(20));
         
-        // Should handle month transition correctly (4 hours: 20:00-00:00)
-        expect(timeline.length, equals(4)); // 4 hours for 3020/0100
+        // Should handle month transition correctly (28 hours: Oct 30 20:00 to Oct 31 23:00)
+        expect(timeline.length, equals(28)); // 28 hours for 3020/0100 (effective end is 23:00 on Oct 31)
       });
     });
 

@@ -21,7 +21,7 @@ class AirportTimezoneService {
     if (_cache.containsKey(upperIcao)) {
       final cacheTime = _cacheTimestamps[upperIcao]!;
       if (DateTime.now().difference(cacheTime) < _cacheValidity) {
-        debugPrint('DEBUG: AirportTimezoneService - Using cached timezone for $upperIcao');
+        debugPrint('DEBUG: AirportTimezoneService - Using cached timezone for $upperIcao: ${_cache[upperIcao]!.timezone}');
         return _cache[upperIcao];
       }
     }
@@ -65,16 +65,22 @@ class AirportTimezoneService {
   /// Fetch timezone from primary aviation API
   static Future<AirportTimezone?> _fetchFromAviationApi(String icao) async {
     try {
+      final url = '$_baseUrl/airports/$icao';
+      debugPrint('DEBUG: AirportTimezoneService - Calling aviation API: $url');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl/airports/$icao'),
+        Uri.parse(url),
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'BriefingBuddy/1.0',
         },
       ).timeout(const Duration(seconds: 10));
       
+      debugPrint('DEBUG: AirportTimezoneService - Aviation API response for $icao: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        debugPrint('DEBUG: AirportTimezoneService - Aviation API data for $icao: $data');
         
         // Parse the response based on API structure
         if (data is Map<String, dynamic>) {
@@ -83,6 +89,7 @@ class AirportTimezoneService {
           final city = data['city'] as String?;
           
           if (timezoneStr != null) {
+            debugPrint('DEBUG: AirportTimezoneService - Found timezone for $icao: $timezoneStr');
             return AirportTimezone(
               icao: icao,
               timezone: timezoneStr,
@@ -90,8 +97,12 @@ class AirportTimezoneService {
               city: city ?? '',
               source: 'aviation_api',
             );
+          } else {
+            debugPrint('DEBUG: AirportTimezoneService - No timezone field in API response for $icao');
           }
         }
+      } else {
+        debugPrint('DEBUG: AirportTimezoneService - Aviation API failed for $icao: HTTP ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('DEBUG: AirportTimezoneService - Aviation API failed for $icao: $e');
@@ -189,14 +200,44 @@ class AirportTimezoneService {
     
     // Pattern-based inference for common prefixes
     if (icao.startsWith('Y')) {
-      // Australia - default to Sydney timezone
-      return AirportTimezone(
-        icao: icao,
-        timezone: 'Australia/Sydney',
-        country: 'Australia',
-        city: '',
-        source: 'inferred_australia',
-      );
+      // Australia - be more specific about timezone regions
+      if (icao.startsWith('YB')) {
+        // Queensland airports (Brisbane region) - no DST
+        return AirportTimezone(
+          icao: icao,
+          timezone: 'Australia/Brisbane',
+          country: 'Australia',
+          city: '',
+          source: 'inferred_queensland',
+        );
+      } else if (icao.startsWith('YP')) {
+        // Western Australia airports (Perth region) - no DST
+        return AirportTimezone(
+          icao: icao,
+          timezone: 'Australia/Perth',
+          country: 'Australia',
+          city: '',
+          source: 'inferred_western_australia',
+        );
+      } else if (icao.startsWith('YD')) {
+        // Northern Territory airports (Darwin region) - no DST
+        return AirportTimezone(
+          icao: icao,
+          timezone: 'Australia/Darwin',
+          country: 'Australia',
+          city: '',
+          source: 'inferred_northern_territory',
+        );
+      } else {
+        // Default to Sydney timezone for other Australian airports
+        return AirportTimezone(
+          icao: icao,
+          timezone: 'Australia/Sydney',
+          country: 'Australia',
+          city: '',
+          source: 'inferred_australia',
+        );
+      }
     } else if (icao.startsWith('NZ')) {
       // New Zealand
       return AirportTimezone(
@@ -234,6 +275,7 @@ class AirportTimezoneService {
     final upperIcao = icao.toUpperCase();
     _cache.remove(upperIcao);
     _cacheTimestamps.remove(upperIcao);
+    debugPrint('DEBUG: AirportTimezoneService - Cleared cache for $upperIcao');
   }
   
   /// Clear all cache
