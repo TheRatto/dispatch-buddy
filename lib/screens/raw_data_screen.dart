@@ -100,6 +100,42 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
     });
   }
 
+  // Calculate responsive TAF card height based on screen size
+  double _calculateResponsiveTafCardHeight(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calculate logical screen dimensions
+    final logicalHeight = screenHeight;
+    final logicalWidth = screenWidth;
+    
+    // iPhone screen size detection based on logical dimensions
+    // iPhone Pro Max: ~926 logical height, ~428 logical width
+    // iPhone Pro: ~844 logical height, ~390 logical width
+    // iPhone Standard: ~667 logical height, ~375 logical width
+    
+    double baseHeight;
+    if (logicalHeight >= 900) {
+      // iPhone Pro Max or larger
+      baseHeight = 500.0;
+    } else if (logicalHeight >= 800) {
+      // iPhone Pro
+      baseHeight = 450.0;
+    } else {
+      // iPhone Standard or smaller
+      baseHeight = 400.0;
+    }
+    
+    // Adjust based on available space (subtract tab bar, airport selector, slider, etc.)
+    final availableHeight = logicalHeight - 200; // Approximate space for UI elements
+    final calculatedHeight = (availableHeight * 0.7).clamp(350.0, baseHeight);
+    
+    debugPrint('DEBUG: Screen dimensions - Height: $logicalHeight, Width: $logicalWidth');
+    debugPrint('DEBUG: Calculated TAF card height: $calculatedHeight');
+    
+    return calculatedHeight;
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -515,7 +551,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                   children: [
                     // Flip Card Widget - combines raw and decoded views
                     SizedBox(
-                      height: 320, // Increased height for more vertical space
+                      height: _calculateResponsiveTafCardHeight(context),
                       child: RepaintBoundary(
                         child: FlipCardWidget(
                           key: ValueKey('flip_${flightProvider.selectedAirport}'),
@@ -536,6 +572,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                           sliderValue: sliderValue,
                           allPeriods: forecastPeriods,
                           timeline: selectedTaf.decodedWeather?.timeline,
+                          cardHeight: _calculateResponsiveTafCardHeight(context),
                         ),
                       ),
                     ),

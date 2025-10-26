@@ -648,20 +648,35 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
           fallback: _buildMockRadarDisplay(provider.selectedSite!, provider.selectedRange),
         ),
         
-        // Layer 4: Range circles (distance references) - ABOVE weather data
+        // Layer 4: Weather observations (temperature, wind, rain icons) - ABOVE weather data
+        if (layers.observationsUrl != null)
+          _buildRadarLayer(
+            layers.observationsUrl!,
+            'Weather Observations',
+          ),
+        
+        // Layer 5: Range circles (distance references) - ABOVE weather data
         _buildRadarLayer(
           layers.rangeUrl,
           'Range Circles',
         ),
         
-        // Layer 5: Location labels (city names) - ABOVE weather data - only if URL provided
+        // Layer 6: Location labels (city names) - ABOVE weather data - only if URL provided
         if (layers.locationsUrl != null)
           _buildRadarLayer(
             layers.locationsUrl!,
             'Location Labels',
           ),
         
-        // Layer 6: Legend overlay (positioned to align transparent part with radar layers)
+        // Weather observations legend (positioned at the top)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _buildWeatherObservationsLegend(),
+        ),
+
+        // Layer 7: Legend overlay (positioned to align transparent part with radar layers)
         Positioned(
           bottom: 0, // Position at the very bottom
           left: 0,
@@ -798,6 +813,96 @@ class _WeatherRadarScreenState extends State<WeatherRadarScreen> {
         },
       );
     }
+  }
+
+  /// Build weather observations legend for the top of radar display
+  Widget _buildWeatherObservationsLegend() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(8),
+          bottomRight: Radius.circular(8),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Temperature legend
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'Temp. (°C)',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          
+          // Wind legend
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'Wind (km/h)',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          
+          // Rain legend
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'Rain (mm since 9am)',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -14,7 +14,7 @@ void main() {
   print('BOM Product ID: $bomSiteId');
   
   // Generate expected remote URLs
-  const transparencyBaseUrl = 'https://www.bom.gov.au/products/radar_transparencies/';
+  const transparencyBaseUrl = 'https://reg.bom.gov.au/products/radar_transparencies/';
   
   final remoteBackground = '${transparencyBaseUrl}$bomSiteId.background.png';
   final remoteLocations = '${transparencyBaseUrl}$bomSiteId.locations.png';

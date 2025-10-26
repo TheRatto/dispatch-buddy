@@ -431,10 +431,10 @@ class MetarParser {
       final hour = int.parse(timeStr.substring(2, 4));
       final minute = int.parse(timeStr.substring(4, 6));
       
-      // Assume current month/year for now
-      final now = DateTime.now();
-      return DateTime(now.year, now.month, day, hour, minute);
+      // METAR times are always in UTC (Zulu time)
+      final now = DateTime.now().toUtc();
+      return DateTime.utc(now.year, now.month, day, hour, minute);
     }
-    return DateTime.now();
+    return DateTime.now().toUtc();
   }
 } 

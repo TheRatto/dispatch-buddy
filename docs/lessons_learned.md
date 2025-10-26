@@ -43,6 +43,30 @@
   - A tie‑blind "NAIPS over API" merge allowed older NAIPS to suppress newer API; a naive "newest‑wins" then suppressed NAIPS too aggressively. The 2‑minute NAIPS preference is a pragmatic balance.
   - **TAF Priority Logic Regression (January 2025)**: After fixing NAIPs TAF parsing regex, the merge logic was still using "newest wins" which caused API TAFs to override NAIPs TAFs due to newer timestamps. **Solution**: Prioritize NAIPs TAFs regardless of timestamp - add NAIPs TAFs first, then only add API TAFs as fallback if no NAIPs TAF exists for that airport.
 
+- ATIS Formatting and Display (January 2025)
+  - **Problem**: ATIS raw text displayed with inconsistent formatting compared to NAIPs standards
+  - **Issues Identified**:
+    1. No clear separation between header and body content
+    2. Inconsistent indentation (mixed spaces, `+` prefixes, no indentation)
+    3. Fragmented sentences across multiple lines (e.g., "AND DEPARTURES IN" followed by "PROGRESS" on next line)
+    4. Unnecessary blank lines cluttering the display
+  - **NAIPs Standards Analysis**:
+    - Header format: `ATIS [ICAO] [LETTER] [DDHHMM]Z`
+    - Natural line break after validity time (no blank line)
+    - Consistent 2-space indentation for all body content
+    - Connected sentences to avoid unnecessary fragmentation
+  - **Solution Implementation**:
+    1. **Two-Stage Processing**: Basic formatting + smart line connection
+    2. **Header Detection**: Regex pattern `^ATIS\s+\w{4}\s+[A-Z]\s+(\d{6})` to identify proper ATIS headers
+    3. **Consistent Indentation**: All body content uniformly indented with 2 spaces
+    4. **Smart Line Connection**: Algorithm to connect fragmented sentences while preserving category structure
+  - **Connection Rules**:
+    - Connect when current line ends with continuation words (`AND`, `IN`, `ON`, `FOR`, `TO`, `OF`, `AT`, `FROM`, `WITH`)
+    - Connect when current line ends with punctuation (`,`, `:`)
+    - Connect when next line is very short (< 20 chars) and doesn't contain `:`
+    - Don't connect when next line starts with category prefixes (`RWY:`, `WIND:`, `WND:`, `VIS:`, `WX:`, `CLD:`, `TMP:`, `QNH:`, `SIGWX:`, `+`)
+  - **Key Lesson**: Aviation data formatting should follow official standards (NAIPs) for consistency and familiarity. Smart text processing can improve readability while maintaining proper structure.
+
 ## Lessons learned – NAIPS Charts directory and viewer
 
 - Directory access

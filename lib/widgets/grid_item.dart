@@ -32,7 +32,7 @@ class GridItem extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
@@ -41,7 +41,7 @@ class GridItem extends StatelessWidget {
           Text(
             displayValue,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),

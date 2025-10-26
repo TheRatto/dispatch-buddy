@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
-import '../services/airport_timezone_service.dart';
 import '../providers/flight_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -143,7 +141,7 @@ class TafTimeSlider extends StatelessWidget {
         
         return Text(
           '${DateFormat('dd HH:mm').format(utcTime)}Z$localTimeText',
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         );
       },

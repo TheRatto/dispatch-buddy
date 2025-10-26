@@ -112,19 +112,21 @@ class RadarImage {
 /// Represents the multiple layers that compose a BOM radar image
 class RadarLayers {
   final String backgroundUrl;     // IDR402.background.png
-  final String? locationsUrl;     // IDR402.locations.png (optional - can be null to hide locations)
-  final String rangeUrl;          // IDR402.range.png
-  final String topographyUrl;     // IDR402.topography.png
-  final String legendUrl;         // IDR.legend.0.png
-  final String radarDataUrl;      // IDR402.T.202508300959.png
+  final String? locationsUrl;       // IDR402.locations.png (optional - can be null to hide locations)
+  final String rangeUrl;            // IDR402.range.png
+  final String topographyUrl;       // IDR402.topography.png
+  final String legendUrl;           // IDR.legend.0.png
+  final String radarDataUrl;        // IDR402.T.202508300959.png
+  final String? observationsUrl;    // IDR402.observations.YYYYMMDDHHMM.png (optional - weather observations overlay)
 
   const RadarLayers({
     required this.backgroundUrl,
-    this.locationsUrl,             // Made optional
+    this.locationsUrl,               // Made optional
     required this.rangeUrl,
     required this.topographyUrl,
     required this.legendUrl,
     required this.radarDataUrl,
+    this.observationsUrl,            // Made optional
   });
 
   /// Convert to JSON for storage
@@ -136,6 +138,7 @@ class RadarLayers {
       'topographyUrl': topographyUrl,
       'legendUrl': legendUrl,
       'radarDataUrl': radarDataUrl,
+      'observationsUrl': observationsUrl, // Can be null
     };
   }
 
@@ -148,6 +151,7 @@ class RadarLayers {
       topographyUrl: json['topographyUrl'] as String,
       legendUrl: json['legendUrl'] as String,
       radarDataUrl: json['radarDataUrl'] as String,
+      observationsUrl: json['observationsUrl'] as String?, // Handle nullable
     );
   }
 }

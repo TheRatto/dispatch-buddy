@@ -25,6 +25,7 @@ class FlipCardWidget extends StatefulWidget {
   final double? sliderValue;
   final List<DecodedForecastPeriod>? allPeriods;
   final List<DateTime>? timeline;
+  final double? cardHeight;
 
   const FlipCardWidget({
     super.key,
@@ -38,6 +39,7 @@ class FlipCardWidget extends StatefulWidget {
     this.sliderValue,
     this.allPeriods,
     this.timeline,
+    this.cardHeight,
   });
 
   @override
@@ -151,7 +153,7 @@ class _FlipCardWidgetState extends State<FlipCardWidget>
     debugPrint('DEBUG: FlipCardWidget build for ${widget.taf.icao} - showing ${_isShowingRaw ? 'raw' : 'decoded'}');
     
     return SizedBox(
-      height: 320, // Increased from 290 to match decoded card height
+      height: widget.cardHeight ?? 320, // Use provided height or default to 320
       child: AnimatedBuilder(
         animation: _flipAnimation,
         builder: (context, child) {
@@ -201,7 +203,7 @@ class _FlipCardWidgetState extends State<FlipCardWidget>
 
   Widget _buildRawCard() {
     return SizedBox(
-      height: 320, // Increased from 290 to match decoded card height
+      height: widget.cardHeight ?? 320, // Use provided height or default to 320
       child: RawTafCard(
         key: ValueKey('raw_${widget.taf.icao}'),
         taf: widget.taf,
@@ -213,13 +215,13 @@ class _FlipCardWidgetState extends State<FlipCardWidget>
   Widget _buildDecodedCard() {
     if (widget.baseline == null || widget.completeWeather == null) {
       return SizedBox(
-        height: 320, // Increased from 290 to match decoded card height
+        height: widget.cardHeight ?? 320, // Use provided height or default to 320
         child: _buildEmptyDecodedCard(),
       );
     }
     
     return SizedBox(
-      height: 320, // Increased from 290 to match decoded card height
+      height: widget.cardHeight ?? 320, // Use provided height or default to 320
       child: DecodedWeatherCard(
         key: ValueKey('decoded_${widget.taf.icao}'),
         baseline: widget.baseline!,

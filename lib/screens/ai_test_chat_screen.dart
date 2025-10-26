@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ai_chat_provider.dart';
+import '../providers/flight_provider.dart';
 
 /// AI Test Chat Screen
 /// 
@@ -70,9 +71,17 @@ class _AITestChatScreenState extends State<AITestChatScreen> {
             const SizedBox(height: 16),
             _buildPromptButton('Hello, can you help me?'),
             _buildPromptButton('What can you do?'),
-            _buildPromptButton('Generate a flight briefing for YSCB to YSSY'),
-            _buildPromptButton('Tell me about aviation weather'),
-            _buildPromptButton('What are NOTAMs?'),
+            const SizedBox(height: 8),
+            const Text(
+              'Aviation Queries (with Flight Data):',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            _buildAviationPromptButton('What is the weather at the departure airport?'),
+            _buildAviationPromptButton('Are there any runway closures affecting my flight?'),
+            _buildAviationPromptButton('What NOTAMs are relevant to my route?'),
+            _buildAviationPromptButton('Generate a comprehensive flight briefing'),
+            _buildAviationPromptButton('What are the safety considerations for this flight?'),
             const SizedBox(height: 16),
           ],
         ),
@@ -110,6 +119,62 @@ class _AITestChatScreenState extends State<AITestChatScreen> {
     );
   }
 
+  Widget _buildAviationPromptButton(String prompt) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _sendAviationQuery(prompt);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade50,
+            foregroundColor: Colors.green.shade700,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            prompt,
+            style: const TextStyle(fontSize: 14),
+            textAlign: TextAlign.left,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Load flight data and generate aviation briefing
+  void _loadFlightDataAndGenerateBriefing() {
+    final flightProvider = context.read<FlightProvider>();
+    final chatProvider = context.read<AIChatProvider>();
+    
+    chatProvider.loadFlightDataAndGenerateBriefing(flightProvider);
+    _scrollToBottom();
+  }
+
+  /// Test different briefing styles with current flight data
+  void _testBriefingStyles() {
+    final flightProvider = context.read<FlightProvider>();
+    final chatProvider = context.read<AIChatProvider>();
+    
+    chatProvider.testBriefingStyles(flightProvider);
+    _scrollToBottom();
+  }
+
+  /// Send aviation-specific query with flight context
+  void _sendAviationQuery(String query) {
+    final flightProvider = context.read<FlightProvider>();
+    final chatProvider = context.read<AIChatProvider>();
+    
+    chatProvider.generateQuickAviationResponse(query, flightProvider);
+    _scrollToBottom();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,6 +183,16 @@ class _AITestChatScreenState extends State<AITestChatScreen> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            onPressed: () => _loadFlightDataAndGenerateBriefing(),
+            icon: const Icon(Icons.flight_takeoff),
+            tooltip: 'Load Flight Data & Generate Briefing',
+          ),
+          IconButton(
+            onPressed: () => _testBriefingStyles(),
+            icon: const Icon(Icons.style),
+            tooltip: 'Test Different Briefing Styles',
+          ),
           IconButton(
             onPressed: _showTestPrompts,
             icon: const Icon(Icons.lightbulb_outline),
@@ -245,6 +320,11 @@ class _AITestChatScreenState extends State<AITestChatScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
+    // Handle prompt messages specially (collapsible)
+    if (message.isPrompt) {
+      return _buildPromptBubble(message);
+    }
+    
     final isUser = message.isUser;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -264,19 +344,44 @@ class _AITestChatScreenState extends State<AITestChatScreen> {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isUser ? Colors.blue : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: isUser ? Colors.white : Colors.black87,
-                  fontSize: 16,
+            child: Column(
+              crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isUser ? Colors.blue : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Text(
+                    message.text,
+                    style: TextStyle(
+                      color: isUser ? Colors.white : Colors.black87,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
-              ),
+                // Show metrics if available (for AI responses)
+                if (message.metrics != null && !isUser) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Text(
+                      message.metrics!.toDisplayString(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.blue.shade700,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           if (isUser) ...[
@@ -292,6 +397,63 @@ class _AITestChatScreenState extends State<AITestChatScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildPromptBubble(ChatMessage message) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.amber.shade50,
+          border: Border.all(color: Colors.amber.shade300, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            leading: Icon(Icons.code, color: Colors.amber.shade700),
+            title: Text(
+              'Full Prompt Sent to AI',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.amber.shade900,
+              ),
+            ),
+            subtitle: Text(
+              'Tap to expand/collapse (${message.text.length} characters)',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.amber.shade700,
+              ),
+            ),
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade900,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SelectableText(
+                    message.text,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: Colors.greenAccent,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -447,11 +447,20 @@ class FlightContext {
 
 ### **✅ AI Test Chat Implementation** (COMPLETED)
 - **AITestChatScreen**: Professional chat interface with status indicators
-- **AIChatProvider**: State management for chat functionality
-- **Foundation Models Integration**: Real AI responses via custom bridge
+- **AIChatProvider**: State management for chat functionality with real flight data
+- **Foundation Models Integration**: Real AI responses via custom Swift bridge
 - **Status Indicators**: Green banner showing "Foundation Models Ready"
 - **Input Field**: Fully functional text input and send functionality
 - **More Menu Integration**: Easy access via More menu
+- **🛩️ Flight Data Loading**: Loads current weather/NOTAMs and generates briefings
+- **🎨 Briefing Style Testing**: Tests all briefing styles with real data
+- **💡 Aviation Test Prompts**: Context-aware aviation queries
+- **📝 Prompt Visibility**: Shows full prompts (with all data) sent to AI
+  - Collapsible amber-themed prompt display
+  - Dark terminal-style code formatting
+  - Selectable text for copying
+  - Character count display
+  - Horizontal scrolling for long lines
 
 ## 🚀 **NEW: Technical Gaps Analysis & Implementation Plan**
 

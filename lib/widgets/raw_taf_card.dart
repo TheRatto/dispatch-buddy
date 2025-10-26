@@ -171,7 +171,7 @@ class _RawTafCardState extends State<RawTafCard> {
       // No active periods, show unformatted text
       textSpan = TextSpan(
         text: formattedRawText, 
-        style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
+        style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 14)
       );
     }
     
@@ -189,7 +189,7 @@ class _RawTafCardState extends State<RawTafCard> {
                     _ageText,
                     style: TextStyle(
                       color: Colors.grey[600],
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',
                     ),
@@ -213,7 +213,7 @@ class _RawTafCardState extends State<RawTafCard> {
                         textSpan,
                         style: const TextStyle(
                           fontFamily: 'monospace',
-                          fontSize: 12,
+                          fontSize: 14,
                           height: 1.2,
                         ),
                       ),
@@ -302,7 +302,7 @@ class _RawTafCardState extends State<RawTafCard> {
         // Add RMK line without highlighting
         children.add(TextSpan(
           text: line + (isLastLine ? '' : '\n'),
-          style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 12)
+          style: const TextStyle(color: Colors.black, fontFamily: 'monospace', fontSize: 14)
         ));
         inHighlightedPeriod = false;
         currentHighlightColor = null;
@@ -442,7 +442,7 @@ class _RawTafCardState extends State<RawTafCard> {
         style: TextStyle(
           color: highlightColor ?? Colors.black, 
           fontFamily: 'monospace', 
-          fontSize: 12,
+          fontSize: 14,
           // Only apply background highlighting for TEMPO, INTER, and PROB periods
           backgroundColor: _shouldApplyBackgroundHighlight(highlightColor, baseline, concurrent) ? highlightColor?.withValues(alpha: 0.2) : null,
         )

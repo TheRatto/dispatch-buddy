@@ -8,6 +8,7 @@ import '../models/weather.dart';
 import '../models/airport.dart';
 import '../models/flight_context.dart';
 import 'prompt_template_engine.dart';
+import 'aviation_prompt_template.dart';
 
 /// AI Briefing Service using Apple's Foundation Models framework
 /// 
@@ -74,6 +75,96 @@ class AIBriefingService {
       
     } catch (e) {
       debugPrint('$_tag: Error generating simple response: $e');
+      return _generateErrorBriefing('Failed to generate response: ${e.toString()}');
+    }
+  }
+
+  /// Generate an aviation-specific flight briefing
+  /// 
+  /// This method creates a comprehensive flight briefing using real aviation data
+  /// and the structured prompt template for optimal AI processing.
+  Future<String> generateAviationBriefing({
+    required FlightContext flightContext,
+    required List<Weather> weatherData,
+    required List<Notam> notams,
+    required List<Airport> airports,
+    BriefingStyle briefingStyle = BriefingStyle.comprehensive,
+  }) async {
+    try {
+      debugPrint('$_tag: Generating aviation briefing for ${flightContext.departureIcao} → ${flightContext.destinationIcao}');
+      
+      // Check if Foundation Models is available
+      if (!await _isFoundationModelsAvailable()) {
+        debugPrint('$_tag: Foundation Models not available, using fallback briefing');
+        return _generateOfflineBriefing(
+          flightContext: flightContext,
+          weatherData: weatherData,
+          notams: notams,
+          airports: airports,
+        );
+      }
+      
+      // Initialize if needed
+      await _initializeLanguageModel();
+      
+      // Generate structured prompt
+      final prompt = AviationPromptTemplate.generateBriefingPrompt(
+        flightContext: flightContext,
+        weatherData: weatherData,
+        notams: notams,
+        airports: airports,
+        briefingStyle: briefingStyle.displayName,
+      );
+      
+      debugPrint('$_tag: Generated structured prompt (${prompt.length} characters)');
+      
+      // Process with Foundation Models
+      final response = await _processWithFoundationModels(prompt);
+      
+      debugPrint('$_tag: Aviation briefing generated successfully');
+      return response;
+      
+    } catch (e) {
+      debugPrint('$_tag: Error generating aviation briefing: $e');
+      return _generateErrorBriefing('Failed to generate aviation briefing: ${e.toString()}');
+    }
+  }
+
+  /// Generate a quick aviation response for simple queries
+  /// 
+  /// This method handles quick aviation-related questions with optional context data.
+  Future<String> generateQuickAviationResponse({
+    required String query,
+    List<Weather>? weatherData,
+    List<Notam>? notams,
+  }) async {
+    try {
+      debugPrint('$_tag: Generating quick aviation response for: ${query.substring(0, query.length > 50 ? 50 : query.length)}...');
+      
+      // Check if Foundation Models is available
+      if (!await _isFoundationModelsAvailable()) {
+        debugPrint('$_tag: Foundation Models not available, using fallback response');
+        return _generateSimpleFallbackResponse();
+      }
+      
+      // Initialize if needed
+      await _initializeLanguageModel();
+      
+      // Generate quick prompt
+      final prompt = AviationPromptTemplate.generateQuickPrompt(
+        query: query,
+        weatherData: weatherData,
+        notams: notams,
+      );
+      
+      // Process with Foundation Models
+      final response = await _processWithFoundationModels(prompt);
+      
+      debugPrint('$_tag: Quick aviation response generated successfully');
+      return response;
+      
+    } catch (e) {
+      debugPrint('$_tag: Error generating quick aviation response: $e');
       return _generateErrorBriefing('Failed to generate response: ${e.toString()}');
     }
   }
@@ -438,118 +529,6 @@ Keep briefings factual, clear, and actionable. Always prioritize safety-critical
   /// 
   /// This method provides a sample response for initial testing
   /// and will be removed once Foundation Models is integrated
-  String _generateMockResponse(String prompt) {
-    // Analyze the prompt to generate more realistic responses
-    final hasWeather = prompt.contains('METAR') || prompt.contains('TAF');
-    final hasNotams = prompt.contains('NOTAM');
-    final hasRunwayNotams = prompt.contains('RUNWAY NOTAMs');
-    final hasNavaidNotams = prompt.contains('NAVAID NOTAMs');
-    final hasLightingNotams = prompt.contains('LIGHTING NOTAMs');
-    
-    final now = DateTime.now().toUtc();
-    final briefingTime = '${now.day}/${now.month}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}Z';
-    
-    StringBuffer briefing = StringBuffer();
-    
-    // Header
-    briefing.writeln('# FLIGHT BRIEFING - AI Generated');
-    briefing.writeln('**Generated**: $briefingTime');
-    briefing.writeln();
-    
-    // Weather Summary
-    briefing.writeln('## 🌤️ WEATHER SUMMARY');
-    if (hasWeather) {
-      briefing.writeln('Current weather conditions show:');
-      briefing.writeln('• **YPPH**: 250° at 15G25KT, 10SM visibility, scattered clouds at 3000ft, broken at 5000ft');
-      briefing.writeln('• **YSSY**: 180° at 12KT, 10SM visibility, few clouds at 3000ft, broken at 8000ft');
-      briefing.writeln('• **Wind**: Moderate crosswinds at YPPH, light winds at YSSY');
-      briefing.writeln('• **Visibility**: Excellent (10SM) at both airports');
-      briefing.writeln('• **Clouds**: Scattered to broken layers, no significant weather');
-    } else {
-      briefing.writeln('Weather data not available. Verify current conditions before departure.');
-    }
-    briefing.writeln();
-    
-    // Operational Impacts
-    briefing.writeln('## ⚠️ OPERATIONAL IMPACTS');
-    if (hasNotams) {
-      briefing.writeln('**CRITICAL NOTAMs AFFECTING OPERATIONS:**');
-      if (hasRunwayNotams) {
-        briefing.writeln('• **Runway 03/21**: CLOSED due to maintenance - Use alternate runways');
-        briefing.writeln('• **Runway 16L/34R**: Lighting unserviceable - Day operations only');
-      }
-      if (hasNavaidNotams) {
-        briefing.writeln('• **ILS RWY 16L**: Unserviceable - Use alternate approach procedures');
-        briefing.writeln('• **VOR/DME**: Service degraded - Verify navigation accuracy');
-      }
-      if (hasLightingNotams) {
-        briefing.writeln('• **PAPI RWY 16L**: Unserviceable - Use visual approach only');
-        briefing.writeln('• **MIRL RWY 03/21**: Limited service - Reduced lighting intensity');
-      }
-      briefing.writeln('• **Bird Activity**: Increased bird activity in vicinity - Exercise caution');
-    } else {
-      briefing.writeln('No significant operational impacts identified from current NOTAMs.');
-    }
-    briefing.writeln();
-    
-    // Safety Recommendations
-    briefing.writeln('## 🚨 SAFETY RECOMMENDATIONS');
-    briefing.writeln('1. **Pre-flight Planning**:');
-    briefing.writeln('   • Verify all NOTAMs are current and applicable to your route');
-    briefing.writeln('   • Check weather conditions at departure and destination');
-    briefing.writeln('   • Confirm runway and NAVAID availability');
-    briefing.writeln('2. **Operational Considerations**:');
-    briefing.writeln('   • Plan for runway 03/21 closure - Use alternate runways');
-    briefing.writeln('   • ILS approach not available for RWY 16L - Use visual approach');
-    briefing.writeln('   • Day operations only due to lighting limitations');
-    briefing.writeln('3. **Weather Awareness**:');
-    briefing.writeln('   • Monitor wind conditions for crosswind limitations');
-    briefing.writeln('   • Watch for weather changes during flight');
-    briefing.writeln('4. **Emergency Preparedness**:');
-    briefing.writeln('   • Review alternate airport procedures');
-    briefing.writeln('   • Ensure adequate fuel for diversions');
-    briefing.writeln();
-    
-    // Flight Planning Notes
-    briefing.writeln('## 📋 FLIGHT PLANNING NOTES');
-    briefing.writeln('• **Route**: Direct YPPH-YSSY');
-    briefing.writeln('• **Aircraft**: B737-800');
-    briefing.writeln('• **Flight Rules**: IFR');
-    briefing.writeln('• **Alternate Airports**: Consider YBBN, YMML if required');
-    briefing.writeln('• **Special Procedures**: None required');
-    briefing.writeln();
-    
-    // Additional Information
-    briefing.writeln('## 📊 ADDITIONAL INFORMATION');
-    briefing.writeln('• **NOTAM Count**: ${_countNotamsInPrompt(prompt)} active NOTAMs');
-    briefing.writeln('• **Weather Sources**: METAR, TAF, ATIS data analyzed');
-    briefing.writeln('• **Last Updated**: $briefingTime');
-    briefing.writeln('• **Next Review**: ${_getNextReviewTime(now)}');
-    briefing.writeln();
-    
-    // Footer
-    briefing.writeln('---');
-    briefing.writeln('*This briefing was generated using Apple\'s Foundation Models framework for on-device AI processing.*');
-    briefing.writeln('*Always verify information with official sources before flight.*');
-    
-    return briefing.toString();
-  }
-  
-  /// Count NOTAMs in the prompt for realistic reporting
-  int _countNotamsInPrompt(String prompt) {
-    int count = 0;
-    if (prompt.contains('RUNWAY NOTAMs')) count += 2;
-    if (prompt.contains('NAVAID NOTAMs')) count += 2;
-    if (prompt.contains('LIGHTING NOTAMs')) count += 2;
-    if (prompt.contains('HAZARD NOTAMs')) count += 1;
-    return count;
-  }
-  
-  /// Get next review time for briefing
-  String _getNextReviewTime(DateTime now) {
-    final nextReview = now.add(const Duration(hours: 2));
-    return '${nextReview.day}/${nextReview.month}/${nextReview.year} ${nextReview.hour.toString().padLeft(2, '0')}:${nextReview.minute.toString().padLeft(2, '0')}Z';
-  }
   
   /// Generate offline briefing when Foundation Models is not available
   /// 

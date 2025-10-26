@@ -137,7 +137,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                     _ageText,
               style: TextStyle(
                       color: Colors.grey[600],
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',
               ),
@@ -187,7 +187,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                             _ageText,
                           style: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 12,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               fontFamily: 'monospace',
                           ),
@@ -255,7 +255,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -289,7 +289,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
@@ -298,7 +298,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                 Text(
                   periodInfo,
                   style: TextStyle(
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: FontWeight.normal,
                     color: color.withValues(alpha: 0.8),
                   ),
@@ -328,7 +328,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
               const Text(
                 'BECMG',
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: WeatherColors.becmg,
                 ),
@@ -337,7 +337,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
                 Text(
                   becmgPeriodInfo,
                   style: TextStyle(
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: FontWeight.normal,
                     color: WeatherColors.becmg.withValues(alpha: 0.8),
                   ),
@@ -691,7 +691,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
         child: Text(
           concurrentValue,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: color,
           ),
@@ -707,7 +707,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 14,
                 color: Colors.grey,
                 fontWeight: FontWeight.w500,
               ),
@@ -716,7 +716,7 @@ class _DecodedWeatherCardState extends State<DecodedWeatherCard> {
             Text(
               displayValue,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: valueColor,
               ),
