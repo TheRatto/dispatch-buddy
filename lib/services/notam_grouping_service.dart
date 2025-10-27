@@ -454,6 +454,20 @@ class NotamGroupingService {
         return '📑 Admin';
       case NotamGroup.other:
         return '🔧 Other';
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return '✈️ Airspace Restrictions';
+      case NotamGroup.firAtcNavigation:
+        return '📡 ATC & Navigation';
+      case NotamGroup.firObstaclesCharts:
+        return '🏗️ Obstacles & Charts';
+      case NotamGroup.firInfrastructure:
+        return '🏢 Infrastructure';
+      case NotamGroup.firDroneOperations:
+        return '🚁 Drone Operations';
+      case NotamGroup.firAdministrative:
+        return '📋 Administrative';
     }
   }
 
@@ -476,6 +490,20 @@ class NotamGroupingService {
         return 7;
       case NotamGroup.other:
         return 8;
+      
+      // FIR groups (priorities 9-14)
+      case NotamGroup.firAirspaceRestrictions:
+        return 9;
+      case NotamGroup.firAtcNavigation:
+        return 10;
+      case NotamGroup.firObstaclesCharts:
+        return 11;
+      case NotamGroup.firInfrastructure:
+        return 12;
+      case NotamGroup.firDroneOperations:
+        return 13;
+      case NotamGroup.firAdministrative:
+        return 14;
     }
   }
 
@@ -509,6 +537,21 @@ class NotamGroupingService {
         return ['PF', 'PL', 'PN', 'PO', 'PR', 'PT', 'PX', 'PZ'];
       case NotamGroup.other:
         return [];
+      
+      // FIR groups - Q codes based on observed patterns
+      case NotamGroup.firAirspaceRestrictions:
+        return ['EA', 'EB', 'EC', 'ED', 'EE', 'EF', 'EG', 'EH', 'EI', 'EJ', 'EK', 'EL', 'EM', 'EN', 'EO', 'EP', 'ER', 'ES', 'ET', 'EU', 'EV', 'EW', 'EX', 'EY', 'EZ'];
+      case NotamGroup.firAtcNavigation:
+        return ['LA', 'LB', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK', 'LL', 'LM', 'LN', 'LO', 'LP', 'LR', 'LS', 'LT', 'LU', 'LV', 'LW', 'LX', 'LY', 'LZ'];
+      case NotamGroup.firObstaclesCharts:
+        return ['FA', 'FB', 'FC', 'FD', 'FE', 'FF', 'FG', 'FH', 'FI', 'FJ', 'FK', 'FL', 'FM', 'FN', 'FO', 'FP', 'FR', 'FS', 'FT', 'FU', 'FV', 'FW', 'FX', 'FY', 'FZ'];
+      case NotamGroup.firInfrastructure:
+        return ['HA', 'HB', 'HC', 'HD', 'HE', 'HF', 'HG', 'HH', 'HI', 'HJ', 'HK', 'HL', 'HM', 'HN', 'HO', 'HP', 'HR', 'HS', 'HT', 'HU', 'HV', 'HW', 'HX', 'HY', 'HZ'];
+      case NotamGroup.firDroneOperations:
+        return ['UA', 'UB', 'UC', 'UD', 'UE', 'UF', 'UG', 'UH', 'UI', 'UJ', 'UK', 'UL', 'UM', 'UN', 'UO', 'UP', 'UR', 'US', 'UT', 'UU', 'UV', 'UW', 'UX', 'UY', 'UZ'];
+      case NotamGroup.firAdministrative:
+        return ['GA', 'GB', 'GC', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GJ', 'GK', 'GL', 'GM', 'GN', 'GO', 'GP', 'GR', 'GS', 'GT', 'GU', 'GV', 'GW', 'GX', 'GY', 'GZ',
+                'WA', 'WB', 'WC', 'WD', 'WE', 'WF', 'WG', 'WH', 'WI', 'WJ', 'WK', 'WL', 'WM', 'WN', 'WO', 'WP', 'WR', 'WS', 'WT', 'WU', 'WV', 'WW', 'WX', 'WY', 'WZ'];
     }
   }
 

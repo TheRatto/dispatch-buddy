@@ -70,8 +70,8 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
                     final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
                     await flightProvider.refreshCurrentData(
                       naipsEnabled: settingsProvider.naipsEnabled,
-                      naipsUsername: settingsProvider.naipsUsername,
-                      naipsPassword: settingsProvider.naipsPassword,
+                      naipsUsername: null,
+                      naipsPassword: null,
                     );
                   },
                   child: TafTab(),
@@ -101,11 +101,11 @@ class _AlternateDataScreenState extends State<AlternateDataScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-        await flightProvider.refreshCurrentData(
-          naipsEnabled: settingsProvider.naipsEnabled,
-          naipsUsername: settingsProvider.naipsUsername,
-          naipsPassword: settingsProvider.naipsPassword,
-        );
+                  await flightProvider.refreshCurrentData(
+                    naipsEnabled: settingsProvider.naipsEnabled,
+                    naipsUsername: null,
+                    naipsPassword: null,
+                  );
       },
       child: Column(
         children: [

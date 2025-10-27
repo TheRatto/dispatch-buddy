@@ -81,6 +81,32 @@ class NotamGroupHeader extends StatelessWidget {
         iconData = Icons.info;
         iconColor = Colors.grey;
         break;
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        iconData = Icons.flight;
+        iconColor = const Color(0xFFB91C1C); // Dark red
+        break;
+      case NotamGroup.firAtcNavigation:
+        iconData = Icons.radar;
+        iconColor = const Color(0xFF1E40AF); // Blue
+        break;
+      case NotamGroup.firObstaclesCharts:
+        iconData = Icons.warning;
+        iconColor = const Color(0xFFEA580C); // Orange
+        break;
+      case NotamGroup.firInfrastructure:
+        iconData = Icons.business;
+        iconColor = const Color(0xFF059669); // Emerald
+        break;
+      case NotamGroup.firDroneOperations:
+        iconData = Icons.smart_toy;
+        iconColor = const Color(0xFF7C3AED); // Violet
+        break;
+      case NotamGroup.firAdministrative:
+        iconData = Icons.admin_panel_settings;
+        iconColor = const Color(0xFF4B5563); // Slate
+        break;
     }
 
     return Container(
@@ -201,6 +227,20 @@ class NotamGroupHeader extends StatelessWidget {
         return 'Admin';
       case NotamGroup.other:
         return 'Other';
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return 'Airspace Restrictions';
+      case NotamGroup.firAtcNavigation:
+        return 'ATC & Navigation';
+      case NotamGroup.firObstaclesCharts:
+        return 'Obstacles & Charts';
+      case NotamGroup.firInfrastructure:
+        return 'Infrastructure';
+      case NotamGroup.firDroneOperations:
+        return 'Drone Operations';
+      case NotamGroup.firAdministrative:
+        return 'Administrative';
     }
   }
 
@@ -222,6 +262,20 @@ class NotamGroupHeader extends StatelessWidget {
         return 7;
       case NotamGroup.other:
         return 8;
+      
+      // FIR groups (priorities 9-14)
+      case NotamGroup.firAirspaceRestrictions:
+        return 9;
+      case NotamGroup.firAtcNavigation:
+        return 10;
+      case NotamGroup.firObstaclesCharts:
+        return 11;
+      case NotamGroup.firInfrastructure:
+        return 12;
+      case NotamGroup.firDroneOperations:
+        return 13;
+      case NotamGroup.firAdministrative:
+        return 14;
     }
   }
 } 

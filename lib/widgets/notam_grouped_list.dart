@@ -417,6 +417,20 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
         return 'Admin';
       case NotamGroup.other:
         return 'Other';
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return 'Airspace Restrictions';
+      case NotamGroup.firAtcNavigation:
+        return 'ATC & Navigation';
+      case NotamGroup.firObstaclesCharts:
+        return 'Obstacles & Charts';
+      case NotamGroup.firInfrastructure:
+        return 'Infrastructure';
+      case NotamGroup.firDroneOperations:
+        return 'Drone Operations';
+      case NotamGroup.firAdministrative:
+        return 'Administrative';
     }
   }
 
@@ -438,6 +452,20 @@ class _NotamGroupedListState extends State<NotamGroupedList> with TickerProvider
         return 7;
       case NotamGroup.other:
         return 8;
+      
+      // FIR groups (priorities 9-14)
+      case NotamGroup.firAirspaceRestrictions:
+        return 9;
+      case NotamGroup.firAtcNavigation:
+        return 10;
+      case NotamGroup.firObstaclesCharts:
+        return 11;
+      case NotamGroup.firInfrastructure:
+        return 12;
+      case NotamGroup.firDroneOperations:
+        return 13;
+      case NotamGroup.firAdministrative:
+        return 14;
     }
   }
 

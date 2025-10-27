@@ -4,6 +4,7 @@ import '../models/notam.dart';
 import '../models/weather.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/api_service.dart';
+import '../services/fir_notam_service.dart';
 // import '../services/briefing_conversion_service.dart';
 import '../services/cache_manager.dart';
 // import '../services/taf_state_manager.dart';
@@ -125,17 +126,35 @@ class BriefingRefreshService {
         }))
       );
       
+      // Fetch FIR NOTAMs for Australian FIRs (YMMM and YBBB)
+      final firNotamsFuture = Future(() async {
+        final firNotamService = FIRNotamService();
+        return await firNotamService.fetchAustralianFIRNotams();
+      }).catchError((e) {
+        debugPrint('Warning: Failed to fetch FIR NOTAMs: $e');
+        return <Notam>[];
+      });
+      
       // Use the new separate methods for better separation of concerns
       final metarsFuture = apiService.fetchMetars(airports);
       final atisFuture = apiService.fetchAtis(airports);
       final tafsFuture = apiService.fetchTafs(airports);
 
-      final results = await Future.wait([notamsFuture, metarsFuture, atisFuture, tafsFuture]);
+      final results = await Future.wait([
+        notamsFuture,
+        firNotamsFuture,
+        metarsFuture,
+        atisFuture,
+        tafsFuture,
+      ]);
 
       final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
-      final List<Weather> metars = results[1] as List<Weather>;
-      final List<Weather> atis = results[2] as List<Weather>;
-      final List<Weather> tafs = results[3] as List<Weather>;
+      final List<Notam> firNotams = results[1] as List<Notam>;
+      final List<Weather> metars = results[2] as List<Weather>;
+      final List<Weather> atis = results[3] as List<Weather>;
+      final List<Weather> tafs = results[4] as List<Weather>;
+      
+      debugPrint('DEBUG: BriefingRefreshService - FIR NOTAMs: ${firNotams.length} items');
 
       // Debug: Show what we received from each API call
       debugPrint('DEBUG: BriefingRefreshService - Received from API:');
@@ -152,8 +171,9 @@ class BriefingRefreshService {
         debugPrint('DEBUG:   - ${taf.icao}: ${taf.type} (source: ${taf.source})');
       }
 
-      // Flatten the list of lists into a single list (exactly like new briefing)
-      final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
+      // Flatten the list of lists into a single list and add FIR NOTAMs
+      final List<Notam> allNotams = [...notamResults.expand((notamList) => notamList).toList(), ...firNotams];
+      debugPrint('DEBUG: BriefingRefreshService - Total NOTAMs: ${allNotams.length} (airport: ${notamResults.expand((n) => n).length}, FIR: ${firNotams.length})');
       
       // For refresh: Select only the latest METAR and TAF for each airport
       final Map<String, Weather> latestMetars = {};

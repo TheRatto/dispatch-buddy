@@ -15,6 +15,7 @@ import '../services/briefing_storage_service.dart'; // Added for loadBriefing
 import '../services/cache_manager.dart'; // Added for cache clearing
 import '../services/airport_timezone_service.dart'; // Added for timezone pre-fetching
 import '../services/airport_database.dart'; // Added for airport lookup
+import '../services/fir_notam_service.dart';
 import '../providers/settings_provider.dart'; // Added for NAIPS settings
 import '../models/first_last_light.dart'; // Added for first/last light model
 
@@ -31,6 +32,7 @@ class FlightProvider with ChangeNotifier {
   Map<String, FirstLastLight> _firstLastLightByIcao = {}; // First/last light data by ICAO
   Map<String, String> _airportTimezones = {}; // Airport timezone data by ICAO
   String? _selectedAirport; // Shared airport selection across all tabs
+  String? _selectedFir; // Selected FIR for FIR NOTAMs tab
   bool _naipsFallbackUsed = false; // One-time snackbar flag for NAIPS fallback
   
   // Navigation state tracking
@@ -291,6 +293,7 @@ class FlightProvider with ChangeNotifier {
   Map<String, FirstLastLight> get firstLastLightByIcao => _firstLastLightByIcao;
   Map<String, String> get airportTimezones => _airportTimezones;
   String? get selectedAirport => _selectedAirport;
+  String? get selectedFir => _selectedFir;
   
   /// Add First/Last Light data for a specific airport
   void addFirstLastLightData(FirstLastLight firstLastLight) {
@@ -353,6 +356,12 @@ class FlightProvider with ChangeNotifier {
   // Set selected airport (shared across all tabs)
   void setSelectedAirport(String? icao) {
     _selectedAirport = icao;
+    notifyListeners();
+  }
+  
+  // Set selected FIR (for FIR NOTAMs tab)
+  void setSelectedFir(String? fir) {
+    _selectedFir = fir;
     notifyListeners();
   }
   
@@ -859,19 +868,24 @@ class FlightProvider with ChangeNotifier {
       
       // Fetch all data in parallel using the new separate methods
       final notamsFuture = Future.wait(icaos.map((icao) => apiService.fetchNotams(icao)));
+      
+      // Fetch FIR NOTAMs for Australian FIRs (YMMM and YBBB)
+      final firNotamsFuture = FIRNotamService().fetchAustralianFIRNotams();
+      
       final metarsFuture = apiService.fetchMetars(icaos);
       final atisFuture = apiService.fetchAtis(icaos);
       final tafsFuture = apiService.fetchTafs(icaos);
 
-      final results = await Future.wait([notamsFuture, metarsFuture, atisFuture, tafsFuture]);
+      final results = await Future.wait([notamsFuture, firNotamsFuture, metarsFuture, atisFuture, tafsFuture]);
 
       final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
-      final List<Weather> metars = results[1] as List<Weather>;
-      final List<Weather> atis = results[2] as List<Weather>;
-      final List<Weather> tafs = results[3] as List<Weather>;
+      final List<Notam> firNotams = results[1] as List<Notam>;
+      final List<Weather> metars = results[2] as List<Weather>;
+      final List<Weather> atis = results[3] as List<Weather>;
+      final List<Weather> tafs = results[4] as List<Weather>;
 
-      // Flatten the list of lists into a single list
-      final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
+      // Flatten the list of lists into a single list and add FIR NOTAMs
+      final List<Notam> allNotams = [...notamResults.expand((notamList) => notamList).toList(), ...firNotams];
 
       // Deduplicate by ICAO and latest timestamp, per type, to avoid multiple cards per airport
       final Map<String, Weather> latestMetarByIcao = {};

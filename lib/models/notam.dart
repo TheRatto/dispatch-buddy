@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 
 enum NotamType { runway, navaid, taxiway, lighting, procedure, other, airspace }
 
-// New NOTAM grouping enum based on operational significance
+// NOTAM grouping enum based on operational significance
 enum NotamGroup {
+  // Airport-specific groups (Groups 1-8)
   runways,          // Group 1: Runways (Critical) - closures, lighting, ACR/PCR
   taxiways,         // Group 2: Taxiways - closures, lighting, ACR/PCR
   instrumentProcedures, // Group 3: Navaids, SIDs, STARs, approaches, airspace
@@ -11,7 +12,15 @@ enum NotamGroup {
   lighting,         // Group 5: All lighting facilities - approach, runway, taxiway, obstacle lights
   hazards,          // Group 6: Obstacles, birds, warnings
   admin,            // Group 7: OIP/AIP updates, administrative
-  other            // Group 8: Unmapped items
+  other,            // Group 8: Unmapped items
+  
+  // FIR-specific groups (Groups 9-13) - parallel structure for Flight Information Region NOTAMs
+  firAirspaceRestrictions,  // Group 9: E-series - Military airspace, restricted areas, danger areas
+  firAtcNavigation,         // Group 10: L-series - Radar coverage, ATC services, navigation aids
+  firObstaclesCharts,       // Group 11: F-series - New obstacles, chart amendments, LSALT updates
+  firInfrastructure,        // Group 12: H-series - Airport infrastructure, facility changes
+  firDroneOperations,       // Group 13: UA OPS - Unmanned aircraft operations, drone activities
+  firAdministrative,        // Group 14: G/W-series - General warnings, administrative notices
 }
 
 class Notam {

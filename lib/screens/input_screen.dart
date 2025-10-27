@@ -17,6 +17,7 @@ import '../services/api_service.dart';
 import '../services/airport_database.dart';
 import '../services/briefing_storage_service.dart';
 import '../services/airport_selection_service.dart';
+import '../services/fir_notam_service.dart';
 import 'briefing_tabs_screen.dart';
 import 'package:flutter/foundation.dart';
 
@@ -202,17 +203,25 @@ class _InputScreenState extends State<InputScreen> {
           return <Notam>[]; // Return empty list on error
         }))
       );
+      
+      // Fetch FIR NOTAMs for Australian FIRs (YMMM and YBBB)
+      final firNotamsFuture = FIRNotamService().fetchAustralianFIRNotams().catchError((e) {
+        debugPrint('Warning: Failed to fetch FIR NOTAMs: $e');
+        return <Notam>[];
+      });
+      
       final weatherFuture = apiService.fetchWeather(icaos);
       final tafsFuture = apiService.fetchTafs(icaos);
 
-      final results = await Future.wait([notamsFuture, weatherFuture, tafsFuture]);
+      final results = await Future.wait([notamsFuture, firNotamsFuture, weatherFuture, tafsFuture]);
 
       final List<List<Notam>> notamResults = results[0] as List<List<Notam>>;
-      final List<Weather> metars = results[1] as List<Weather>;
-      final List<Weather> tafs = results[2] as List<Weather>;
+      final List<Notam> firNotams = results[1] as List<Notam>;
+      final List<Weather> metars = results[2] as List<Weather>;
+      final List<Weather> tafs = results[3] as List<Weather>;
 
-      // Flatten the list of lists into a single list
-      final List<Notam> allNotams = notamResults.expand((notamList) => notamList).toList();
+      // Flatten the list of lists into a single list and add FIR NOTAMs
+      final List<Notam> allNotams = [...notamResults.expand((notamList) => notamList).toList(), ...firNotams];
       final List<Weather> allWeather = [...metars, ...tafs];
       
       final newFlight = Flight(

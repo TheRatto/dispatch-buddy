@@ -10,6 +10,8 @@ import '../models/decoded_weather_models.dart';
 import '../services/decoder_service.dart';
 import '../services/taf_state_manager.dart';
 import '../services/cache_manager.dart';
+import '../services/fir_notam_service.dart';
+import '../services/fir_notam_grouping_service.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/zulu_time_widget.dart';
 import '../widgets/flip_card_widget.dart';
@@ -81,7 +83,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     
     // Add listener to save last viewed Raw Data tab
     _tabController.addListener(() {
@@ -325,32 +327,15 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                         icon: Icon(Icons.warning_amber_outlined, size: 18), // Smaller icon
                         text: 'NOTAMs',
                       ),
-
+                      Tab(
+                        icon: Icon(Icons.flight_takeoff, size: 18), // Smaller icon
+                        text: 'FIR NOTAMs',
+                      ),
                     ],
                   ),
                 ),
-                // Fixed airport selector below tabs
-                if (airports.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 40,
-                    child: RepaintBoundary(
-                      child: Center(
-                        child: TafAirportSelector(
-                          airports: airports,
-                          selectedAirport: flightProvider.selectedAirport ?? airports.first,
-                          onAirportSelected: (String airport) {
-                            _clearCache(); // Clear NOTAM cache when airport changes
-                            flightProvider.setSelectedAirport(airport);
-                          },
-                          onAddAirport: _showAddAirportDialog,
-                          onAirportLongPress: _showEditAirportDialog,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
+                // Pill selector below tabs (Airports for all tabs, FIR for FIR NOTAMs tab)
+                _buildPillSelector(context, flightProvider),
                 // Tab content below
                 Expanded(
                   child: TabBarView(
@@ -404,7 +389,13 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
                         'Fetching NOTAMs and airport data for ${flightProvider.loadingAirport}...',
                         _buildNotams2Tab(context, flight.notams, flightProvider),
                       ),
-
+                      // FIR NOTAMs tab: ungrouped FIR NOTAMs
+                      _buildTabContent(
+                        'FIR NOTAMs',
+                        flightProvider.isLoading,
+                        'Fetching FIR NOTAMs...',
+                        _buildFIRNotamsTab(context, flight.notams, flightProvider),
+                      ),
                     ],
                   ),
                 ),
@@ -1359,6 +1350,7 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
 
   Color _getCategoryColor(NotamGroup group) {
     switch (group) {
+      // Airport-specific groups
       case NotamGroup.runways:
         return const Color(0xFFEF4444); // Red for runways
       case NotamGroup.taxiways:
@@ -1375,11 +1367,26 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         return const Color(0xFF6B7280); // Gray for admin
       case NotamGroup.other:
         return const Color(0xFF10B981); // Green for other
+      
+      // FIR-specific groups (distinct colors)
+      case NotamGroup.firAirspaceRestrictions:
+        return const Color(0xFFDC2626); // Dark red for airspace restrictions
+      case NotamGroup.firAtcNavigation:
+        return const Color(0xFF2563EB); // Blue for ATC/navigation
+      case NotamGroup.firObstaclesCharts:
+        return const Color(0xFFEA580C); // Orange for obstacles/charts
+      case NotamGroup.firInfrastructure:
+        return const Color(0xFF059669); // Emerald for infrastructure
+      case NotamGroup.firDroneOperations:
+        return const Color(0xFF7C3AED); // Violet for drone operations
+      case NotamGroup.firAdministrative:
+        return const Color(0xFF4B5563); // Slate for administrative
     }
   }
 
   String _getCategoryLabel(NotamGroup group) {
     switch (group) {
+      // Airport-specific groups
       case NotamGroup.runways:
         return 'RWY';
       case NotamGroup.taxiways:
@@ -1396,6 +1403,20 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
         return 'ADM';
       case NotamGroup.other:
         return 'OTH';
+      
+      // FIR-specific groups
+      case NotamGroup.firAirspaceRestrictions:
+        return 'AIRSPACE';
+      case NotamGroup.firAtcNavigation:
+        return 'ATC/NAV';
+      case NotamGroup.firObstaclesCharts:
+        return 'OBST';
+      case NotamGroup.firInfrastructure:
+        return 'INFRA';
+      case NotamGroup.firDroneOperations:
+        return 'DRONE';
+      case NotamGroup.firAdministrative:
+        return 'ADMIN';
     }
   }
 
@@ -1528,6 +1549,423 @@ class _RawDataScreenState extends State<RawDataScreen> with TickerProviderStateM
       );
     }
     return content;
+  }
+
+  /// Build FIR NOTAMs tab - displays FIR NOTAMs with filtering
+  Widget _buildFIRNotamsTab(BuildContext context, List<Notam> allNotams, FlightProvider flightProvider) {
+    debugPrint('DEBUG: Building FIR NOTAMs tab');
+    
+    // Extract FIR NOTAMs from all NOTAMs
+    var firNotams = FIRNotamService.extractFIRNotams(allNotams);
+    debugPrint('DEBUG: Found ${firNotams.length} FIR NOTAMs');
+    
+    // Filter by selected FIR pill
+    if (flightProvider.selectedFir != null) {
+      firNotams = firNotams.where((notam) => notam.icao == flightProvider.selectedFir).toList();
+      debugPrint('DEBUG: After FIR filter (${flightProvider.selectedFir}): ${firNotams.length} FIR NOTAMs');
+    }
+    
+    // Filter by time
+    final filteredFirNotams = _filterNotamsByTime(firNotams);
+    debugPrint('DEBUG: After time filter: ${filteredFirNotams.length} FIR NOTAMs');
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+        debugPrint('DEBUG: 🔄 FIR NOTAMs tab refresh triggered!');
+        _clearCache();
+        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        await flightProvider.refreshCurrentData(
+          naipsEnabled: settingsProvider.naipsEnabled,
+          naipsUsername: null,
+          naipsPassword: null,
+        );
+        debugPrint('DEBUG: 🔄 FIR NOTAMs tab refresh completed!');
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            // Time filter
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time, size: 16, color: Color(0xFF1E3A8A)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Show NOTAMs for next:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _selectedTimeFilter,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => _timeFilterOptions.map((filter) {
+                      return PopupMenuItem<String>(
+                        value: filter,
+                        child: Text(filter),
+                      );
+                    }).toList(),
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedTimeFilter = value;
+                        // Clear NOTAM cache when filter changes
+                        _clearCache();
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: filteredFirNotams.isEmpty 
+                          ? Colors.grey[200] 
+                          : const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          filteredFirNotams.isEmpty 
+                              ? Icons.check_circle 
+                              : Icons.warning,
+                          size: 14,
+                          color: filteredFirNotams.isEmpty 
+                              ? Colors.grey[600] 
+                              : Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${filteredFirNotams.length}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: filteredFirNotams.isEmpty 
+                                ? Colors.grey[600] 
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Grouped FIR NOTAM list
+            Expanded(
+              child: filteredFirNotams.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.flight_takeoff, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            'No FIR NOTAMs Available',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'FIR NOTAMs will appear here when available',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  : NotamGroupedList(
+                      notams: FIRNotamGroupingService.applyFIRGrouping(filteredFirNotams),
+                      onNotamTap: (notam) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'FIR NOTAM ${notam.id}',
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6B7280), // Grey for FIR
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    notam.icao, // Show FIR code (YMMM/YBBB)
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(height: 16),
+                                  
+                                  // Validity Section (Prominent) - matching airport NOTAMs
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.shade200),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Absolute validity times
+                                        Text(
+                                          'Valid: ${_formatDateTime(notam.validFrom)} - ${notam.isPermanent ? 'PERM' : _formatDateTime(notam.validTo)}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        // Relative status + countdown - match raw data page styling
+                                        Row(
+                                          children: [
+                                            // Left side: Start time or Active status (orange)
+                                            Expanded(
+                                              child: Text(
+                                                _getLeftSideText(notam),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Color(0xFFF59E0B), // Orange to match list view
+                                                  fontWeight: FontWeight.w400, // No bold
+                                                ),
+                                              ),
+                                            ),
+                                            // Right side: End time (green)
+                                            Text(
+                                              _getRightSideText(notam),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.green.shade600, // Green to match list view
+                                                fontWeight: FontWeight.w400, // No bold
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Schedule Information (Field D) - only show if present
+                                  if (notam.fieldD.isNotEmpty) ...[
+                                    const SizedBox(height: 16),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey.shade200),
+                                      ),
+                                      child: Text(
+                                        notam.fieldD,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.orange.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  
+                                  // NOTAM Text (Main Content) - Field E + Altitude Info (Fields F & G)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.shade200),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Main NOTAM text (Field E)
+                                        Text(
+                                          notam.fieldE.isNotEmpty ? notam.fieldE : notam.rawText,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                        
+                                        // Altitude information (Fields F & G) - only show if present
+                                        if (notam.fieldF.isNotEmpty || notam.fieldG.isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _formatAltitudeInfo(notam.fieldF, notam.fieldG),
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              height: 1.4,
+                                              color: Colors.blue,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  
+                                  // Metadata Footer (Single line, small, muted)
+                                  Text(
+                                    'Q: ${notam.qCode ?? 'N/A'} • Type: ${notam.type.name} • Group: ${notam.group.name}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade500,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Close'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      showGroupHeaders: true,
+                      initiallyExpanded: true,
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  /// Build pill selector - shows airport pills for most tabs, FIR pills for FIR NOTAMs tab
+  Widget _buildPillSelector(BuildContext context, FlightProvider flightProvider) {
+    final currentTab = _tabController.index;
+    final isFIRNotamsTab = currentTab == 3; // FIR NOTAMs is the 4th tab (index 3)
+    
+    if (isFIRNotamsTab) {
+      // Show FIR pills for FIR NOTAMs tab
+      return Column(
+        children: [
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 40,
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildFIRPill('YMMM', flightProvider.selectedFir == 'YMMM', () {
+                    flightProvider.setSelectedFir('YMMM');
+                  }),
+                  const SizedBox(width: 8),
+                  _buildFIRPill('YBBB', flightProvider.selectedFir == 'YBBB', () {
+                    flightProvider.setSelectedFir('YBBB');
+                  }),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+      );
+    } else {
+      // Show airport pills for other tabs
+      final airports = flightProvider.currentFlight?.airports.map((a) => a.icao).toList() ?? [];
+      if (airports.isEmpty) return const SizedBox.shrink();
+      
+      return Column(
+        children: [
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 40,
+            child: RepaintBoundary(
+              child: Center(
+                child: TafAirportSelector(
+                  airports: airports,
+                  selectedAirport: flightProvider.selectedAirport ?? airports.first,
+                  onAirportSelected: (String airport) {
+                    _clearCache();
+                    flightProvider.setSelectedAirport(airport);
+                  },
+                  onAddAirport: _showAddAirportDialog,
+                  onAirportLongPress: _showEditAirportDialog,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+      );
+    }
+  }
+
+  /// Build a single FIR pill
+  Widget _buildFIRPill(String fir, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFF97316) : Colors.grey[700]!,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFF97316) : Colors.grey[600]!,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          fir,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white70,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
   }
 
 }

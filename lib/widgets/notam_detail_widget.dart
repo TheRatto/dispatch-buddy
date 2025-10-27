@@ -332,6 +332,20 @@ class NotamDetailWidget extends StatelessWidget {
         return const Color(0xFF6B7280); // Gray for admin
       case NotamGroup.other:
         return const Color(0xFF10B981); // Green for other
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return const Color(0xFFB91C1C); // Dark red
+      case NotamGroup.firAtcNavigation:
+        return const Color(0xFF1E40AF); // Blue
+      case NotamGroup.firObstaclesCharts:
+        return const Color(0xFFEA580C); // Orange
+      case NotamGroup.firInfrastructure:
+        return const Color(0xFF059669); // Emerald
+      case NotamGroup.firDroneOperations:
+        return const Color(0xFF7C3AED); // Violet
+      case NotamGroup.firAdministrative:
+        return const Color(0xFF4B5563); // Slate
     }
   }
 
@@ -353,6 +367,20 @@ class NotamDetailWidget extends StatelessWidget {
         return 'ADM';
       case NotamGroup.other:
         return 'OTH';
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return 'AIRSPACE';
+      case NotamGroup.firAtcNavigation:
+        return 'ATC/NAV';
+      case NotamGroup.firObstaclesCharts:
+        return 'OBST';
+      case NotamGroup.firInfrastructure:
+        return 'INFRA';
+      case NotamGroup.firDroneOperations:
+        return 'DRONE';
+      case NotamGroup.firAdministrative:
+        return 'ADMIN';
     }
   }
 }

@@ -1622,6 +1622,20 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         return Colors.cyan;
       case NotamGroup.airportServices:
         return Colors.teal;
+      
+      // FIR groups (fallback to similar airport colors)
+      case NotamGroup.firAirspaceRestrictions:
+        return Colors.red.shade700;
+      case NotamGroup.firAtcNavigation:
+        return Colors.blue.shade700;
+      case NotamGroup.firObstaclesCharts:
+        return Colors.orange.shade700;
+      case NotamGroup.firInfrastructure:
+        return Colors.teal.shade700;
+      case NotamGroup.firDroneOperations:
+        return Colors.purple.shade700;
+      case NotamGroup.firAdministrative:
+        return Colors.grey.shade700;
     }
   }
 
@@ -1643,6 +1657,20 @@ class _FacilitiesWidgetState extends State<FacilitiesWidget> {
         return 'TWY';
       case NotamGroup.airportServices:
         return 'SVC';
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return 'AIRSPACE';
+      case NotamGroup.firAtcNavigation:
+        return 'ATC/NAV';
+      case NotamGroup.firObstaclesCharts:
+        return 'OBST';
+      case NotamGroup.firInfrastructure:
+        return 'INFRA';
+      case NotamGroup.firDroneOperations:
+        return 'DRONE';
+      case NotamGroup.firAdministrative:
+        return 'ADMIN';
     }
   }
 
@@ -2584,6 +2612,20 @@ class _NotamSwipeViewState extends State<NotamSwipeView> {
         return Colors.cyan;
       case NotamGroup.airportServices:
         return Colors.teal;
+      
+      // FIR groups (fallback to similar airport colors)
+      case NotamGroup.firAirspaceRestrictions:
+        return Colors.red.shade700;
+      case NotamGroup.firAtcNavigation:
+        return Colors.blue.shade700;
+      case NotamGroup.firObstaclesCharts:
+        return Colors.orange.shade700;
+      case NotamGroup.firInfrastructure:
+        return Colors.teal.shade700;
+      case NotamGroup.firDroneOperations:
+        return Colors.purple.shade700;
+      case NotamGroup.firAdministrative:
+        return Colors.grey.shade700;
     }
   }
 
@@ -2605,6 +2647,20 @@ class _NotamSwipeViewState extends State<NotamSwipeView> {
         return 'TWY';
       case NotamGroup.airportServices:
         return 'SVC';
+      
+      // FIR groups
+      case NotamGroup.firAirspaceRestrictions:
+        return 'AIRSPACE';
+      case NotamGroup.firAtcNavigation:
+        return 'ATC/NAV';
+      case NotamGroup.firObstaclesCharts:
+        return 'OBST';
+      case NotamGroup.firInfrastructure:
+        return 'INFRA';
+      case NotamGroup.firDroneOperations:
+        return 'DRONE';
+      case NotamGroup.firAdministrative:
+        return 'ADMIN';
     }
   }
 }
