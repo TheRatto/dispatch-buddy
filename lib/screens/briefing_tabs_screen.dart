@@ -7,7 +7,7 @@ import '../widgets/more_sheet.dart';
 
 class BriefingTabsScreen extends StatefulWidget {
   final int initialTabIndex;
-  const BriefingTabsScreen({super.key, this.initialTabIndex = 1}); // Default to Summary tab (index 1)
+  const BriefingTabsScreen({super.key, this.initialTabIndex = 1}); // Default to Raw Data tab (index 1)
 
   // Static method to switch tabs from child widgets
   static void switchToTab(BuildContext context, int index) {
@@ -26,9 +26,9 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const SummaryScreen(),
-    const AirportDetailScreen(),
     const RawDataScreen(),
+    const AirportDetailScreen(),
+    const SummaryScreen(),
   ];
 
   @override
@@ -98,16 +98,16 @@ class _BriefingTabsScreenState extends State<BriefingTabsScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Summary',
+            icon: Icon(Icons.code),
+            label: 'Raw Data',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.airplanemode_active),
             label: 'Airports',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.code),
-            label: 'Raw Data',
+            icon: Icon(Icons.dashboard),
+            label: 'Summary',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz),
